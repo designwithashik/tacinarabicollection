@@ -8,7 +8,7 @@ import {
   validateImageUrl,
 } from "../../../lib/images";
 
-const adminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? "";
+const defaultAdminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? "";
 
 type AdminProduct = {
   id: string;
@@ -67,6 +67,7 @@ const validateNewDraft = (draft: AdminProduct) => {
 };
 
 export default function AdminInventory() {
+  const [adminSecret, setAdminSecret] = useState(defaultAdminSecret);
   const [items, setItems] = useState<AdminProduct[]>([]);
   const [draft, setDraft] = useState<AdminProduct>(emptyDraft);
   const [saving, setSaving] = useState(false);
@@ -89,13 +90,22 @@ export default function AdminInventory() {
   useEffect(() => {
     const storedCloudName = localStorage.getItem("tacin-cloudinary-name");
     const storedPreset = localStorage.getItem("tacin-cloudinary-preset");
+    const storedAdminSecret = localStorage.getItem("tacin-admin-secret");
     if (storedCloudName) setCloudName(storedCloudName);
     if (storedPreset) setUploadPreset(storedPreset);
-    if (!canUseAdmin) {
-      setError("Admin secret missing. Set NEXT_PUBLIC_ADMIN_SECRET.");
+    if (storedAdminSecret && !defaultAdminSecret) {
+      setAdminSecret(storedAdminSecret);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!adminSecret) {
+      setError("Admin secret missing. Add it below to unlock saving.");
       setLoading(false);
       return;
     }
+    setError(null);
+    setLoading(true);
     const load = async () => {
       try {
         const response = await fetch("/api/admin/products", {
@@ -111,7 +121,7 @@ export default function AdminInventory() {
       }
     };
     load();
-  }, [canUseAdmin]);
+  }, [adminSecret]);
 
   useEffect(() => {
     localStorage.setItem("tacin-cloudinary-name", cloudName);
@@ -120,6 +130,11 @@ export default function AdminInventory() {
   useEffect(() => {
     localStorage.setItem("tacin-cloudinary-preset", uploadPreset);
   }, [uploadPreset]);
+
+  useEffect(() => {
+    if (!adminSecret || defaultAdminSecret) return;
+    localStorage.setItem("tacin-admin-secret", adminSecret);
+  }, [adminSecret]);
 
   useEffect(() => {
     if (!notice) return;
@@ -382,11 +397,21 @@ export default function AdminInventory() {
       ) : null}
 
       <div className="rounded-3xl bg-white p-6 shadow-soft">
-        <h3 className="text-lg font-semibold">Cloudinary Setup</h3>
+        <h3 className="text-lg font-semibold">Setup</h3>
         <p className="mt-1 text-xs text-muted">
-          Add your Cloudinary cloud name and unsigned upload preset.
+          Add your admin secret and Cloudinary upload settings.
         </p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <label className="text-xs font-semibold">
+            Admin Secret
+            <input
+              type="password"
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={adminSecret}
+              onChange={(event) => setAdminSecret(event.target.value)}
+              placeholder="Paste admin secret"
+            />
+          </label>
           <label className="text-xs font-semibold">
             Cloud Name
             <input

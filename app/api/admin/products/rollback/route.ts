@@ -5,9 +5,13 @@ export const runtime = "nodejs";
 const getSecret = (request: Request) =>
   request.headers.get("x-admin-secret") ?? "";
 
-const isAuthorized = (request: Request) =>
-  Boolean(process.env.ADMIN_SECRET) &&
-  getSecret(request) === process.env.ADMIN_SECRET;
+const getAdminSecret = () =>
+  process.env.ADMIN_SECRET ?? process.env.NEXT_PUBLIC_ADMIN_SECRET ?? "";
+
+const isAuthorized = (request: Request) => {
+  const secret = getAdminSecret();
+  return Boolean(secret) && getSecret(request) === secret;
+};
 
 export async function POST(request: Request) {
   if (!isAuthorized(request)) {
