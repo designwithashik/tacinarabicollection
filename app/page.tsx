@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
@@ -33,6 +34,16 @@ const deliveryFees = {
 };
 
 
+type CartItem = {
+  id: string;
+  name: string;
+  price: number;
+  size: string;
+  color: string;
+  quantity: number;
+  image: string;
+};
+
 type Filters = {
   size: string[];
   colors: string[];
@@ -44,6 +55,11 @@ type Filters = {
 type AddState = "idle" | "loading" | "success";
 
 type Language = "en" | "bn";
+type CustomerInfo = {
+  name: string;
+  phone: string;
+  address: string;
+};
 
 const defaultFilters: Filters = {
   size: [],
@@ -112,6 +128,45 @@ const getStockLabel = (index: number) =>
 const getOrderSubtotal = (items: CartItem[]) =>
   items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  cart: "tacin-cart",
+  viewed: "tacin-recently-viewed",
+};
+
+const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
+
+const getOrderTotal = (items: CartItem[]) =>
+  items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+const buildWhatsAppMessage = (
+  customer: CustomerInfo,
+  items: CartItem[],
+  paymentMethod: string,
+  transactionId?: string
+) => {
+  const lines = [
+    `Assalamualaikum! New order from Tacin Arabi Collection`,
+    `Name: ${customer.name}`,
+    `Phone: ${customer.phone}`,
+    `Address: ${customer.address}`,
+    ``,
+    `Order Details:`,
+    ...items.map(
+      (item, index) =>
+        `${index + 1}. ${item.name} | Size: ${item.size} | Color: ${item.color} | Qty: ${item.quantity} | ${formatPrice(
+          item.price * item.quantity
+        )}`
+    ),
+    ``,
+    `Total: ${formatPrice(getOrderTotal(items))}`,
+    `Payment Method: ${paymentMethod}`,
+  ];
+
+  if (transactionId) {
+    lines.push(`Transaction ID: ${transactionId}`);
+  }
+
+  return encodeURIComponent(lines.join("\n"));
+};
 
 export default function HomePage() {
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
@@ -125,6 +180,9 @@ export default function HomePage() {
   const [activeSheet, setActiveSheet] = useState<
     "size" | "color" | "price" | "sort" | null
   >(null);
+  const [filters, setFilters] = useState<Filters>(defaultFilters);
+  const [draftFilters, setDraftFilters] = useState<Filters>(defaultFilters);
+  const [activeSheet, setActiveSheet] = useState<"size" | "color" | "price" | "sort" | null>(null);
   const [detailsProduct, setDetailsProduct] = useState<Product | null>(null);
   const [showCart, setShowCart] = useState(false);
   const [checkoutItems, setCheckoutItems] = useState<CartItem[]>([]);
@@ -165,6 +223,18 @@ export default function HomePage() {
 
     setCartItems(storedCart);
 
+  useEffect(() => {
+    const storedCart = localStorage.getItem(storageKeys.cart);
+    const storedViewed = localStorage.getItem(storageKeys.viewed);
+
+    if (storedCart) {
+      try {
+        setCartItems(JSON.parse(storedCart));
+      } catch {
+        setCartItems([]);
+      }
+    }
+
     if (storedViewed) {
       try {
         setRecentlyViewed(JSON.parse(storedViewed));
@@ -182,6 +252,10 @@ export default function HomePage() {
 
   useEffect(() => {
     setStoredCart(cartItems);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(storageKeys.cart, JSON.stringify(cartItems));
   }, [cartItems]);
 
   useEffect(() => {
@@ -291,6 +365,7 @@ export default function HomePage() {
         setAddStates((prev) => ({ ...prev, [product.id]: "idle" }));
       }, 1500);
     }, 400);
+    setToast("Added to cart");
   };
 
   const handleBuyNow = (product: Product) => {
@@ -336,6 +411,18 @@ export default function HomePage() {
       paymentScreenshot: paymentScreenshot || undefined,
       total,
     });
+  };
+
+  const handleWhatsappRedirect = (
+    paymentMethod: string,
+    txId?: string
+  ) => {
+    const message = buildWhatsAppMessage(
+      customer,
+      checkoutItems,
+      paymentMethod,
+      txId
+    );
     const url = `https://wa.me/${whatsappNumber.replace(
       /\D/g,
       ""
@@ -368,6 +455,8 @@ export default function HomePage() {
 
   const filteredProducts = useMemo(() => {
     let result = [...productSource];
+  const filteredProducts = useMemo(() => {
+    let result = [...products];
 
     if (filters.size.length) {
       result = result.filter((product) =>
@@ -401,6 +490,7 @@ export default function HomePage() {
 
     return result;
   }, [filters, productSource]);
+  }, [filters]);
 
   const activeChips = [
     ...filters.size.map((size) => ({ type: "size", value: size })),
@@ -512,6 +602,35 @@ export default function HomePage() {
             </div>
           </div>
           <div className="rounded-3xl bg-card p-6 shadow-soft opacity-0 animate-[fadeUp_0.8s_ease-out_forwards]">
+  return (
+    <div className="min-h-screen pb-24">
+      <header className="bg-base">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-10 pt-8 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-xl">
+            <p className="text-sm font-semibold text-accent">
+              WhatsApp-first shopping
+            </p>
+            <h1 className="mt-3 font-heading text-3xl font-bold text-ink md:text-4xl">
+              Tacin Arabi Collection
+            </h1>
+            <p className="mt-3 text-sm text-muted md:text-base">
+              Discover curated fashion and ceramics crafted for Bangladesh.
+              Smooth ordering, COD, and bKash/Nagad payments, all wrapped in a
+              mobile-first experience.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft">
+                Cash on Delivery
+              </span>
+              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft">
+                Nationwide Delivery
+              </span>
+              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft">
+                WhatsApp Support
+              </span>
+            </div>
+          </div>
+          <div className="rounded-3xl bg-card p-6 shadow-soft">
             <h2 className="font-heading text-xl font-semibold">
               Quick Order Promise
             </h2>
@@ -670,6 +789,36 @@ export default function HomePage() {
               Color
             </button>
           </div>
+      <section className="sticky top-0 z-20 bg-base/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 overflow-x-auto px-4 py-3">
+          <button
+            type="button"
+            onClick={() => openSheet("size")}
+            className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+          >
+            Size
+          </button>
+          <button
+            type="button"
+            onClick={() => openSheet("color")}
+            className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+          >
+            Color
+          </button>
+          <button
+            type="button"
+            onClick={() => openSheet("price")}
+            className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+          >
+            Price
+          </button>
+          <button
+            type="button"
+            onClick={() => openSheet("sort")}
+            className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+          >
+            Sort
+          </button>
         </div>
       </section>
 
@@ -748,6 +897,24 @@ export default function HomePage() {
             ))}
           </div>
         )}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              selectedSize={selectedSizes[product.id]}
+              quantity={quantities[product.id] ?? 1}
+              onSizeChange={(size) => updateSize(product.id, size)}
+              onQuantityChange={(quantity) => updateQuantity(product.id, quantity)}
+              onBuyNow={() => handleBuyNow(product)}
+              onAddToCart={() => handleAddToCart(product)}
+              onOpenDetails={() => {
+                markRecentlyViewed(product);
+                setDetailsProduct(product);
+              }}
+            />
+          ))}
+        </div>
 
         {recentlyViewed.length > 0 ? (
           <section className="mt-12">
@@ -761,6 +928,7 @@ export default function HomePage() {
             </div>
             <div className="grid gap-6 md:grid-cols-2">
               {recentlyViewed.map((product, index) => (
+              {recentlyViewed.map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -866,6 +1034,18 @@ export default function HomePage() {
         <span className="whitespace-nowrap pr-4 text-sm font-semibold text-ink opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           Cart
         </span>
+      <button
+        type="button"
+        onClick={() => setShowCart(true)}
+        className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-soft"
+        aria-label="Open cart"
+      >
+        <span className="text-xl">🛍️</span>
+        {cartItems.length > 0 ? (
+          <span className="absolute -top-1 -right-1 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">
+            {cartItems.length}
+          </span>
+        ) : null}
       </button>
 
       <a
@@ -890,6 +1070,11 @@ export default function HomePage() {
         <span className="whitespace-nowrap pr-5 text-sm font-semibold text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           Order via WhatsApp
         </span>
+        className="fixed bottom-6 right-4 z-30 flex items-center gap-2 rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white shadow-soft"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <span>Order via WhatsApp</span>
       </a>
 
       {activeSheet ? (
@@ -973,6 +1158,30 @@ export default function HomePage() {
                     {color}
                   </button>
                 ))}
+                {["Beige", "Olive", "Maroon", "Black", "Ivory", "Sand", "Terracotta"].map(
+                  (color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() =>
+                        setDraftFilters((prev) => ({
+                          ...prev,
+                          colors: prev.colors.includes(color)
+                            ? prev.colors.filter((item) => item !== color)
+                            : [...prev.colors, color],
+                        }))
+                      }
+                      className={clsx(
+                        "rounded-full border px-4 py-2 text-sm font-semibold",
+                        draftFilters.colors.includes(color)
+                          ? "border-accent bg-accent text-white"
+                          : "border-[#e6d8ce]"
+                      )}
+                    >
+                      {color}
+                    </button>
+                  )
+                )}
               </div>
             ) : null}
 
@@ -1033,6 +1242,9 @@ export default function HomePage() {
                 className="min-h-[44px] rounded-full border border-[#e6d8ce] px-4 py-2 text-sm font-semibold text-ink"
               >
                 {text.clear}
+                className="rounded-full border border-[#e6d8ce] px-4 py-2 text-sm font-semibold text-ink"
+              >
+                Clear
               </button>
               <button
                 type="button"
@@ -1040,6 +1252,9 @@ export default function HomePage() {
                 className="min-h-[44px] rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white"
               >
                 {text.applyFilters}
+                className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white"
+              >
+                Apply Filters
               </button>
             </div>
           </div>
@@ -1092,6 +1307,13 @@ export default function HomePage() {
                   <span className="font-semibold text-ink">
                     {formatPrice(detailsProduct.price)}
                   </span>
+                  Category: <span className="font-semibold text-ink">{detailsProduct.category}</span>
+                </p>
+                <p>
+                  Colors: <span className="font-semibold text-ink">{detailsProduct.colors.join(", ")}</span>
+                </p>
+                <p>
+                  Price: <span className="font-semibold text-ink">{formatPrice(detailsProduct.price)}</span>
                 </p>
               </div>
             </div>
@@ -1147,12 +1369,14 @@ export default function HomePage() {
                   disabled={!selectedSizes[detailsProduct.id]}
                   className={clsx(
                     "min-h-[44px] rounded-full px-4 py-2 text-sm font-semibold",
+                    "rounded-full px-4 py-2 text-sm font-semibold",
                     selectedSizes[detailsProduct.id]
                       ? "bg-accent text-white"
                       : "cursor-not-allowed bg-[#e6d8ce] text-muted"
                   )}
                 >
                   {text.buyNow}
+                  Buy Now
                 </button>
                 <button
                   type="button"
@@ -1160,12 +1384,14 @@ export default function HomePage() {
                   disabled={!selectedSizes[detailsProduct.id]}
                   className={clsx(
                     "min-h-[44px] rounded-full border px-4 py-2 text-sm font-semibold",
+                    "rounded-full border px-4 py-2 text-sm font-semibold",
                     selectedSizes[detailsProduct.id]
                       ? "border-accent text-accent"
                       : "cursor-not-allowed border-[#e6d8ce] text-muted"
                   )}
                 >
                   {text.addToCart}
+                  Add to Cart
                 </button>
               </div>
             </div>
@@ -1203,6 +1429,7 @@ export default function HomePage() {
                   Browse products
                 </button>
               </div>
+              <p className="mt-6 text-sm text-muted">Your cart is empty.</p>
             ) : (
               <div className="mt-4 space-y-4">
                 {cartItems.map((item, index) => (
@@ -1268,6 +1495,8 @@ export default function HomePage() {
                 <div className="flex items-center justify-between text-sm font-semibold">
                   <span>{text.subtotal}</span>
                   <span>{formatPrice(getOrderSubtotal(cartItems))}</span>
+                  <span>Total</span>
+                  <span>{formatPrice(getOrderTotal(cartItems))}</span>
                 </div>
                 <button
                   type="button"
@@ -1275,6 +1504,9 @@ export default function HomePage() {
                   className="min-h-[44px] w-full rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white"
                 >
                   {text.checkout}
+                  className="w-full rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white"
+                >
+                  Checkout
                 </button>
               </div>
             )}
@@ -1375,6 +1607,13 @@ export default function HomePage() {
               </label>
               <input
                 id="checkout-name"
+              <div className="flex items-center justify-between font-semibold">
+                <span>Total</span>
+                <span>{formatPrice(getOrderTotal(checkoutItems))}</span>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              <input
                 type="text"
                 placeholder="Name"
                 value={customer.name}
@@ -1391,6 +1630,7 @@ export default function HomePage() {
               </label>
               <input
                 id="checkout-phone"
+              <input
                 type="tel"
                 placeholder="Phone"
                 value={customer.phone}
@@ -1407,6 +1647,7 @@ export default function HomePage() {
               </label>
               <textarea
                 id="checkout-address"
+              <textarea
                 placeholder="Address"
                 rows={3}
                 value={customer.address}
@@ -1438,11 +1679,16 @@ export default function HomePage() {
                 className={clsx(
                   "min-h-[48px] rounded-full px-4 py-3 text-sm font-semibold",
                   isCustomerInfoValid && isOnline
+                disabled={!isCustomerInfoValid}
+                className={clsx(
+                  "rounded-full px-4 py-3 text-sm font-semibold",
+                  isCustomerInfoValid
                     ? "bg-accent text-white"
                     : "cursor-not-allowed bg-[#e6d8ce] text-muted"
                 )}
               >
                 {text.orderCod}
+                Order via WhatsApp (COD)
               </button>
               <button
                 type="button"
@@ -1451,11 +1697,16 @@ export default function HomePage() {
                 className={clsx(
                   "min-h-[48px] rounded-full border px-4 py-3 text-sm font-semibold",
                   isCustomerInfoValid && isOnline
+                disabled={!isCustomerInfoValid}
+                className={clsx(
+                  "rounded-full border px-4 py-3 text-sm font-semibold",
+                  isCustomerInfoValid
                     ? "border-accent text-accent"
                     : "cursor-not-allowed border-[#e6d8ce] text-muted"
                 )}
               >
                 {text.payNow}
+                Pay Now (bKash / Nagad)
               </button>
             </div>
           </div>
@@ -1496,6 +1747,9 @@ export default function HomePage() {
               </label>
               <input
                 id="transaction-id"
+                Please pay first, then paste your Transaction ID below.
+              </p>
+              <input
                 type="text"
                 placeholder="Transaction ID"
                 value={transactionId}
@@ -1534,11 +1788,22 @@ export default function HomePage() {
               className={clsx(
                 "mt-6 min-h-[48px] w-full rounded-full px-4 py-3 text-sm font-semibold",
                 hasPaymentProof && isOnline
+            </div>
+            <button
+              type="button"
+              disabled={!transactionId.trim()}
+              onClick={() =>
+                handleWhatsappRedirect("bKash/Nagad", transactionId.trim())
+              }
+              className={clsx(
+                "mt-6 w-full rounded-full px-4 py-3 text-sm font-semibold",
+                transactionId.trim()
                   ? "bg-accent text-white"
                   : "cursor-not-allowed bg-[#e6d8ce] text-muted"
               )}
             >
               {text.confirmWhatsapp}
+              Confirm & Send on WhatsApp
             </button>
           </div>
         </div>
