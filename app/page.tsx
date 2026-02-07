@@ -537,6 +537,98 @@ export default function HomePage() {
         </div>
       </header>
 
+      <section className="mx-auto max-w-6xl px-4 pb-8">
+        <div className="rounded-3xl bg-card p-6 shadow-soft">
+          <div className="flex flex-col gap-1">
+            <h2 className="font-heading text-2xl font-semibold">
+              Trusted delivery, transparent payments
+            </h2>
+            <p className="text-sm text-muted">
+              We confirm every order on WhatsApp before dispatch, so you stay in
+              control of size, color, and delivery timing.
+            </p>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-[#f0e4da] bg-white p-4">
+              <p className="text-xs font-semibold text-muted">Delivery Zones</p>
+              <p className="mt-2 text-sm font-semibold text-ink">
+                Inside Dhaka · Outside Dhaka
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Clear pricing shown before checkout.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#f0e4da] bg-white p-4">
+              <p className="text-xs font-semibold text-muted">Payment Options</p>
+              <p className="mt-2 text-sm font-semibold text-ink">
+                Cash on Delivery, bKash, Nagad
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Pay in the way that feels safest.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#f0e4da] bg-white p-4">
+              <p className="text-xs font-semibold text-muted">Support</p>
+              <p className="mt-2 text-sm font-semibold text-ink">
+                Real people on WhatsApp
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Fast replies for urgent questions.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-8">
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-3xl bg-card p-6 shadow-soft">
+            <h3 className="font-heading text-xl font-semibold">
+              How ordering works
+            </h3>
+            <p className="mt-2 text-sm text-muted">
+              A smooth three-step flow built for busy shoppers.
+            </p>
+            <ol className="mt-4 space-y-3 text-sm text-ink">
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
+                <span>Select size, quantity, then tap Buy Now.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
+                <span>Confirm delivery zone and payment method.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
+                <span>We verify on WhatsApp and dispatch quickly.</span>
+              </li>
+            </ol>
+          </div>
+          <div className="rounded-3xl bg-card p-6 shadow-soft">
+            <h3 className="font-heading text-xl font-semibold">
+              Why customers choose us
+            </h3>
+            <p className="mt-2 text-sm text-muted">
+              Built for trust, clarity, and calm shopping.
+            </p>
+            <ul className="mt-4 space-y-3 text-sm text-ink">
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
+                <span>Every order verified by a real team member.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
+                <span>Transparent pricing before WhatsApp checkout.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
+                <span>Fast updates on delivery timeline.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       <section className="sticky top-0 z-20 bg-base/95 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 py-3">
           <div className="flex items-center gap-2 overflow-x-auto">
@@ -697,6 +789,41 @@ export default function HomePage() {
           </section>
         ) : null}
       </main>
+
+      <footer className="border-t border-[#e6d8ce] bg-white">
+        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 md:grid-cols-3">
+          <div>
+            <h3 className="font-heading text-lg font-semibold">
+              Tacin Arabi Collection
+            </h3>
+            <p className="mt-2 text-sm text-muted">
+              WhatsApp-first shopping for fashion and ceramics across
+              Bangladesh.
+            </p>
+            <p className="mt-3 text-sm font-semibold text-ink">
+              WhatsApp: +8801522119189
+            </p>
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-ink">Store Policies</h4>
+            <ul className="mt-3 space-y-2 text-sm text-muted">
+              <li>Cash on Delivery available nationwide</li>
+              <li>Delivery confirmation before dispatch</li>
+              <li>Support available 10am–10pm daily</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-ink">Social Proof</h4>
+            <p className="mt-3 text-sm text-muted">
+              Thousands of shoppers trust our WhatsApp checkout for quick
+              confirmations and clear delivery updates.
+            </p>
+            <p className="mt-3 text-sm font-semibold text-ink">
+              “Fast replies, quality products, safe delivery.”
+            </p>
+          </div>
+        </div>
+      </footer>
 
       {toast ? (
         <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white">
