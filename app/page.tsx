@@ -59,6 +59,35 @@ const storageKeys = {
 };
 
 const statusLabels = ["New", "Hot", "Limited"] as const;
+const defaultColors = ["Beige", "Olive", "Maroon", "Black"];
+const defaultSizes = ["M", "L", "XL"];
+
+type ApiProduct = {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  size?: string;
+  category?: Product["category"];
+  colors?: string[];
+  sizes?: string[];
+  active?: boolean;
+};
+
+const normalizeProduct = (item: ApiProduct): Product => ({
+  id: item.id,
+  name: item.name,
+  price: item.price,
+  image: item.image,
+  category: item.category ?? "Clothing",
+  colors: Array.isArray(item.colors) && item.colors.length > 0 ? item.colors : defaultColors,
+  sizes:
+    Array.isArray(item.sizes) && item.sizes.length > 0
+      ? item.sizes
+      : item.size
+      ? [item.size]
+      : defaultSizes,
+});
 
 // Minimal EN/BN labels used for critical UI only
 const copy = {
@@ -229,9 +258,10 @@ export default function HomePage() {
         setProductError(null);
         const response = await fetch("/api/products", { next: { revalidate: 30 } });
         if (!response.ok) throw new Error("Failed to load products.");
-        const data = (await response.json()) as Product[];
+        const data = (await response.json()) as ApiProduct[];
         if (mounted) {
-          setProductData(data);
+          const active = data.filter((item) => item.active !== false);
+          setProductData(active.map(normalizeProduct));
           setIsLoading(false);
         }
       } catch {

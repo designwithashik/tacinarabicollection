@@ -8,7 +8,7 @@ import {
   validateImageUrl,
 } from "../../../lib/images";
 
-const adminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? "";
+const defaultAdminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? "";
 
 type AdminProduct = {
   id: string;
@@ -50,7 +50,24 @@ const validateDraft = (draft: AdminProduct) => {
   return null;
 };
 
+const validateNewDraft = (draft: AdminProduct) => {
+  if (!draft.name.trim()) {
+    return "Name is required.";
+  }
+  if (!draft.image.trim()) {
+    return "Image URL is required.";
+  }
+  if (!validateImageUrl(draft.image)) {
+    return "Image URL must be valid.";
+  }
+  if (Number.isNaN(draft.price) || draft.price <= 0) {
+    return "Price must be greater than 0.";
+  }
+  return null;
+};
+
 export default function AdminInventory() {
+  const [adminSecret, setAdminSecret] = useState(defaultAdminSecret);
   const [items, setItems] = useState<AdminProduct[]>([]);
   const [draft, setDraft] = useState<AdminProduct>(emptyDraft);
   const [saving, setSaving] = useState(false);
@@ -73,13 +90,22 @@ export default function AdminInventory() {
   useEffect(() => {
     const storedCloudName = localStorage.getItem("tacin-cloudinary-name");
     const storedPreset = localStorage.getItem("tacin-cloudinary-preset");
+    const storedAdminSecret = localStorage.getItem("tacin-admin-secret");
     if (storedCloudName) setCloudName(storedCloudName);
     if (storedPreset) setUploadPreset(storedPreset);
-    if (!canUseAdmin) {
-      setError("Admin secret missing. Set NEXT_PUBLIC_ADMIN_SECRET.");
+    if (storedAdminSecret && !defaultAdminSecret) {
+      setAdminSecret(storedAdminSecret);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!adminSecret) {
+      setError("Admin secret missing. Add it below to unlock saving.");
       setLoading(false);
       return;
     }
+    setError(null);
+    setLoading(true);
     const load = async () => {
       try {
         const response = await fetch("/api/admin/products", {
@@ -95,7 +121,7 @@ export default function AdminInventory() {
       }
     };
     load();
-  }, [canUseAdmin]);
+  }, [adminSecret]);
 
   useEffect(() => {
     localStorage.setItem("tacin-cloudinary-name", cloudName);
@@ -104,6 +130,11 @@ export default function AdminInventory() {
   useEffect(() => {
     localStorage.setItem("tacin-cloudinary-preset", uploadPreset);
   }, [uploadPreset]);
+
+  useEffect(() => {
+    if (!adminSecret || defaultAdminSecret) return;
+    localStorage.setItem("tacin-admin-secret", adminSecret);
+  }, [adminSecret]);
 
   useEffect(() => {
     if (!notice) return;
@@ -135,7 +166,7 @@ export default function AdminInventory() {
   };
 
   const handleAdd = async () => {
-    const validationError = validateDraft(draft);
+    const validationError = validateNewDraft(draft);
     if (validationError) {
       setError(validationError);
       return;
@@ -143,17 +174,32 @@ export default function AdminInventory() {
     setSaving(true);
     setError(null);
     try {
-      const payload = { ...draft, updatedAt: Date.now() };
-      setItems((prev) => [payload, ...prev]);
       const response = await fetch("/api/admin/products", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-admin-secret": adminSecret,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          name: draft.name,
+          price: draft.price,
+          size: draft.size ?? "",
+          image: draft.image,
+          active: true,
+        }),
       });
       if (!response.ok) throw new Error("Save failed.");
+      const data = (await response.json()) as { product?: AdminProduct };
+      if (data.product) {
+        setItems((prev) => [
+          {
+            ...data.product,
+            tags: data.product.tags ?? [],
+            stockStatus: data.product.stockStatus ?? "in",
+          },
+          ...prev,
+        ]);
+      }
       setNotice("Product added.");
       setDraft(emptyDraft);
     } catch {
@@ -247,29 +293,6 @@ export default function AdminInventory() {
     }
   };
 
-  const handleRollback = async () => {
-    if (!window.confirm("Rollback to the previous inventory snapshot?")) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/admin/products/rollback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-secret": adminSecret,
-        },
-        body: JSON.stringify({ index: 0 }),
-      });
-      if (!response.ok) throw new Error("Rollback failed.");
-      setNotice("Rollback completed.");
-      setDirtyIds(new Set());
-    } catch {
-      setError("Unable to rollback inventory.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleBulkToggle = (active: boolean) => {
     if (selectedIds.size === 0) return;
     selectedIds.forEach((id) => updateItem(id, { active }));
@@ -321,6 +344,13 @@ export default function AdminInventory() {
   };
 
   const dirtyCount = useMemo(() => dirtyIds.size, [dirtyIds]);
+  const isDraftReady =
+    !uploading &&
+    Boolean(draft.name.trim()) &&
+    Boolean(draft.image.trim()) &&
+    validateImageUrl(draft.image) &&
+    !Number.isNaN(draft.price) &&
+    draft.price > 0;
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -367,11 +397,21 @@ export default function AdminInventory() {
       ) : null}
 
       <div className="rounded-3xl bg-white p-6 shadow-soft">
-        <h3 className="text-lg font-semibold">Cloudinary Setup</h3>
+        <h3 className="text-lg font-semibold">Setup</h3>
         <p className="mt-1 text-xs text-muted">
-          Add your Cloudinary cloud name and unsigned upload preset.
+          Add your admin secret and Cloudinary upload settings.
         </p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <label className="text-xs font-semibold">
+            Admin Secret
+            <input
+              type="password"
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={adminSecret}
+              onChange={(event) => setAdminSecret(event.target.value)}
+              placeholder="Paste admin secret"
+            />
+          </label>
           <label className="text-xs font-semibold">
             Cloud Name
             <input
@@ -394,16 +434,6 @@ export default function AdminInventory() {
       <div className="rounded-3xl bg-white p-6 shadow-soft">
         <h3 className="text-lg font-semibold">Add New Product</h3>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <label className="text-xs font-semibold">
-            Product ID
-            <input
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-              value={draft.id}
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, id: event.target.value }))
-              }
-            />
-          </label>
           <label className="text-xs font-semibold">
             Name
             <input
@@ -508,6 +538,11 @@ export default function AdminInventory() {
               ) : null}
             </div>
           </div>
+          {!uploading && !draft.image ? (
+            <p className="text-xs text-muted">
+              Upload must finish before adding the product.
+            </p>
+          ) : null}
         </div>
         {draft.image ? (
           <div className="mt-4 overflow-hidden rounded-2xl border border-[#f0e4da]">
@@ -747,14 +782,6 @@ export default function AdminInventory() {
             </button>
             <button
               type="button"
-              onClick={handleRollback}
-              className="min-h-[40px] rounded-full border border-[#e6d8ce] px-4 text-xs font-semibold"
-              disabled={saving}
-            >
-              Rollback Snapshot
-            </button>
-            <button
-              type="button"
               onClick={handleSaveAll}
               className="min-h-[44px] rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white"
               disabled={saving || !canUseAdmin}
@@ -765,7 +792,7 @@ export default function AdminInventory() {
               type="button"
               onClick={handleAdd}
               className="min-h-[44px] rounded-full border border-[#e6d8ce] px-5 py-2 text-sm font-semibold"
-              disabled={saving || !canUseAdmin}
+              disabled={saving || !canUseAdmin || !isDraftReady}
             >
               Add Product
             </button>
