@@ -66,6 +66,8 @@ const storageKeys = {
   language: "tacin-lang",
 };
 
+const adminStorageKey = "tacin-admin-products";
+
 const copy = {
   en: {
     buyNow: "Buy Now",
@@ -189,8 +191,29 @@ export default function HomePage() {
   const [language, setLanguage] = useState<Language>("en");
   const [cartBump, setCartBump] = useState(false);
   const prevCartCount = useRef(cartItems.length);
+  const [isOnline, setIsOnline] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [adminProducts, setAdminProducts] = useState<Product[]>([]);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [adminDraft, setAdminDraft] = useState<Product>({
+    id: "",
+    name: "",
+    price: 0,
+    image: "/images/product-1.svg",
+    category: "Clothing",
+    colors: ["Beige"],
+    sizes: ["M", "L", "XL"],
+  });
 
   const text = copy[language];
+
+  const logEvent = (eventName: string, payload: Record<string, unknown>) => {
+    if (typeof window === "undefined") return;
+    const dataLayer = (window as Window & { dataLayer?: unknown[] }).dataLayer;
+    if (Array.isArray(dataLayer)) {
+      dataLayer.push({ event: eventName, ...payload });
+    }
+  };
 
   useEffect(() => {
     const storedCart = localStorage.getItem(storageKeys.cart);
@@ -216,6 +239,15 @@ export default function HomePage() {
     if (storedLanguage === "en" || storedLanguage === "bn") {
       setLanguage(storedLanguage);
     }
+
+    const storedAdmin = localStorage.getItem(adminStorageKey);
+    if (storedAdmin) {
+      try {
+        setAdminProducts(JSON.parse(storedAdmin));
+      } catch {
+        setAdminProducts([]);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -235,6 +267,27 @@ export default function HomePage() {
     const timer = setTimeout(() => setToast(null), 2000);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIsLoading(false), 220);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(adminStorageKey, JSON.stringify(adminProducts));
+  }, [adminProducts]);
 
   useEffect(() => {
     if (cartItems.length > prevCartCount.current) {
@@ -300,6 +353,11 @@ export default function HomePage() {
     });
     setToast(addedToCartNotice);
     setCartNotice(`${product.name} ${addedToCartNotice}`);
+    logEvent("add_to_cart", {
+      productId: product.id,
+      quantity,
+      price: product.price,
+    });
     window.setTimeout(() => {
       setAddStates((prev) => ({ ...prev, [product.id]: "success" }));
       window.setTimeout(() => {
@@ -324,6 +382,7 @@ export default function HomePage() {
         image: product.image,
       },
     ]);
+    logEvent("begin_checkout", { productId: product.id, quantity });
     setShowCheckout(true);
   };
 
@@ -332,6 +391,7 @@ export default function HomePage() {
     setCheckoutItems(cartItems);
     setShowCheckout(true);
     setShowCart(false);
+    logEvent("begin_checkout", { items: cartItems.length });
   };
 
   const handleWhatsappRedirect = (paymentMethod: string) => {
@@ -350,14 +410,21 @@ export default function HomePage() {
       ""
     )}?text=${message}`;
     window.location.href = url;
+    logEvent("purchase", {
+      total: checkoutTotal,
+      paymentMethod,
+      items: checkoutItems.length,
+    });
     setCartItems([]);
     setCheckoutItems([]);
     setShowCheckout(false);
     setShowPaymentInfo(false);
   };
 
+  const productSource = adminProducts.length ? adminProducts : products;
+
   const filteredProducts = useMemo(() => {
-    let result = [...products];
+    let result = [...productSource];
 
     if (filters.size.length) {
       result = result.filter((product) =>
@@ -390,7 +457,7 @@ export default function HomePage() {
     }
 
     return result;
-  }, [filters]);
+  }, [filters, productSource]);
 
   const activeChips = [
     ...filters.size.map((size) => ({ type: "size", value: size })),
@@ -463,6 +530,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen pb-24">
+      {!isOnline ? (
+        <div className="sticky top-0 z-50 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900">
+          ⚠️ You are offline — checkout is disabled.
+        </div>
+      ) : null}
       <header className="bg-base">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-10 pt-6 md:flex-row md:items-center md:justify-between">
           <div className="max-w-xl">
@@ -587,31 +659,58 @@ export default function HomePage() {
           </div>
         ) : null}
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              selectedSize={selectedSizes[product.id]}
-              quantity={quantities[product.id] ?? 1}
-              onSizeChange={(size) => updateSize(product.id, size)}
-              onQuantityChange={(quantity) => updateQuantity(product.id, quantity)}
-              onBuyNow={() => handleBuyNow(product)}
-              onAddToCart={() => handleAddToCart(product)}
-              onOpenDetails={() => {
-                markRecentlyViewed(product);
-                setDetailsProduct(product);
-              }}
-              priceLabel={text.priceLabel}
-              buyNowLabel={text.buyNow}
-              addToCartLabel={text.addToCart}
-              addingLabel={text.adding}
-              addedLabel={text.added}
-              addState={addStates[product.id] ?? "idle"}
-              quantityFeedback={quantityFeedback[product.id]}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={`skeleton-${index}`}
+                className="rounded-3xl bg-card p-4 shadow-soft"
+              >
+                <div className="h-44 w-full animate-pulse rounded-2xl bg-[#efe5dc]" />
+                <div className="mt-4 space-y-3">
+                  <div className="h-4 w-2/3 animate-pulse rounded-full bg-[#efe5dc]" />
+                  <div className="h-3 w-1/3 animate-pulse rounded-full bg-[#efe5dc]" />
+                  <div className="h-8 w-full animate-pulse rounded-full bg-[#efe5dc]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="rounded-3xl bg-card p-6 text-center shadow-soft">
+            <p className="text-lg font-semibold text-ink">No products found.</p>
+            <p className="mt-2 text-sm text-muted">
+              Adjust filters or check back soon.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                selectedSize={selectedSizes[product.id]}
+                quantity={quantities[product.id] ?? 1}
+                onSizeChange={(size) => updateSize(product.id, size)}
+                onQuantityChange={(quantity) =>
+                  updateQuantity(product.id, quantity)
+                }
+                onBuyNow={() => handleBuyNow(product)}
+                onAddToCart={() => handleAddToCart(product)}
+                onOpenDetails={() => {
+                  markRecentlyViewed(product);
+                  setDetailsProduct(product);
+                }}
+                priceLabel={text.priceLabel}
+                buyNowLabel={text.buyNow}
+                addToCartLabel={text.addToCart}
+                addingLabel={text.adding}
+                addedLabel={text.added}
+                addState={addStates[product.id] ?? "idle"}
+                quantityFeedback={quantityFeedback[product.id]}
+              />
+            ))}
+          </div>
+        )}
 
         {recentlyViewed.length > 0 ? (
           <section className="mt-12">
@@ -651,6 +750,136 @@ export default function HomePage() {
           </section>
         ) : null}
       </main>
+
+      <section className="mx-auto max-w-6xl px-4 pb-10">
+        <button
+          type="button"
+          onClick={() => setShowAdmin((prev) => !prev)}
+          className="rounded-full border border-[#e6d8ce] px-4 py-2 text-xs font-semibold text-ink"
+        >
+          {showAdmin ? "Hide Admin Panel" : "Open Admin Panel"}
+        </button>
+        {showAdmin ? (
+          <div className="mt-4 rounded-3xl bg-card p-6 shadow-soft">
+            <h2 className="font-heading text-lg font-semibold text-ink">
+              Admin Inventory (Client-only)
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              Add or update demo products stored in this browser.
+            </p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div>
+                <label htmlFor="admin-id" className="text-xs font-semibold">
+                  Product ID
+                </label>
+                <input
+                  id="admin-id"
+                  value={adminDraft.id}
+                  onChange={(event) =>
+                    setAdminDraft((prev) => ({ ...prev, id: event.target.value }))
+                  }
+                  className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="admin-name" className="text-xs font-semibold">
+                  Name
+                </label>
+                <input
+                  id="admin-name"
+                  value={adminDraft.name}
+                  onChange={(event) =>
+                    setAdminDraft((prev) => ({
+                      ...prev,
+                      name: event.target.value,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="admin-price" className="text-xs font-semibold">
+                  Price (BDT)
+                </label>
+                <input
+                  id="admin-price"
+                  type="number"
+                  min={0}
+                  value={adminDraft.price}
+                  onChange={(event) =>
+                    setAdminDraft((prev) => ({
+                      ...prev,
+                      price: Number(event.target.value),
+                    }))
+                  }
+                  className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="admin-category" className="text-xs font-semibold">
+                  Category
+                </label>
+                <select
+                  id="admin-category"
+                  value={adminDraft.category}
+                  onChange={(event) =>
+                    setAdminDraft((prev) => ({
+                      ...prev,
+                      category: event.target.value as Product["category"],
+                    }))
+                  }
+                  className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+                >
+                  <option value="Clothing">Clothing</option>
+                  <option value="Ceramic">Ceramic</option>
+                </select>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (!adminDraft.id || !adminDraft.name || adminDraft.price <= 0) {
+                  setToast("Fill all admin fields");
+                  return;
+                }
+                setAdminProducts((prev) => {
+                  const existingIndex = prev.findIndex(
+                    (item) => item.id === adminDraft.id
+                  );
+                  if (existingIndex >= 0) {
+                    return prev.map((item, index) =>
+                      index === existingIndex ? adminDraft : item
+                    );
+                  }
+                  return [adminDraft, ...prev];
+                });
+                logEvent("admin_update", { productId: adminDraft.id });
+                setAdminDraft((prev) => ({ ...prev, id: "", name: "", price: 0 }));
+              }}
+              className="mt-4 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white"
+            >
+              Save Product
+            </button>
+            {adminProducts.length === 0 ? (
+              <div className="mt-4 rounded-2xl border border-[#f0e4da] bg-base p-4 text-center text-xs text-muted">
+                No items found. Add new product to begin.
+              </div>
+            ) : (
+              <ul className="mt-4 space-y-2 text-sm">
+                {adminProducts.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex items-center justify-between rounded-2xl border border-[#f0e4da] px-3 py-2"
+                  >
+                    <span className="font-semibold text-ink">{item.name}</span>
+                    <span className="text-xs text-muted">{formatPrice(item.price)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : null}
+      </section>
 
       {toast ? (
         <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white">
@@ -699,7 +928,11 @@ export default function HomePage() {
         href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
         target="_blank"
         rel="noreferrer"
-        className="group fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center overflow-hidden rounded-full bg-[#25D366] shadow-soft transition-all duration-500 ease-out hover:w-56"
+        aria-disabled={!isOnline}
+        className={clsx(
+          "group fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center overflow-hidden rounded-full bg-[#25D366] shadow-soft transition-all duration-500 ease-out hover:w-56",
+          !isOnline && "pointer-events-none opacity-60"
+        )}
       >
         <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center">
           <img
@@ -1010,7 +1243,22 @@ export default function HomePage() {
               </button>
             </div>
             {cartItems.length === 0 ? (
-              <p className="mt-6 text-sm text-muted">Your cart is empty.</p>
+              <div className="mt-6 rounded-2xl border border-[#f0e4da] bg-base p-4 text-center">
+                <p className="text-lg">🛍️</p>
+                <p className="mt-2 text-sm font-semibold text-ink">
+                  Your cart is empty.
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  Start shopping to add items.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowCart(false)}
+                  className="mt-3 rounded-full border border-[#e6d8ce] px-4 py-2 text-xs font-semibold text-ink"
+                >
+                  Browse products
+                </button>
+              </div>
             ) : (
               <div className="mt-4 space-y-4">
                 {cartItems.map((item, index) => (
@@ -1178,7 +1426,11 @@ export default function HomePage() {
               </div>
             </div>
             <div className="mt-4 space-y-3">
+              <label htmlFor="checkout-name" className="sr-only">
+                Name
+              </label>
               <input
+                id="checkout-name"
                 type="text"
                 placeholder="Name"
                 value={customer.name}
@@ -1190,7 +1442,11 @@ export default function HomePage() {
                 }
                 className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
               />
+              <label htmlFor="checkout-phone" className="sr-only">
+                Phone
+              </label>
               <input
+                id="checkout-phone"
                 type="tel"
                 placeholder="Phone"
                 value={customer.phone}
@@ -1202,7 +1458,11 @@ export default function HomePage() {
                 }
                 className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
               />
+              <label htmlFor="checkout-address" className="sr-only">
+                Address
+              </label>
               <textarea
+                id="checkout-address"
                 placeholder="Address"
                 rows={3}
                 value={customer.address}
@@ -1230,10 +1490,10 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => handleWhatsappRedirect("COD")}
-                disabled={!isCustomerInfoValid}
+                disabled={!isCustomerInfoValid || !isOnline}
                 className={clsx(
                   "min-h-[48px] rounded-full px-4 py-3 text-sm font-semibold",
-                  isCustomerInfoValid
+                  isCustomerInfoValid && isOnline
                     ? "bg-accent text-white"
                     : "cursor-not-allowed bg-[#e6d8ce] text-muted"
                 )}
@@ -1243,10 +1503,10 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setShowPaymentInfo(true)}
-                disabled={!isCustomerInfoValid}
+                disabled={!isCustomerInfoValid || !isOnline}
                 className={clsx(
                   "min-h-[48px] rounded-full border px-4 py-3 text-sm font-semibold",
-                  isCustomerInfoValid
+                  isCustomerInfoValid && isOnline
                     ? "border-accent text-accent"
                     : "cursor-not-allowed border-[#e6d8ce] text-muted"
                 )}
@@ -1287,7 +1547,11 @@ export default function HomePage() {
                 Please pay first, then paste your Transaction ID or upload a
                 screenshot.
               </p>
+              <label htmlFor="transaction-id" className="sr-only">
+                Transaction ID
+              </label>
               <input
+                id="transaction-id"
                 type="text"
                 placeholder="Transaction ID"
                 value={transactionId}
@@ -1295,10 +1559,14 @@ export default function HomePage() {
                 className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
               />
               <div className="rounded-2xl border border-dashed border-[#e6d8ce] px-4 py-3">
-                <label className="block text-xs font-semibold text-muted">
+                <label
+                  htmlFor="payment-screenshot"
+                  className="block text-xs font-semibold text-muted"
+                >
                   Upload payment screenshot
                 </label>
                 <input
+                  id="payment-screenshot"
                   type="file"
                   accept="image/*"
                   onChange={(event) =>
@@ -1317,11 +1585,11 @@ export default function HomePage() {
             </div>
             <button
               type="button"
-              disabled={!hasPaymentProof}
+              disabled={!hasPaymentProof || !isOnline}
               onClick={() => handleWhatsappRedirect("bKash/Nagad")}
               className={clsx(
                 "mt-6 min-h-[48px] w-full rounded-full px-4 py-3 text-sm font-semibold",
-                hasPaymentProof
+                hasPaymentProof && isOnline
                   ? "bg-accent text-white"
                   : "cursor-not-allowed bg-[#e6d8ce] text-muted"
               )}
