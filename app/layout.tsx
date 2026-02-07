@@ -18,25 +18,15 @@ export const metadata: Metadata = {
   title: "Tacin Arabi Collection | WhatsApp-first Shopping",
   description:
     "A lightweight, mobile-first commerce landing page for Bangladesh with fast checkout via WhatsApp.",
-  themeColor: "#8a4b3c",
   metadataBase: new URL("https://tacinarabicollection.vercel.app"),
   openGraph: {
     title: "Tacin Arabi Collection",
     description:
       "Shop curated fashion and ceramics with fast WhatsApp checkout, COD, and bKash/Nagad payments.",
     type: "website",
-    images: [{ url: "/images/og-cover.svg", width: 1200, height: 630 }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    images: ["/images/og-cover.svg"],
   },
   icons: {
     icon: "/favicon.ico",
-    apple: "/icons/icon-192.svg",
-  },
-  other: {
-    "mobile-web-app-capable": "yes",
   },
 };
 
