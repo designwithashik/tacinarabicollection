@@ -488,10 +488,10 @@ export default function HomePage() {
               fulfillment and real-time WhatsApp ordering for busy customers.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft">
+              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft opacity-0 animate-[fadeUp_0.9s_ease-out_forwards]">
                 COD Nationwide
               </span>
-              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft">
+              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft opacity-0 animate-[fadeUp_0.9s_ease-out_forwards] [animation-delay:120ms]">
                 WhatsApp Ordering
               </span>
             </div>
@@ -523,35 +523,46 @@ export default function HomePage() {
       </header>
 
       <section className="sticky top-0 z-20 bg-base/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 overflow-x-auto px-4 py-3">
-          <button
-            type="button"
-            onClick={() => openSheet("size")}
-            className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
-          >
-            Size
-          </button>
-          <button
-            type="button"
-            onClick={() => openSheet("color")}
-            className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
-          >
-            Color
-          </button>
-          <button
-            type="button"
-            onClick={() => openSheet("price")}
-            className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
-          >
-            Price
-          </button>
-          <button
-            type="button"
-            onClick={() => openSheet("sort")}
-            className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
-          >
-            Sort
-          </button>
+        <div className="mx-auto max-w-6xl px-4 py-3">
+          <div className="flex items-center gap-2 overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => openSheet("size")}
+              className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-soft"
+            >
+              Filters
+              {(filters.size.length ||
+                filters.colors.length ||
+                filters.price) && (
+                <span className="rounded-full bg-accent px-2 text-xs text-white">
+                  {filters.size.length +
+                    filters.colors.length +
+                    (filters.price ? 1 : 0)}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => openSheet("sort")}
+              className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+            >
+              Sort
+            </button>
+            <button
+              type="button"
+              onClick={() => openSheet("price")}
+              className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+            >
+              Price
+            </button>
+            <button
+              type="button"
+              onClick={() => openSheet("color")}
+              className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+            >
+              Color
+            </button>
+          </div>
         </div>
       </section>
 
@@ -663,17 +674,25 @@ export default function HomePage() {
       <button
         type="button"
         onClick={() => setShowCart(true)}
-        className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-soft"
+        className="group fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center overflow-hidden rounded-full bg-white shadow-soft transition-all duration-300 hover:w-32"
         aria-label="Open cart"
       >
-        <span className={clsx("text-xl", cartBump && "animate-cart-bounce")}>
+        <span
+          className={clsx(
+            "relative flex h-14 w-14 items-center justify-center text-xl text-ink",
+            cartBump && "animate-cart-bounce"
+          )}
+        >
           🛍️
+          {cartItems.length > 0 ? (
+            <span className="absolute -top-1 -right-1 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">
+              {cartItems.length}
+            </span>
+          ) : null}
         </span>
-        {cartItems.length > 0 ? (
-          <span className="absolute -top-1 -right-1 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">
-            {cartItems.length}
-          </span>
-        ) : null}
+        <span className="whitespace-nowrap pr-4 text-sm font-semibold text-ink opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          Cart
+        </span>
       </button>
 
       <a
