@@ -11,9 +11,30 @@ const AnalyticsCharts = dynamic(
 
 export default function AdminAnalytics() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [logs, setLogs] = useState<
+    { action: string; productId?: string; timestamp: number }[]
+  >([]);
 
   useEffect(() => {
     setOrders(getStoredOrders());
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      const secret = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? "";
+      if (!secret) return;
+      const response = await fetch("/api/admin/logs", {
+        headers: { "x-admin-secret": secret },
+      });
+      if (!response.ok) return;
+      const data = (await response.json()) as {
+        action: string;
+        productId?: string;
+        timestamp: number;
+      }[];
+      setLogs(data);
+    };
+    load();
   }, []);
 
   return (
@@ -25,6 +46,28 @@ export default function AdminAnalytics() {
         </p>
       </div>
       <AnalyticsCharts orders={orders} />
+
+      <div className="rounded-3xl bg-white p-6 shadow-soft">
+        <h3 className="text-lg font-semibold">Admin Activity</h3>
+        {logs.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">No admin actions yet.</p>
+        ) : (
+          <ul className="mt-4 space-y-2 text-sm">
+            {logs.slice(0, 8).map((log, index) => (
+              <li
+                key={`${log.timestamp}-${index}`}
+                className="flex items-center justify-between rounded-2xl border border-[#f0e4da] px-3 py-2"
+              >
+                <span className="font-semibold">{log.action}</span>
+                <span className="text-xs text-muted">
+                  {log.productId ?? "—"} ·{" "}
+                  {new Date(log.timestamp).toLocaleString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }

@@ -37,3 +37,49 @@ export const uploadToUploadcare = async (
   const result = (await response.json()) as { file: string };
   return `https://ucarecdn.com/${result.file}/`;
 };
+
+export const compressImage = async (file: File, maxWidth = 1400) => {
+  const imageBitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxWidth / imageBitmap.width);
+  const width = Math.round(imageBitmap.width * scale);
+  const height = Math.round(imageBitmap.height * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) return file;
+  context.drawImage(imageBitmap, 0, 0, width, height);
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", 0.85)
+  );
+  return blob ? new File([blob], file.name, { type: blob.type }) : file;
+};
+
+export const uploadToCloudinary = async ({
+  file,
+  cloudName,
+  uploadPreset,
+}: {
+  file: File;
+  cloudName: string;
+  uploadPreset: string;
+}): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Upload failed");
+  }
+
+  const result = (await response.json()) as { secure_url: string };
+  return result.secure_url;
+};

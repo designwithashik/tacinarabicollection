@@ -5,11 +5,36 @@ import { getStoredOrders, type Order } from "../../../lib/orders";
 
 const formatMoney = (value: number) => `৳${value.toLocaleString("en-BD")}`;
 
+type AdminProduct = {
+  id: string;
+  name: string;
+  price: number;
+  size?: string;
+  image: string;
+  active: boolean;
+  updatedAt: number;
+};
+
 export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
 
   useEffect(() => {
     setOrders(getStoredOrders());
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      const secret = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? "";
+      if (!secret) return;
+      const response = await fetch("/api/admin/products", {
+        headers: { "x-admin-secret": secret },
+      });
+      if (!response.ok) return;
+      const data = (await response.json()) as AdminProduct[];
+      setProducts(data);
+    };
+    load();
   }, []);
 
   const totalRevenue = useMemo(
@@ -17,6 +42,13 @@ export default function AdminDashboard() {
     [orders]
   );
   const avgOrder = orders.length ? totalRevenue / orders.length : 0;
+  const activeProducts = products.filter((product) => product.active).length;
+  const inactiveProducts = products.length - activeProducts;
+  const lastUpdate = products.length
+    ? new Date(
+        Math.max(...products.map((product) => product.updatedAt))
+      ).toLocaleString()
+    : "No updates";
 
   return (
     <section className="space-y-6">
@@ -35,6 +67,10 @@ export default function AdminDashboard() {
           { label: "Revenue", value: formatMoney(totalRevenue) },
           { label: "Avg Order", value: formatMoney(avgOrder) },
           { label: "Pending", value: orders.filter((o) => o.status === "pending").length },
+          { label: "Total Products", value: products.length },
+          { label: "Active Products", value: activeProducts },
+          { label: "Inactive Products", value: inactiveProducts },
+          { label: "Last Update", value: lastUpdate },
         ].map((card) => (
           <div key={card.label} className="rounded-2xl bg-white p-4 shadow-soft">
             <p className="text-xs font-semibold text-muted">{card.label}</p>

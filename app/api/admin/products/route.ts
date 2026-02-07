@@ -9,6 +9,14 @@ type StoredProduct = {
   image: string;
   active: boolean;
   updatedAt: number;
+  tags?: string[];
+  stockStatus?: "in" | "low" | "out";
+};
+
+type AdminLog = {
+  action: string;
+  productId?: string;
+  timestamp: number;
 };
 
 const getSecret = (request: Request) =>
@@ -17,6 +25,17 @@ const getSecret = (request: Request) =>
 const isAuthorized = (request: Request) =>
   Boolean(process.env.ADMIN_SECRET) &&
   getSecret(request) === process.env.ADMIN_SECRET;
+
+const saveSnapshot = async (products: StoredProduct[]) => {
+  const versions = (await kv.get<StoredProduct[][]>("products_versions")) ?? [];
+  const next = [products, ...versions].slice(0, 5);
+  await kv.set("products_versions", next);
+};
+
+const appendLog = async (entry: AdminLog) => {
+  const logs = (await kv.get<AdminLog[]>("admin_logs")) ?? [];
+  await kv.set("admin_logs", [entry, ...logs].slice(0, 200));
+};
 
 export async function GET(request: Request) {
   if (!isAuthorized(request)) {
@@ -43,10 +62,18 @@ export async function POST(request: Request) {
     image: payload.image,
     active: payload.active ?? true,
     updatedAt: Date.now(),
+    tags: payload.tags ?? [],
+    stockStatus: payload.stockStatus ?? "in",
   };
   const next = stored.some((item) => item.id === updated.id)
     ? stored.map((item) => (item.id === updated.id ? updated : item))
     : [updated, ...stored];
   await kv.set("products", next);
+  await saveSnapshot(next);
+  await appendLog({
+    action: "upsert",
+    productId: updated.id,
+    timestamp: Date.now(),
+  });
   return NextResponse.json(updated);
 }

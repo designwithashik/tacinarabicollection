@@ -2,6 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import {
+  compressImage,
+  uploadToCloudinary,
+  validateImageUrl,
+} from "../../../lib/images";
 
 const adminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? "";
 
@@ -13,6 +18,8 @@ type AdminProduct = {
   image: string;
   active: boolean;
   updatedAt: number;
+  tags?: string[];
+  stockStatus?: "in" | "low" | "out";
 };
 
 const emptyDraft: AdminProduct = {
@@ -23,6 +30,8 @@ const emptyDraft: AdminProduct = {
   image: "",
   active: true,
   updatedAt: Date.now(),
+  tags: [],
+  stockStatus: "in",
 };
 
 const validateDraft = (draft: AdminProduct) => {
@@ -31,6 +40,9 @@ const validateDraft = (draft: AdminProduct) => {
   }
   if (!draft.image.trim()) {
     return "Image URL is required.";
+  }
+  if (!validateImageUrl(draft.image)) {
+    return "Image URL must be valid.";
   }
   if (Number.isNaN(draft.price) || draft.price <= 0) {
     return "Price must be greater than 0.";
@@ -46,10 +58,23 @@ export default function AdminInventory() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [dirtyIds, setDirtyIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [lastArchivedId, setLastArchivedId] = useState<string | null>(null);
+  const [cloudName, setCloudName] = useState("");
+  const [uploadPreset, setUploadPreset] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "hidden">(
+    "all"
+  );
 
   const canUseAdmin = Boolean(adminSecret);
 
   useEffect(() => {
+    const storedCloudName = localStorage.getItem("tacin-cloudinary-name");
+    const storedPreset = localStorage.getItem("tacin-cloudinary-preset");
+    if (storedCloudName) setCloudName(storedCloudName);
+    if (storedPreset) setUploadPreset(storedPreset);
     if (!canUseAdmin) {
       setError("Admin secret missing. Set NEXT_PUBLIC_ADMIN_SECRET.");
       setLoading(false);
@@ -73,6 +98,14 @@ export default function AdminInventory() {
   }, [canUseAdmin]);
 
   useEffect(() => {
+    localStorage.setItem("tacin-cloudinary-name", cloudName);
+  }, [cloudName]);
+
+  useEffect(() => {
+    localStorage.setItem("tacin-cloudinary-preset", uploadPreset);
+  }, [uploadPreset]);
+
+  useEffect(() => {
     if (!notice) return;
     const timer = window.setTimeout(() => setNotice(null), 2000);
     return () => window.clearTimeout(timer);
@@ -87,6 +120,18 @@ export default function AdminInventory() {
       prev.map((item) => (item.id === id ? { ...item, ...patch } : item))
     );
     markDirty(id);
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
   const handleAdd = async () => {
@@ -121,6 +166,14 @@ export default function AdminInventory() {
   const handleSaveAll = async () => {
     if (dirtyIds.size === 0) {
       setNotice("No changes to save.");
+      return;
+    }
+    const invalid = Array.from(dirtyIds).find((id) => {
+      const item = items.find((product) => product.id === id);
+      return item ? validateDraft(item) : false;
+    });
+    if (invalid) {
+      setError("Please fix validation errors before saving.");
       return;
     }
     setSaving(true);
@@ -162,6 +215,7 @@ export default function AdminInventory() {
       });
       if (!response.ok) throw new Error("Delete failed.");
       setNotice("Product archived.");
+      setLastArchivedId(id);
     } catch {
       setError("Unable to archive product.");
     } finally {
@@ -169,7 +223,118 @@ export default function AdminInventory() {
     }
   };
 
+  const handleUndoArchive = async () => {
+    if (!lastArchivedId) return;
+    setSaving(true);
+    setError(null);
+    updateItem(lastArchivedId, { active: true });
+    try {
+      const response = await fetch(`/api/admin/products/${lastArchivedId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-secret": adminSecret,
+        },
+        body: JSON.stringify({ active: true }),
+      });
+      if (!response.ok) throw new Error("Undo failed.");
+      setNotice("Archive undone.");
+      setLastArchivedId(null);
+    } catch {
+      setError("Unable to undo archive.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRollback = async () => {
+    if (!window.confirm("Rollback to the previous inventory snapshot?")) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/products/rollback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-secret": adminSecret,
+        },
+        body: JSON.stringify({ index: 0 }),
+      });
+      if (!response.ok) throw new Error("Rollback failed.");
+      setNotice("Rollback completed.");
+      setDirtyIds(new Set());
+    } catch {
+      setError("Unable to rollback inventory.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleBulkToggle = (active: boolean) => {
+    if (selectedIds.size === 0) return;
+    selectedIds.forEach((id) => updateItem(id, { active }));
+    setNotice(active ? "Products activated." : "Products hidden.");
+  };
+
+  const handleBulkPrice = (percent: number) => {
+    if (selectedIds.size === 0) return;
+    selectedIds.forEach((id) => {
+      const item = items.find((product) => product.id === id);
+      if (!item) return;
+      const nextPrice = Math.max(1, Math.round(item.price * (1 + percent / 100)));
+      updateItem(id, { price: nextPrice });
+    });
+    setNotice("Bulk price update applied.");
+  };
+
+  const handleDuplicate = (item: AdminProduct) => {
+    const duplicated = {
+      ...item,
+      id: `${item.id}-copy`,
+      updatedAt: Date.now(),
+    };
+    setItems((prev) => [duplicated, ...prev]);
+    markDirty(duplicated.id);
+    setNotice("Product duplicated.");
+  };
+
+  const handleUpload = async (file: File) => {
+    if (!cloudName || !uploadPreset) {
+      setError("Add Cloudinary name and upload preset first.");
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const compressed = await compressImage(file);
+      const url = await uploadToCloudinary({
+        file: compressed,
+        cloudName,
+        uploadPreset,
+      });
+      setDraft((prev) => ({ ...prev, image: url }));
+    } catch {
+      setError("Upload failed. Try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const dirtyCount = useMemo(() => dirtyIds.size, [dirtyIds]);
+
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const matchesSearch =
+        !search ||
+        item.name.toLowerCase().includes(search.toLowerCase()) ||
+        item.id.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && item.active) ||
+        (statusFilter === "hidden" && !item.active);
+      return matchesSearch && matchesStatus;
+    });
+  }, [items, search, statusFilter]);
 
   return (
     <section className="space-y-6">
@@ -190,6 +355,41 @@ export default function AdminInventory() {
           {notice}
         </div>
       ) : null}
+      {lastArchivedId ? (
+        <button
+          type="button"
+          onClick={handleUndoArchive}
+          className="w-fit rounded-full border border-[#e6d8ce] px-4 py-2 text-xs font-semibold"
+          disabled={saving}
+        >
+          Undo archive
+        </button>
+      ) : null}
+
+      <div className="rounded-3xl bg-white p-6 shadow-soft">
+        <h3 className="text-lg font-semibold">Cloudinary Setup</h3>
+        <p className="mt-1 text-xs text-muted">
+          Add your Cloudinary cloud name and unsigned upload preset.
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <label className="text-xs font-semibold">
+            Cloud Name
+            <input
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={cloudName}
+              onChange={(event) => setCloudName(event.target.value)}
+            />
+          </label>
+          <label className="text-xs font-semibold">
+            Upload Preset
+            <input
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={uploadPreset}
+              onChange={(event) => setUploadPreset(event.target.value)}
+            />
+          </label>
+        </div>
+      </div>
 
       <div className="rounded-3xl bg-white p-6 shadow-soft">
         <h3 className="text-lg font-semibold">Add New Product</h3>
@@ -239,6 +439,41 @@ export default function AdminInventory() {
               }
             />
           </label>
+          <label className="text-xs font-semibold">
+            Stock Status
+            <select
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={draft.stockStatus ?? "in"}
+              onChange={(event) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  stockStatus: event.target.value as AdminProduct["stockStatus"],
+                }))
+              }
+            >
+              <option value="in">In stock</option>
+              <option value="low">Low stock</option>
+              <option value="out">Out of stock</option>
+            </select>
+          </label>
+        </div>
+        <div className="mt-4">
+          <label className="text-xs font-semibold">
+            Tags (comma separated)
+            <input
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={draft.tags?.join(", ") ?? ""}
+              onChange={(event) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  tags: event.target.value
+                    .split(",")
+                    .map((tag) => tag.trim())
+                    .filter(Boolean),
+                }))
+              }
+            />
+          </label>
         </div>
         <div className="mt-4 space-y-2">
           <label className="text-xs font-semibold">Image URL</label>
@@ -249,6 +484,30 @@ export default function AdminInventory() {
               setDraft((prev) => ({ ...prev, image: event.target.value }))
             }
           />
+          <div
+            className="rounded-2xl border border-dashed border-[#e6d8ce] px-4 py-3 text-xs text-muted"
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              const file = event.dataTransfer.files?.[0];
+              if (file) handleUpload(file);
+            }}
+          >
+            Drag & drop an image here to upload
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) handleUpload(file);
+                }}
+              />
+              {uploading ? (
+                <span className="text-xs text-muted">Uploading...</span>
+              ) : null}
+            </div>
+          </div>
         </div>
         {draft.image ? (
           <div className="mt-4 overflow-hidden rounded-2xl border border-[#f0e4da]">
@@ -265,23 +524,52 @@ export default function AdminInventory() {
 
       <div className="rounded-3xl bg-white p-6 shadow-soft">
         <h3 className="text-lg font-semibold">Inventory List</h3>
+        <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex-1">
+            <input
+              className="w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              placeholder="Search by name or ID"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+          <select
+            className="rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+            value={statusFilter}
+            onChange={(event) =>
+              setStatusFilter(event.target.value as typeof statusFilter)
+            }
+          >
+            <option value="all">All</option>
+            <option value="active">Active</option>
+            <option value="hidden">Hidden</option>
+          </select>
+        </div>
+
         {loading ? (
           <p className="mt-3 text-sm text-muted">Loading inventory...</p>
-        ) : items.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <p className="mt-3 text-sm text-muted">
             No products yet. Add one to begin.
           </p>
         ) : (
           <div className="mt-4 space-y-4">
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <div
                 key={item.id}
                 className="flex flex-col gap-4 rounded-2xl border border-[#f0e4da] p-4"
               >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold">{item.name}</p>
-                    <p className="text-xs text-muted">{item.id}</p>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(item.id)}
+                      onChange={() => toggleSelected(item.id)}
+                    />
+                    <div>
+                      <p className="font-semibold">{item.name}</p>
+                      <p className="text-xs text-muted">{item.id}</p>
+                    </div>
                   </div>
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -329,12 +617,44 @@ export default function AdminInventory() {
                     />
                   </label>
                   <label className="text-xs font-semibold">
+                    Stock Status
+                    <select
+                      className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+                      value={item.stockStatus ?? "in"}
+                      onChange={(event) =>
+                        updateItem(item.id, {
+                          stockStatus:
+                            event.target.value as AdminProduct["stockStatus"],
+                        })
+                      }
+                    >
+                      <option value="in">In stock</option>
+                      <option value="low">Low stock</option>
+                      <option value="out">Out of stock</option>
+                    </select>
+                  </label>
+                  <label className="text-xs font-semibold">
                     Image URL
                     <input
                       className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
                       value={item.image}
                       onChange={(event) =>
                         updateItem(item.id, { image: event.target.value })
+                      }
+                    />
+                  </label>
+                  <label className="text-xs font-semibold">
+                    Tags (comma separated)
+                    <input
+                      className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+                      value={item.tags?.join(", ") ?? ""}
+                      onChange={(event) =>
+                        updateItem(item.id, {
+                          tags: event.target.value
+                            .split(",")
+                            .map((tag) => tag.trim())
+                            .filter(Boolean),
+                        })
                       }
                     />
                   </label>
@@ -361,6 +681,14 @@ export default function AdminInventory() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => handleDuplicate(item)}
+                    className="min-h-[40px] rounded-full border border-[#e6d8ce] px-4 text-xs font-semibold"
+                    disabled={saving}
+                  >
+                    Duplicate
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleArchive(item.id)}
                     className="min-h-[40px] rounded-full border border-[#e6d8ce] px-4 text-xs font-semibold"
                     disabled={saving}
@@ -381,7 +709,50 @@ export default function AdminInventory() {
               ? `${dirtyCount} unsaved change${dirtyCount > 1 ? "s" : ""}`
               : "All changes saved."}
           </p>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
+            <span className="rounded-full bg-base px-3 py-1 text-xs font-semibold text-ink">
+              {selectedIds.size} selected
+            </span>
+            <button
+              type="button"
+              onClick={() => handleBulkToggle(true)}
+              className="min-h-[40px] rounded-full border border-[#e6d8ce] px-4 text-xs font-semibold"
+              disabled={saving || selectedIds.size === 0}
+            >
+              Bulk Activate
+            </button>
+            <button
+              type="button"
+              onClick={() => handleBulkToggle(false)}
+              className="min-h-[40px] rounded-full border border-[#e6d8ce] px-4 text-xs font-semibold"
+              disabled={saving || selectedIds.size === 0}
+            >
+              Bulk Hide
+            </button>
+            <button
+              type="button"
+              onClick={() => handleBulkPrice(10)}
+              className="min-h-[40px] rounded-full border border-[#e6d8ce] px-4 text-xs font-semibold"
+              disabled={saving || selectedIds.size === 0}
+            >
+              +10% Price
+            </button>
+            <button
+              type="button"
+              onClick={() => handleBulkPrice(-10)}
+              className="min-h-[40px] rounded-full border border-[#e6d8ce] px-4 text-xs font-semibold"
+              disabled={saving || selectedIds.size === 0}
+            >
+              -10% Price
+            </button>
+            <button
+              type="button"
+              onClick={handleRollback}
+              className="min-h-[40px] rounded-full border border-[#e6d8ce] px-4 text-xs font-semibold"
+              disabled={saving}
+            >
+              Rollback Snapshot
+            </button>
             <button
               type="button"
               onClick={handleSaveAll}
