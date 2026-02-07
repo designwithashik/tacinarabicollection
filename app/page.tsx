@@ -10,7 +10,6 @@ import { getStoredCart, setStoredCart } from "../lib/cart";
 import type { CustomerInfo } from "../lib/orders";
 import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
-import { getStoredInventory, type AdminProduct } from "../lib/inventory";
 
 // Contact numbers
 const whatsappNumber = "+8801522119189";
@@ -152,7 +151,8 @@ export default function HomePage() {
   const prevCartCount = useRef(cartItems.length);
   const [isOnline, setIsOnline] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [adminProducts, setAdminProducts] = useState<AdminProduct[]>([]);
+  const [productData, setProductData] = useState<Product[]>([]);
+  const [productError, setProductError] = useState<string | null>(null);
 
   const text = copy[language];
 
@@ -165,7 +165,7 @@ export default function HomePage() {
     }
   };
 
-  // Initial hydration: storage, language, inventory
+  // Initial hydration: storage and language
   useEffect(() => {
     const storedCart = getStoredCart();
     const storedViewed = localStorage.getItem(storageKeys.viewed);
@@ -184,8 +184,6 @@ export default function HomePage() {
     if (storedLanguage === "en" || storedLanguage === "bn") {
       setLanguage(storedLanguage);
     }
-
-    setAdminProducts(getStoredInventory());
   }, []);
 
   // Persist cart
@@ -223,10 +221,34 @@ export default function HomePage() {
     };
   }, []);
 
-  // Skeleton shimmer delay
+  // Fetch live products (KV-backed), fallback to mock data in development only.
   useEffect(() => {
-    const timer = window.setTimeout(() => setIsLoading(false), 220);
-    return () => window.clearTimeout(timer);
+    let mounted = true;
+    const fetchProducts = async () => {
+      try {
+        setProductError(null);
+        const response = await fetch("/api/products", { next: { revalidate: 30 } });
+        if (!response.ok) throw new Error("Failed to load products.");
+        const data = (await response.json()) as Product[];
+        if (mounted) {
+          setProductData(data);
+          setIsLoading(false);
+        }
+      } catch {
+        if (!mounted) return;
+        if (process.env.NODE_ENV === "development") {
+          setProductData(products);
+          setIsLoading(false);
+          return;
+        }
+        setProductError("Unable to load products right now.");
+        setIsLoading(false);
+      }
+    };
+    fetchProducts();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Cart bump animation
@@ -381,9 +403,12 @@ export default function HomePage() {
   // ------------------------------
   // Derived data
   // ------------------------------
-  const productSource = adminProducts.length
-    ? adminProducts.filter((item) => item.active !== false)
-    : products;
+  const productSource =
+    productData.length > 0
+      ? productData
+      : process.env.NODE_ENV === "development"
+      ? products
+      : [];
 
   const filteredProducts = useMemo(() => {
     let result = [...productSource];
@@ -731,6 +756,15 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : productError ? (
+          <div className="rounded-3xl bg-card p-6 text-center shadow-soft">
+            <p className="text-lg font-semibold text-ink">
+              {productError}
+            </p>
+            <p className="mt-2 text-sm text-muted">
+              Please refresh to try again.
+            </p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="rounded-3xl bg-card p-6 text-center shadow-soft">

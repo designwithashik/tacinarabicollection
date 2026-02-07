@@ -1,93 +1,198 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import {
-  getStoredInventory,
-  setStoredInventory,
-  type AdminProduct,
-} from "../../../lib/inventory";
-import { uploadToUploadcare, validateImageUrl } from "../../../lib/images";
 
-const defaultDraft: AdminProduct = {
+const adminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? "";
+
+type AdminProduct = {
+  id: string;
+  name: string;
+  price: number;
+  size?: string;
+  image: string;
+  active: boolean;
+  updatedAt: number;
+};
+
+const emptyDraft: AdminProduct = {
   id: "",
   name: "",
   price: 0,
+  size: "",
   image: "",
-  category: "Clothing",
-  colors: ["Beige"],
-  sizes: ["M", "L", "XL"],
   active: true,
-  updatedAt: new Date().toISOString(),
+  updatedAt: Date.now(),
+};
+
+const validateDraft = (draft: AdminProduct) => {
+  if (!draft.id.trim() || !draft.name.trim()) {
+    return "ID and name are required.";
+  }
+  if (!draft.image.trim()) {
+    return "Image URL is required.";
+  }
+  if (Number.isNaN(draft.price) || draft.price <= 0) {
+    return "Price must be greater than 0.";
+  }
+  return null;
 };
 
 export default function AdminInventory() {
   const [items, setItems] = useState<AdminProduct[]>([]);
-  const [draft, setDraft] = useState<AdminProduct>(defaultDraft);
-  const [uploading, setUploading] = useState(false);
+  const [draft, setDraft] = useState<AdminProduct>(emptyDraft);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [uploadcareKey, setUploadcareKey] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+  const [dirtyIds, setDirtyIds] = useState<Set<string>>(new Set());
+
+  const canUseAdmin = Boolean(adminSecret);
 
   useEffect(() => {
-    setItems(getStoredInventory());
-    const storedKey = localStorage.getItem("tacin-uploadcare-key");
-    if (storedKey) setUploadcareKey(storedKey);
-  }, []);
-
-  useEffect(() => {
-    setStoredInventory(items);
-  }, [items]);
-
-  const handleSave = () => {
-    if (!draft.id || !draft.name || draft.price <= 0) {
-      setError("Please fill out all required fields.");
+    if (!canUseAdmin) {
+      setError("Admin secret missing. Set NEXT_PUBLIC_ADMIN_SECRET.");
+      setLoading(false);
       return;
     }
-    if (!validateImageUrl(draft.image)) {
-      setError("Please provide a valid image URL.");
-      return;
-    }
-    setError(null);
-    const updated = { ...draft, updatedAt: new Date().toISOString() };
-    setItems((prev) => {
-      const existingIndex = prev.findIndex((item) => item.id === draft.id);
-      if (existingIndex >= 0) {
-        return prev.map((item, index) => (index === existingIndex ? updated : item));
+    const load = async () => {
+      try {
+        const response = await fetch("/api/admin/products", {
+          headers: { "x-admin-secret": adminSecret },
+        });
+        if (!response.ok) throw new Error("Unable to load inventory.");
+        const data = (await response.json()) as AdminProduct[];
+        setItems(data.sort((a, b) => b.updatedAt - a.updatedAt));
+      } catch {
+        setError("Unable to load inventory.");
+      } finally {
+        setLoading(false);
       }
-      return [updated, ...prev];
-    });
-    setDraft(defaultDraft);
+    };
+    load();
+  }, [canUseAdmin]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), 2000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
+  const markDirty = (id: string) => {
+    setDirtyIds((prev) => new Set(prev).add(id));
   };
 
-  const handleUpload = async (file: File) => {
-    if (!uploadcareKey) {
-      setError("Uploadcare key missing. Add it in settings.");
+  const updateItem = (id: string, patch: Partial<AdminProduct>) => {
+    setItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...patch } : item))
+    );
+    markDirty(id);
+  };
+
+  const handleAdd = async () => {
+    const validationError = validateDraft(draft);
+    if (validationError) {
+      setError(validationError);
       return;
     }
-    setUploading(true);
+    setSaving(true);
     setError(null);
     try {
-      const url = await uploadToUploadcare(file, uploadcareKey);
-      setDraft((prev) => ({ ...prev, image: url }));
+      const payload = { ...draft, updatedAt: Date.now() };
+      setItems((prev) => [payload, ...prev]);
+      const response = await fetch("/api/admin/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-secret": adminSecret,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error("Save failed.");
+      setNotice("Product added.");
+      setDraft(emptyDraft);
     } catch {
-      setError("Upload failed. Try again.");
+      setError("Unable to add product.");
     } finally {
-      setUploading(false);
+      setSaving(false);
     }
   };
+
+  const handleSaveAll = async () => {
+    if (dirtyIds.size === 0) {
+      setNotice("No changes to save.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await Promise.all(
+        Array.from(dirtyIds).map((id) => {
+          const item = items.find((product) => product.id === id);
+          if (!item) return Promise.resolve();
+          return fetch(`/api/admin/products/${id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-secret": adminSecret,
+            },
+            body: JSON.stringify(item),
+          }).then((response) => {
+            if (!response.ok) throw new Error("Save failed.");
+          });
+        })
+      );
+      setDirtyIds(new Set());
+      setNotice("Changes saved.");
+    } catch {
+      setError("Unable to save changes.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    setSaving(true);
+    setError(null);
+    updateItem(id, { active: false });
+    try {
+      const response = await fetch(`/api/admin/products/${id}`, {
+        method: "DELETE",
+        headers: { "x-admin-secret": adminSecret },
+      });
+      if (!response.ok) throw new Error("Delete failed.");
+      setNotice("Product archived.");
+    } catch {
+      setError("Unable to archive product.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const dirtyCount = useMemo(() => dirtyIds.size, [dirtyIds]);
 
   return (
     <section className="space-y-6">
       <div>
         <h2 className="font-heading text-2xl font-semibold">Inventory</h2>
         <p className="mt-1 text-sm text-muted">
-          Manage products, pricing, and visibility.
+          Live inventory synced with Vercel KV. Changes apply instantly.
         </p>
       </div>
 
+      {error ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+      {notice ? (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {notice}
+        </div>
+      ) : null}
+
       <div className="rounded-3xl bg-white p-6 shadow-soft">
-        <h3 className="text-lg font-semibold">Add or Update Product</h3>
-        {error ? <p className="mt-2 text-xs text-red-600">{error}</p> : null}
+        <h3 className="text-lg font-semibold">Add New Product</h3>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <label className="text-xs font-semibold">
             Product ID
@@ -117,25 +222,22 @@ export default function AdminInventory() {
               className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
               value={draft.price}
               onChange={(event) =>
-                setDraft((prev) => ({ ...prev, price: Number(event.target.value) }))
+                setDraft((prev) => ({
+                  ...prev,
+                  price: Number(event.target.value),
+                }))
               }
             />
           </label>
           <label className="text-xs font-semibold">
-            Category
-            <select
+            Size (optional)
+            <input
               className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-              value={draft.category}
+              value={draft.size}
               onChange={(event) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  category: event.target.value as AdminProduct["category"],
-                }))
+                setDraft((prev) => ({ ...prev, size: event.target.value }))
               }
-            >
-              <option value="Clothing">Clothing</option>
-              <option value="Ceramic">Ceramic</option>
-            </select>
+            />
           </label>
         </div>
         <div className="mt-4 space-y-2">
@@ -147,17 +249,6 @@ export default function AdminInventory() {
               setDraft((prev) => ({ ...prev, image: event.target.value }))
             }
           />
-          <div className="flex items-center gap-2">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) handleUpload(file);
-              }}
-            />
-            {uploading ? <span className="text-xs text-muted">Uploading...</span> : null}
-          </div>
         </div>
         {draft.image ? (
           <div className="mt-4 overflow-hidden rounded-2xl border border-[#f0e4da]">
@@ -170,68 +261,145 @@ export default function AdminInventory() {
             />
           </div>
         ) : null}
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleSave}
-            className="min-h-[44px] rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white"
-          >
-            Save Product
-          </button>
-          <button
-            type="button"
-            onClick={() => setDraft(defaultDraft)}
-            className="min-h-[44px] rounded-full border border-[#e6d8ce] px-5 py-2 text-sm font-semibold"
-          >
-            Clear
-          </button>
-        </div>
       </div>
 
       <div className="rounded-3xl bg-white p-6 shadow-soft">
         <h3 className="text-lg font-semibold">Inventory List</h3>
-        {items.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">No products yet.</p>
+        {loading ? (
+          <p className="mt-3 text-sm text-muted">Loading inventory...</p>
+        ) : items.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">
+            No products yet. Add one to begin.
+          </p>
         ) : (
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-4">
             {items.map((item) => (
               <div
                 key={item.id}
-                className="flex flex-col gap-3 rounded-2xl border border-[#f0e4da] p-3 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-4 rounded-2xl border border-[#f0e4da] p-4"
               >
-                <div>
-                  <p className="font-semibold">{item.name}</p>
-                  <p className="text-xs text-muted">{item.id}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold">৳{item.price}</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setItems((prev) =>
-                        prev.map((product) =>
-                          product.id === item.id
-                            ? { ...product, active: !product.active }
-                            : product
-                        )
-                      )
-                    }
-                    className="min-h-[36px] rounded-full border border-[#e6d8ce] px-3 text-xs font-semibold"
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold">{item.name}</p>
+                    <p className="text-xs text-muted">{item.id}</p>
+                  </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      item.active
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-slate-100 text-slate-500"
+                    }`}
                   >
                     {item.active ? "Active" : "Hidden"}
+                  </span>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="text-xs font-semibold">
+                    Name
+                    <input
+                      className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+                      value={item.name}
+                      onChange={(event) =>
+                        updateItem(item.id, { name: event.target.value })
+                      }
+                    />
+                  </label>
+                  <label className="text-xs font-semibold">
+                    Price (BDT)
+                    <input
+                      type="number"
+                      min={0}
+                      className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+                      value={item.price}
+                      onChange={(event) =>
+                        updateItem(item.id, {
+                          price: Number(event.target.value),
+                        })
+                      }
+                    />
+                  </label>
+                  <label className="text-xs font-semibold">
+                    Size (optional)
+                    <input
+                      className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+                      value={item.size ?? ""}
+                      onChange={(event) =>
+                        updateItem(item.id, { size: event.target.value })
+                      }
+                    />
+                  </label>
+                  <label className="text-xs font-semibold">
+                    Image URL
+                    <input
+                      className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+                      value={item.image}
+                      onChange={(event) =>
+                        updateItem(item.id, { image: event.target.value })
+                      }
+                    />
+                  </label>
+                </div>
+                {item.image ? (
+                  <div className="overflow-hidden rounded-2xl border border-[#f0e4da]">
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      width={600}
+                      height={400}
+                      className="h-36 w-full object-cover"
+                    />
+                  </div>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateItem(item.id, { active: !item.active })}
+                    className="min-h-[40px] rounded-full border border-[#e6d8ce] px-4 text-xs font-semibold"
+                    disabled={saving}
+                  >
+                    {item.active ? "Hide" : "Activate"}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDraft(item)}
-                    className="min-h-[36px] rounded-full border border-[#e6d8ce] px-3 text-xs font-semibold"
+                    onClick={() => handleArchive(item.id)}
+                    className="min-h-[40px] rounded-full border border-[#e6d8ce] px-4 text-xs font-semibold"
+                    disabled={saving}
                   >
-                    Edit
+                    Archive
                   </button>
                 </div>
               </div>
             ))}
           </div>
         )}
+      </div>
+
+      <div className="sticky bottom-4 z-10 rounded-2xl bg-white/95 p-4 shadow-soft backdrop-blur">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted">
+            {dirtyCount > 0
+              ? `${dirtyCount} unsaved change${dirtyCount > 1 ? "s" : ""}`
+              : "All changes saved."}
+          </p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleSaveAll}
+              className="min-h-[44px] rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white"
+              disabled={saving || !canUseAdmin}
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+            <button
+              type="button"
+              onClick={handleAdd}
+              className="min-h-[44px] rounded-full border border-[#e6d8ce] px-5 py-2 text-sm font-semibold"
+              disabled={saving || !canUseAdmin}
+            >
+              Add Product
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   );
