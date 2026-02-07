@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
@@ -187,6 +187,8 @@ export default function HomePage() {
   const [quantityFeedback, setQuantityFeedback] = useState<Record<string, string>>({});
   const [cartQuantityFeedback, setCartQuantityFeedback] = useState<Record<number, string>>({});
   const [language, setLanguage] = useState<Language>("en");
+  const [cartBump, setCartBump] = useState(false);
+  const prevCartCount = useRef(cartItems.length);
 
   const text = copy[language];
 
@@ -233,6 +235,15 @@ export default function HomePage() {
     const timer = setTimeout(() => setToast(null), 2000);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    if (cartItems.length > prevCartCount.current) {
+      setCartBump(true);
+      const timer = window.setTimeout(() => setCartBump(false), 450);
+      return () => window.clearTimeout(timer);
+    }
+    prevCartCount.current = cartItems.length;
+  }, [cartItems.length]);
 
   const updateSize = (productId: string, size: string) => {
     setSelectedSizes((prev) => ({ ...prev, [productId]: size }));
@@ -485,7 +496,7 @@ export default function HomePage() {
               </span>
             </div>
           </div>
-          <div className="rounded-3xl bg-card p-6 shadow-soft">
+          <div className="rounded-3xl bg-card p-6 shadow-soft opacity-0 animate-[fadeUp_0.8s_ease-out_forwards]">
             <h2 className="font-heading text-xl font-semibold">
               Quick Order Promise
             </h2>
@@ -655,7 +666,9 @@ export default function HomePage() {
         className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-soft"
         aria-label="Open cart"
       >
-        <span className="text-xl">🛍️</span>
+        <span className={clsx("text-xl", cartBump && "animate-cart-bounce")}>
+          🛍️
+        </span>
         {cartItems.length > 0 ? (
           <span className="absolute -top-1 -right-1 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">
             {cartItems.length}
