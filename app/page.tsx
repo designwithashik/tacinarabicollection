@@ -519,73 +519,109 @@ export default function HomePage() {
   // UI
   // ------------------------------
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen bg-base pb-20">
       {!isOnline ? (
         <div className="sticky top-0 z-50 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900">
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="bg-base">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-10 pt-6 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-xl">
+      <header className="relative overflow-hidden bg-[#f6efe8]">
+        <div className="pointer-events-none absolute left-0 top-0 h-40 w-40 -translate-x-1/3 -translate-y-1/3 rounded-full bg-[#f3d4b8] opacity-60 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-56 w-56 translate-x-1/3 translate-y-1/3 rounded-full bg-[#e9d2ff] opacity-50 blur-3xl" />
+        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 pb-10 pt-5 md:flex-row md:items-stretch md:justify-between">
+          <div className="relative z-10 max-w-xl rounded-3xl border border-[#f0e4da] bg-white/80 p-5 shadow-soft">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-accent">
-                WhatsApp-first shopping
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                  Live Storefront
+                </span>
+                <span className="text-xs font-semibold text-accent">
+                  WhatsApp-first shopping
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() =>
                   setLanguage((prev) => (prev === "en" ? "bn" : "en"))
                 }
-                className="rounded-full border border-[#e6d8ce] bg-white px-3 py-1 text-xs font-semibold text-ink"
+                className="rounded-xl border border-[#e6d8ce] bg-white px-3 py-1 text-xs font-semibold text-ink shadow-soft"
               >
                 {language === "en" ? "বাংলা" : "EN"}
               </button>
             </div>
-            <h1 className="mt-3 font-heading text-3xl font-bold text-ink md:text-4xl">
-              WhatsApp checkout in minutes, shipped anywhere in Bangladesh.
+            <h1 className="mt-3 max-w-[18ch] font-heading text-4xl font-bold text-ink md:text-5xl">
+              WhatsApp checkout in minutes, shipped nationwide.
             </h1>
             <p className="mt-3 text-sm text-muted md:text-base">
               Tacin Arabi Collection curates fashion and ceramics with fast COD
-              fulfillment and real-time WhatsApp ordering for busy customers.
+              fulfillment, real-time WhatsApp ordering, and verified delivery.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft opacity-0 animate-[fadeUp_0.9s_ease-out_forwards]">
-                COD Nationwide
+              <button
+                type="button"
+                className="min-h-[44px] rounded-xl bg-ink px-5 py-2 text-sm font-semibold text-white shadow-soft"
+              >
+                Shop Bestsellers
+              </button>
+              <button
+                type="button"
+                className="min-h-[44px] rounded-xl border-2 border-ink px-5 py-2 text-sm font-semibold text-ink"
+              >
+                Explore New Drops
+              </button>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-ink shadow-soft">
+                <span>⚡</span> COD Nationwide
               </span>
-              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft opacity-0 animate-[fadeUp_0.9s_ease-out_forwards] [animation-delay:120ms]">
-                WhatsApp Ordering
+              <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-ink shadow-soft">
+                <span>💬</span> WhatsApp Ordering
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-ink shadow-soft">
+                <span>🚚</span> Fast Dispatch
               </span>
             </div>
           </div>
-          <div className="rounded-3xl bg-card p-6 shadow-soft opacity-0 animate-[fadeUp_0.8s_ease-out_forwards]">
+          <div className="relative z-10 -mt-2 rounded-3xl bg-ink p-5 text-white shadow-[0_20px_40px_rgba(18,18,18,0.18)] md:-mt-6 md:self-end">
+            <div className="absolute -left-3 top-6 hidden rounded-2xl bg-white/20 px-3 py-1 text-xs font-semibold text-white shadow-soft md:block">
+              Quick Order Promise
+            </div>
             <h2 className="font-heading text-xl font-semibold">
               Quick Order Promise
             </h2>
-            <p className="mt-2 text-sm text-muted">
-              Select your size, tap buy now, and finish checkout in seconds. No
+            <p className="mt-2 text-sm text-white/80">
+              Select your size, tap Buy Now, and finish checkout in seconds. No
               account needed.
             </p>
             <div className="mt-4 space-y-2 text-sm">
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-accent" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-base">
+                  ✅
+                </span>
                 <span>Fast checkout popup</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-accent" />
-                <span>Cart saved in your device</span>
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-base">
+                  💾
+                </span>
+                <span>Cart saved on your device</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-accent" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 text-base">
+                  🔒
+                </span>
                 <span>Secure WhatsApp confirmation</span>
               </div>
+            </div>
+            <div className="mt-4 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-white/80">
+              4.8/5 verified WhatsApp response time
             </div>
           </div>
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 pb-8">
-        <div className="rounded-3xl bg-card p-6 shadow-soft">
+      <section className="mx-auto max-w-6xl px-4 pb-6">
+        <div className="rounded-3xl border border-[#f0e4da] bg-white p-5 shadow-[0_18px_36px_rgba(18,18,18,0.08)]">
           <div className="flex flex-col gap-1">
             <h2 className="font-heading text-2xl font-semibold">
               Trusted delivery, transparent payments
@@ -595,31 +631,57 @@ export default function HomePage() {
               control of size, color, and delivery timing.
             </p>
           </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-[#f0e4da] bg-white p-4">
-              <p className="text-xs font-semibold text-muted">Delivery Zones</p>
-              <p className="mt-2 text-sm font-semibold text-ink">
-                Inside Dhaka · Outside Dhaka
-              </p>
-              <p className="mt-1 text-xs text-muted">
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <div className="group rounded-2xl border border-[#f0e4da] bg-[#fff7f0] p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg">
+                  🚚
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-ink">
+                    Delivery Zones
+                  </p>
+                  <p className="text-xs text-muted">Inside · Outside Dhaka</p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-muted">
                 Clear pricing shown before checkout.
               </p>
             </div>
-            <div className="rounded-2xl border border-[#f0e4da] bg-white p-4">
-              <p className="text-xs font-semibold text-muted">Payment Options</p>
-              <p className="mt-2 text-sm font-semibold text-ink">
-                Cash on Delivery, bKash, Nagad
-              </p>
-              <p className="mt-1 text-xs text-muted">
+            <div className="group relative rounded-2xl border-2 border-accent bg-white p-4 shadow-lg transition hover:-translate-y-1 hover:shadow-xl">
+              <span className="absolute -top-3 left-4 rounded-full bg-accent px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+                Most trusted
+              </span>
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-lg text-white">
+                  💳
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-ink">
+                    Payment Options
+                  </p>
+                  <p className="text-xs text-muted">
+                    Cash on Delivery, bKash, Nagad
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-muted">
                 Pay in the way that feels safest.
               </p>
             </div>
-            <div className="rounded-2xl border border-[#f0e4da] bg-white p-4">
-              <p className="text-xs font-semibold text-muted">Support</p>
-              <p className="mt-2 text-sm font-semibold text-ink">
-                Real people on WhatsApp
-              </p>
-              <p className="mt-1 text-xs text-muted">
+            <div className="group rounded-2xl border border-[#f0e4da] bg-[#f7f3ff] p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg">
+                  🧑‍💻
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-ink">Support</p>
+                  <p className="text-xs text-muted">
+                    Real people on WhatsApp
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-muted">
                 Fast replies for urgent questions.
               </p>
             </div>
@@ -627,31 +689,57 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-8">
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-3xl bg-card p-6 shadow-soft">
-            <h3 className="font-heading text-xl font-semibold">
-              How ordering works
-            </h3>
+      <section className="mx-auto max-w-6xl px-4 pb-6">
+        <div className="grid gap-5 md:grid-cols-2">
+          <div className="rounded-3xl border border-[#f0e4da] bg-white p-5 shadow-soft">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-xl font-semibold">
+                How ordering works
+              </h3>
+              <span className="rounded-full bg-[#f6efe8] px-3 py-1 text-xs font-semibold text-ink">
+                3 steps
+              </span>
+            </div>
             <p className="mt-2 text-sm text-muted">
               A smooth three-step flow built for busy shoppers.
             </p>
-            <ol className="mt-4 space-y-3 text-sm text-ink">
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
-                <span>Select size, quantity, then tap Buy Now.</span>
+            <ol className="mt-4 space-y-4 text-sm text-ink">
+              <li className="relative flex gap-4 rounded-2xl border border-[#f0e4da] bg-[#fff7f0] p-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-ink text-sm font-semibold text-white">
+                  1
+                </span>
+                <div>
+                  <p className="font-semibold">Select size + quantity</p>
+                  <p className="text-xs text-muted">
+                    Tap Buy Now when you&apos;re ready.
+                  </p>
+                </div>
               </li>
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
-                <span>Confirm delivery zone and payment method.</span>
+              <li className="relative flex gap-4 rounded-2xl border border-[#e6d8ce] bg-white p-3 shadow-sm">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-ink text-sm font-semibold text-white">
+                  2
+                </span>
+                <div>
+                  <p className="font-semibold">Confirm delivery + payment</p>
+                  <p className="text-xs text-muted">
+                    Inside/outside Dhaka, COD or digital.
+                  </p>
+                </div>
               </li>
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
-                <span>We verify on WhatsApp and dispatch quickly.</span>
+              <li className="relative flex gap-4 rounded-2xl border border-[#f0e4da] bg-[#f7f3ff] p-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-ink text-sm font-semibold text-white">
+                  3
+                </span>
+                <div>
+                  <p className="font-semibold">WhatsApp verification</p>
+                  <p className="text-xs text-muted">
+                    We confirm and dispatch quickly.
+                  </p>
+                </div>
               </li>
             </ol>
           </div>
-          <div className="rounded-3xl bg-card p-6 shadow-soft">
+          <div className="rounded-3xl border border-[#f0e4da] bg-white p-5 shadow-soft">
             <h3 className="font-heading text-xl font-semibold">
               Why customers choose us
             </h3>
@@ -659,17 +747,38 @@ export default function HomePage() {
               Built for trust, clarity, and calm shopping.
             </p>
             <ul className="mt-4 space-y-3 text-sm text-ink">
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
-                <span>Every order verified by a real team member.</span>
+              <li className="flex items-start gap-3 rounded-2xl border border-[#f0e4da] bg-white px-3 py-2 shadow-sm">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-white">
+                  ✓
+                </span>
+                <div>
+                  <p className="font-semibold">Human verified orders</p>
+                  <p className="text-xs text-muted">
+                    Every order confirmed by our team.
+                  </p>
+                </div>
               </li>
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
-                <span>Transparent pricing before WhatsApp checkout.</span>
+              <li className="flex items-start gap-3 rounded-2xl border border-[#f0e4da] bg-white px-3 py-2 shadow-sm">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-white">
+                  ✓
+                </span>
+                <div>
+                  <p className="font-semibold">Transparent pricing</p>
+                  <p className="text-xs text-muted">
+                    See totals before WhatsApp checkout.
+                  </p>
+                </div>
               </li>
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
-                <span>Fast updates on delivery timeline.</span>
+              <li className="flex items-start gap-3 rounded-2xl border border-[#f0e4da] bg-white px-3 py-2 shadow-sm">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-white">
+                  ✓
+                </span>
+                <div>
+                  <p className="font-semibold">Fast delivery updates</p>
+                  <p className="text-xs text-muted">
+                    Real-time updates on shipping.
+                  </p>
+                </div>
               </li>
             </ul>
           </div>
@@ -678,11 +787,27 @@ export default function HomePage() {
 
       <section className="sticky top-0 z-20 bg-base/95 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 py-3">
-          <div className="flex items-center gap-2 overflow-x-auto">
+          <div className="rounded-2xl border border-[#e6d8ce] bg-white px-3 py-3 shadow-soft">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="font-heading text-lg font-semibold text-ink">
+                Browse Products
+              </h2>
+              <span className="rounded-full bg-[#f6efe8] px-3 py-1 text-xs font-semibold text-ink">
+                Filters & Sorting
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => openSheet("size")}
-              className="flex min-h-[44px] items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-soft"
+              className={clsx(
+                "flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-soft transition",
+                filters.size.length ||
+                  filters.colors.length ||
+                  filters.price
+                  ? "bg-ink text-white"
+                  : "bg-[#f6efe8] text-ink"
+              )}
             >
               Filters
               {(filters.size.length ||
@@ -698,29 +823,36 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => openSheet("sort")}
-              className="min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+              className={clsx(
+                "min-h-[44px] rounded-xl border px-4 py-2 text-sm font-semibold transition",
+                filters.sort ? "border-ink bg-ink text-white" : "border-[#e6d8ce] bg-white text-ink"
+              )}
             >
               Sort
             </button>
             <button
               type="button"
               onClick={() => openSheet("price")}
-              className="min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+              className={clsx(
+                "min-h-[44px] rounded-xl border px-4 py-2 text-sm font-semibold transition",
+                filters.price ? "border-ink bg-ink text-white" : "border-[#e6d8ce] bg-white text-ink"
+              )}
             >
               Price
             </button>
             <button
               type="button"
               onClick={() => openSheet("color")}
-              className="min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+              className="min-h-[44px] rounded-xl border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
             >
               Color
             </button>
+            </div>
           </div>
         </div>
       </section>
 
-      <main className="mx-auto max-w-6xl px-4 pb-12 pt-6">
+      <main className="mx-auto max-w-6xl px-4 pb-10 pt-5">
         {activeChips.length > 0 ? (
           <div className="mb-4 flex flex-wrap gap-2">
             {activeChips.map((chip) => (
@@ -742,7 +874,7 @@ export default function HomePage() {
         ) : null}
 
         {isLoading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={`skeleton-${index}`}
@@ -846,37 +978,43 @@ export default function HomePage() {
         ) : null}
       </main>
 
-      <footer className="border-t border-[#e6d8ce] bg-white">
+      <footer className="border-t border-[#1f1f1f] bg-ink text-white">
         <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 md:grid-cols-3">
           <div>
             <h3 className="font-heading text-lg font-semibold">
               Tacin Arabi Collection
             </h3>
-            <p className="mt-2 text-sm text-muted">
+            <p className="mt-2 text-sm text-white/70">
               WhatsApp-first shopping for fashion and ceramics across
               Bangladesh.
             </p>
-            <p className="mt-3 text-sm font-semibold text-ink">
+            <p className="mt-3 text-sm font-semibold text-white">
               WhatsApp: +8801522119189
             </p>
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-ink">Store Policies</h4>
-            <ul className="mt-3 space-y-2 text-sm text-muted">
-              <li>Cash on Delivery available nationwide</li>
-              <li>Delivery confirmation before dispatch</li>
-              <li>Support available 10am–10pm daily</li>
+            <h4 className="text-sm font-semibold text-white">Store Policies</h4>
+            <ul className="mt-3 space-y-2 text-sm text-white/70">
+              <li className="flex items-center gap-2">
+                <span>✅</span> Cash on Delivery available nationwide
+              </li>
+              <li className="flex items-center gap-2">
+                <span>📦</span> Delivery confirmation before dispatch
+              </li>
+              <li className="flex items-center gap-2">
+                <span>🕙</span> Support available 10am–10pm daily
+              </li>
             </ul>
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-ink">Social Proof</h4>
-            <p className="mt-3 text-sm text-muted">
+            <h4 className="text-sm font-semibold text-white">Social Proof</h4>
+            <p className="mt-3 text-sm text-white/70">
               Thousands of shoppers trust our WhatsApp checkout for quick
               confirmations and clear delivery updates.
             </p>
-            <p className="mt-3 text-sm font-semibold text-ink">
+            <div className="mt-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white">
               “Fast replies, quality products, safe delivery.”
-            </p>
+            </div>
           </div>
         </div>
       </footer>

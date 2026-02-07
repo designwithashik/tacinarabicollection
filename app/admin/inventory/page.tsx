@@ -144,7 +144,6 @@ export default function AdminInventory() {
     setError(null);
     try {
       const payload = { ...draft, updatedAt: Date.now() };
-      setItems((prev) => [payload, ...prev]);
       const response = await fetch("/api/admin/products", {
         method: "POST",
         headers: {
@@ -154,6 +153,17 @@ export default function AdminInventory() {
         body: JSON.stringify(payload),
       });
       if (!response.ok) throw new Error("Save failed.");
+      const data = (await response.json()) as { product?: AdminProduct };
+      if (data?.product) {
+        setItems((prev) => [data.product, ...prev]);
+      } else {
+        const refreshResponse = await fetch("/api/admin/products", {
+          headers: { "x-admin-secret": adminSecret },
+        });
+        if (!refreshResponse.ok) throw new Error("Unable to load inventory.");
+        const refreshed = (await refreshResponse.json()) as AdminProduct[];
+        setItems(refreshed.sort((a, b) => b.updatedAt - a.updatedAt));
+      }
       setNotice("Product added.");
       setDraft(emptyDraft);
     } catch {
