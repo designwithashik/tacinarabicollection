@@ -10,7 +10,10 @@ body {
   @apply bg-base text-ink font-body;
 }
 
-* {
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
 

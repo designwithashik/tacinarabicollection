@@ -67,6 +67,8 @@ const storageKeys = {
 };
 
 const adminStorageKey = "tacin-admin-products";
+const siteUrl = "https://tacinarabicollection.vercel.app";
+const statusLabels = ["New", "Hot", "Limited"] as const;
 
 const copy = {
   en: {
@@ -114,6 +116,20 @@ const addedToCartNotice = "Added to cart";
 
 const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
 
+const getPublicImageUrl = (imagePath: string) => {
+  if (!imagePath) return null;
+  try {
+    const isAbsolute = imagePath.startsWith("http://") || imagePath.startsWith("https://");
+    return isAbsolute ? imagePath : `${siteUrl}${imagePath}`;
+  } catch {
+    return null;
+  }
+};
+
+const getStatusLabel = (index: number) => statusLabels[index % statusLabels.length];
+const getStockLabel = (index: number) =>
+  index % 3 === 2 ? "Limited stock" : "In stock";
+
 const getOrderSubtotal = (items: CartItem[]) =>
   items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -135,12 +151,13 @@ const buildWhatsAppMessage = (options: {
     `Address: ${options.customer.address}`,
     ``,
     `Order Details:`,
-    ...options.items.map(
-      (item, index) =>
-        `${index + 1}. ${item.name} | Size: ${item.size} | Color: ${item.color} | Qty: ${item.quantity} | ${formatPrice(
-          item.price * item.quantity
-        )}`
-    ),
+    ...options.items.map((item, index) => {
+      const imageUrl = getPublicImageUrl(item.image);
+      const line = `${index + 1}. ${item.name} | Size: ${item.size} | Color: ${item.color} | Qty: ${item.quantity} | ${formatPrice(
+        item.price * item.quantity
+      )}`;
+      return imageUrl ? `${line} | Image: ${imageUrl}` : `${line} | Image: unavailable`;
+    }),
     ``,
     `Subtotal: ${formatPrice(subtotal)}`,
     `Delivery Zone: ${options.deliveryZone}`,
@@ -600,7 +617,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => openSheet("size")}
-              className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-soft"
+              className="flex min-h-[44px] items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-soft"
             >
               Filters
               {(filters.size.length ||
@@ -616,21 +633,21 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => openSheet("sort")}
-              className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+              className="min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
             >
               Sort
             </button>
             <button
               type="button"
               onClick={() => openSheet("price")}
-              className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+              className="min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
             >
               Price
             </button>
             <button
               type="button"
               onClick={() => openSheet("color")}
-              className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+              className="min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
             >
               Color
             </button>
@@ -664,9 +681,9 @@ export default function HomePage() {
             {Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={`skeleton-${index}`}
-                className="rounded-3xl bg-card p-4 shadow-soft"
+                className="min-h-[560px] rounded-3xl bg-card p-4 shadow-soft"
               >
-                <div className="h-44 w-full animate-pulse rounded-2xl bg-[#efe5dc]" />
+                <div className="aspect-[4/3] w-full animate-pulse rounded-2xl bg-[#efe5dc]" />
                 <div className="mt-4 space-y-3">
                   <div className="h-4 w-2/3 animate-pulse rounded-full bg-[#efe5dc]" />
                   <div className="h-3 w-1/3 animate-pulse rounded-full bg-[#efe5dc]" />
@@ -684,7 +701,7 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredProducts.map((product) => (
+            {filteredProducts.map((product, index) => (
               <ProductCard
                 key={product.id}
                 product={product}
@@ -707,6 +724,8 @@ export default function HomePage() {
                 addedLabel={text.added}
                 addState={addStates[product.id] ?? "idle"}
                 quantityFeedback={quantityFeedback[product.id]}
+                statusLabel={getStatusLabel(index)}
+                stockLabel={getStockLabel(index)}
               />
             ))}
           </div>
@@ -723,7 +742,7 @@ export default function HomePage() {
               </span>
             </div>
             <div className="grid gap-6 md:grid-cols-2">
-              {recentlyViewed.map((product) => (
+              {recentlyViewed.map((product, index) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -744,6 +763,8 @@ export default function HomePage() {
                   addedLabel={text.added}
                   addState={addStates[product.id] ?? "idle"}
                   quantityFeedback={quantityFeedback[product.id]}
+                  statusLabel={getStatusLabel(index)}
+                  stockLabel={getStockLabel(index)}
                 />
               ))}
             </div>
