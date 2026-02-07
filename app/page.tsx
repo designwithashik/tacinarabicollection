@@ -5,6 +5,12 @@ import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
 import { products, type Product } from "../lib/products";
+import type { CartItem } from "../lib/cart";
+import { getStoredCart, setStoredCart } from "../lib/cart";
+import type { CustomerInfo } from "../lib/orders";
+import { addOrder } from "../lib/orders";
+import { buildWhatsAppMessage } from "../lib/whatsapp";
+import { getStoredInventory, type AdminProduct } from "../lib/inventory";
 
 const whatsappNumber = "+8801522119189";
 const paymentNumber = "+8801701019292";
@@ -26,15 +32,6 @@ const deliveryFees = {
   outside: 120,
 };
 
-type CartItem = {
-  id: string;
-  name: string;
-  price: number;
-  size: string;
-  color: string;
-  quantity: number;
-  image: string;
-};
 
 type Filters = {
   size: string[];
@@ -43,11 +40,6 @@ type Filters = {
   sort: string | null;
 };
 
-type CustomerInfo = {
-  name: string;
-  phone: string;
-  address: string;
-};
 
 type AddState = "idle" | "loading" | "success";
 
@@ -61,13 +53,10 @@ const defaultFilters: Filters = {
 };
 
 const storageKeys = {
-  cart: "tacin-cart",
   viewed: "tacin-recently-viewed",
   language: "tacin-lang",
 };
 
-const adminStorageKey = "tacin-admin-products";
-const siteUrl = "https://tacinarabicollection.vercel.app";
 const statusLabels = ["New", "Hot", "Limited"] as const;
 
 const copy = {
@@ -116,16 +105,6 @@ const addedToCartNotice = "Added to cart";
 
 const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
 
-const getPublicImageUrl = (imagePath: string) => {
-  if (!imagePath) return null;
-  try {
-    const isAbsolute = imagePath.startsWith("http://") || imagePath.startsWith("https://");
-    return isAbsolute ? imagePath : `${siteUrl}${imagePath}`;
-  } catch {
-    return null;
-  }
-};
-
 const getStatusLabel = (index: number) => statusLabels[index % statusLabels.length];
 const getStockLabel = (index: number) =>
   index % 3 === 2 ? "Limited stock" : "In stock";
@@ -133,49 +112,6 @@ const getStockLabel = (index: number) =>
 const getOrderSubtotal = (items: CartItem[]) =>
   items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-const buildWhatsAppMessage = (options: {
-  customer: CustomerInfo;
-  items: CartItem[];
-  paymentMethod: string;
-  deliveryZone: string;
-  deliveryFee: number;
-  transactionId?: string;
-  paymentScreenshot?: string;
-}) => {
-  const subtotal = getOrderSubtotal(options.items);
-  const total = subtotal + options.deliveryFee;
-  const lines = [
-    `Assalamualaikum! New order from Tacin Arabi Collection`,
-    `Name: ${options.customer.name}`,
-    `Phone: ${options.customer.phone}`,
-    `Address: ${options.customer.address}`,
-    ``,
-    `Order Details:`,
-    ...options.items.map((item, index) => {
-      const imageUrl = getPublicImageUrl(item.image);
-      const line = `${index + 1}. ${item.name} | Size: ${item.size} | Color: ${item.color} | Qty: ${item.quantity} | ${formatPrice(
-        item.price * item.quantity
-      )}`;
-      return imageUrl ? `${line} | Image: ${imageUrl}` : `${line} | Image: unavailable`;
-    }),
-    ``,
-    `Subtotal: ${formatPrice(subtotal)}`,
-    `Delivery Zone: ${options.deliveryZone}`,
-    `Delivery Charge: ${formatPrice(options.deliveryFee)}`,
-    `Total Payable: ${formatPrice(total)}`,
-    `Payment Method: ${options.paymentMethod}`,
-  ];
-
-  if (options.transactionId) {
-    lines.push(`Transaction ID: ${options.transactionId}`);
-  }
-
-  if (options.paymentScreenshot) {
-    lines.push(`Payment Screenshot: ${options.paymentScreenshot}`);
-  }
-
-  return encodeURIComponent(lines.join("\n"));
-};
 
 export default function HomePage() {
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
@@ -210,17 +146,7 @@ export default function HomePage() {
   const prevCartCount = useRef(cartItems.length);
   const [isOnline, setIsOnline] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [adminProducts, setAdminProducts] = useState<Product[]>([]);
-  const [showAdmin, setShowAdmin] = useState(false);
-  const [adminDraft, setAdminDraft] = useState<Product>({
-    id: "",
-    name: "",
-    price: 0,
-    image: "/images/product-1.svg",
-    category: "Clothing",
-    colors: ["Beige"],
-    sizes: ["M", "L", "XL"],
-  });
+  const [adminProducts, setAdminProducts] = useState<AdminProduct[]>([]);
 
   const text = copy[language];
 
@@ -233,17 +159,11 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    const storedCart = localStorage.getItem(storageKeys.cart);
+    const storedCart = getStoredCart();
     const storedViewed = localStorage.getItem(storageKeys.viewed);
     const storedLanguage = localStorage.getItem(storageKeys.language) as Language | null;
 
-    if (storedCart) {
-      try {
-        setCartItems(JSON.parse(storedCart));
-      } catch {
-        setCartItems([]);
-      }
-    }
+    setCartItems(storedCart);
 
     if (storedViewed) {
       try {
@@ -257,18 +177,11 @@ export default function HomePage() {
       setLanguage(storedLanguage);
     }
 
-    const storedAdmin = localStorage.getItem(adminStorageKey);
-    if (storedAdmin) {
-      try {
-        setAdminProducts(JSON.parse(storedAdmin));
-      } catch {
-        setAdminProducts([]);
-      }
-    }
+    setAdminProducts(getStoredInventory());
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(storageKeys.cart, JSON.stringify(cartItems));
+    setStoredCart(cartItems);
   }, [cartItems]);
 
   useEffect(() => {
@@ -302,9 +215,6 @@ export default function HomePage() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(adminStorageKey, JSON.stringify(adminProducts));
-  }, [adminProducts]);
 
   useEffect(() => {
     if (cartItems.length > prevCartCount.current) {
@@ -413,20 +323,34 @@ export default function HomePage() {
 
   const handleWhatsappRedirect = (paymentMethod: string) => {
     const deliveryFee = deliveryFees[deliveryZone];
+    const total = checkoutTotal;
+    const deliveryZoneLabel =
+      deliveryZone === "inside" ? text.insideDhaka : text.outsideDhaka;
     const message = buildWhatsAppMessage({
       customer,
       items: checkoutItems,
       paymentMethod,
-      deliveryZone: deliveryZone === "inside" ? text.insideDhaka : text.outsideDhaka,
+      deliveryZone: deliveryZoneLabel,
       deliveryFee,
       transactionId: transactionId.trim() || undefined,
       paymentScreenshot: paymentScreenshot || undefined,
+      total,
     });
     const url = `https://wa.me/${whatsappNumber.replace(
       /\D/g,
       ""
     )}?text=${message}`;
     window.location.href = url;
+    addOrder({
+      id: `ORD-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      items: checkoutItems,
+      total,
+      paymentMethod,
+      deliveryZone,
+      customer,
+      status: "pending",
+    });
     logEvent("purchase", {
       total: checkoutTotal,
       paymentMethod,
@@ -438,7 +362,9 @@ export default function HomePage() {
     setShowPaymentInfo(false);
   };
 
-  const productSource = adminProducts.length ? adminProducts : products;
+  const productSource = adminProducts.length
+    ? adminProducts.filter((item) => item.active !== false)
+    : products;
 
   const filteredProducts = useMemo(() => {
     let result = [...productSource];
@@ -771,136 +697,6 @@ export default function HomePage() {
           </section>
         ) : null}
       </main>
-
-      <section className="mx-auto max-w-6xl px-4 pb-10">
-        <button
-          type="button"
-          onClick={() => setShowAdmin((prev) => !prev)}
-          className="rounded-full border border-[#e6d8ce] px-4 py-2 text-xs font-semibold text-ink"
-        >
-          {showAdmin ? "Hide Admin Panel" : "Open Admin Panel"}
-        </button>
-        {showAdmin ? (
-          <div className="mt-4 rounded-3xl bg-card p-6 shadow-soft">
-            <h2 className="font-heading text-lg font-semibold text-ink">
-              Admin Inventory (Client-only)
-            </h2>
-            <p className="mt-1 text-xs text-muted">
-              Add or update demo products stored in this browser.
-            </p>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <div>
-                <label htmlFor="admin-id" className="text-xs font-semibold">
-                  Product ID
-                </label>
-                <input
-                  id="admin-id"
-                  value={adminDraft.id}
-                  onChange={(event) =>
-                    setAdminDraft((prev) => ({ ...prev, id: event.target.value }))
-                  }
-                  className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label htmlFor="admin-name" className="text-xs font-semibold">
-                  Name
-                </label>
-                <input
-                  id="admin-name"
-                  value={adminDraft.name}
-                  onChange={(event) =>
-                    setAdminDraft((prev) => ({
-                      ...prev,
-                      name: event.target.value,
-                    }))
-                  }
-                  className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label htmlFor="admin-price" className="text-xs font-semibold">
-                  Price (BDT)
-                </label>
-                <input
-                  id="admin-price"
-                  type="number"
-                  min={0}
-                  value={adminDraft.price}
-                  onChange={(event) =>
-                    setAdminDraft((prev) => ({
-                      ...prev,
-                      price: Number(event.target.value),
-                    }))
-                  }
-                  className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label htmlFor="admin-category" className="text-xs font-semibold">
-                  Category
-                </label>
-                <select
-                  id="admin-category"
-                  value={adminDraft.category}
-                  onChange={(event) =>
-                    setAdminDraft((prev) => ({
-                      ...prev,
-                      category: event.target.value as Product["category"],
-                    }))
-                  }
-                  className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-                >
-                  <option value="Clothing">Clothing</option>
-                  <option value="Ceramic">Ceramic</option>
-                </select>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                if (!adminDraft.id || !adminDraft.name || adminDraft.price <= 0) {
-                  setToast("Fill all admin fields");
-                  return;
-                }
-                setAdminProducts((prev) => {
-                  const existingIndex = prev.findIndex(
-                    (item) => item.id === adminDraft.id
-                  );
-                  if (existingIndex >= 0) {
-                    return prev.map((item, index) =>
-                      index === existingIndex ? adminDraft : item
-                    );
-                  }
-                  return [adminDraft, ...prev];
-                });
-                logEvent("admin_update", { productId: adminDraft.id });
-                setAdminDraft((prev) => ({ ...prev, id: "", name: "", price: 0 }));
-              }}
-              className="mt-4 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white"
-            >
-              Save Product
-            </button>
-            {adminProducts.length === 0 ? (
-              <div className="mt-4 rounded-2xl border border-[#f0e4da] bg-base p-4 text-center text-xs text-muted">
-                No items found. Add new product to begin.
-              </div>
-            ) : (
-              <ul className="mt-4 space-y-2 text-sm">
-                {adminProducts.map((item) => (
-                  <li
-                    key={item.id}
-                    className="flex items-center justify-between rounded-2xl border border-[#f0e4da] px-3 py-2"
-                  >
-                    <span className="font-semibold text-ink">{item.name}</span>
-                    <span className="text-xs text-muted">{formatPrice(item.price)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ) : null}
-      </section>
 
       {toast ? (
         <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white">
