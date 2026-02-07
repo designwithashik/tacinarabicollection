@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
 import { kv } from "@vercel/kv";
+import { NextResponse } from "next/server";
+
+export const runtime = "nodejs";
 
 type StoredProduct = {
   id: string;
@@ -13,12 +15,6 @@ type StoredProduct = {
   stockStatus?: "in" | "low" | "out";
 };
 
-type AdminLog = {
-  action: string;
-  productId?: string;
-  timestamp: number;
-};
-
 const getSecret = (request: Request) =>
   request.headers.get("x-admin-secret") ?? "";
 
@@ -26,22 +22,20 @@ const isAuthorized = (request: Request) =>
   Boolean(process.env.ADMIN_SECRET) &&
   getSecret(request) === process.env.ADMIN_SECRET;
 
-const saveSnapshot = async (products: StoredProduct[]) => {
-  const versions = (await kv.get<StoredProduct[][]>("products_versions")) ?? [];
-  const next = [products, ...versions].slice(0, 5);
-  await kv.set("products_versions", next);
-};
+const PRODUCTS_KEY = "products:current";
 
-const appendLog = async (entry: AdminLog) => {
-  const logs = (await kv.get<AdminLog[]>("admin_logs")) ?? [];
-  await kv.set("admin_logs", [entry, ...logs].slice(0, 200));
+const getStoredProducts = async () => {
+  const current = (await kv.get<{ data: StoredProduct[] }>(PRODUCTS_KEY)) ?? {
+    data: [],
+  };
+  return Array.isArray(current.data) ? current.data : [];
 };
 
 export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
-  const stored = (await kv.get<StoredProduct[]>("products")) ?? [];
+  const stored = await getStoredProducts();
   return NextResponse.json(stored);
 }
 
@@ -49,31 +43,37 @@ export async function POST(request: Request) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
-  const payload = (await request.json()) as Partial<StoredProduct>;
-  if (!payload.id || !payload.name || !payload.image || !payload.price) {
-    return NextResponse.json({ ok: false, error: "Invalid payload" }, { status: 400 });
+  try {
+    const payload = (await request.json()) as Partial<StoredProduct>;
+    const { name, price, image, size } = payload;
+
+    if (!name || !price || !image) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const stored = await getStoredProducts();
+    const newProduct: StoredProduct = {
+      id: crypto.randomUUID(),
+      name,
+      price: Number(price),
+      size: size ?? "",
+      image,
+      active: true,
+      updatedAt: Date.now(),
+    };
+
+    const updated = [...stored, newProduct];
+    await kv.set(PRODUCTS_KEY, { data: updated });
+
+    return NextResponse.json(
+      { success: true, product: newProduct },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("PRODUCT INSERT FAILED:", error);
+    return NextResponse.json({ error: "Insert failed" }, { status: 500 });
   }
-  const stored = (await kv.get<StoredProduct[]>("products")) ?? [];
-  const updated: StoredProduct = {
-    id: payload.id,
-    name: payload.name,
-    price: Number(payload.price),
-    size: payload.size,
-    image: payload.image,
-    active: payload.active ?? true,
-    updatedAt: Date.now(),
-    tags: payload.tags ?? [],
-    stockStatus: payload.stockStatus ?? "in",
-  };
-  const next = stored.some((item) => item.id === updated.id)
-    ? stored.map((item) => (item.id === updated.id ? updated : item))
-    : [updated, ...stored];
-  await kv.set("products", next);
-  await saveSnapshot(next);
-  await appendLog({
-    action: "upsert",
-    productId: updated.id,
-    timestamp: Date.now(),
-  });
-  return NextResponse.json(updated);
 }
