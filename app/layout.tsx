@@ -24,10 +24,23 @@ export const metadata: Metadata = {
     description:
       "Shop curated fashion and ceramics with fast WhatsApp checkout, COD, and bKash/Nagad payments.",
     type: "website",
+    images: [{ url: "/images/og-cover.svg", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/images/og-cover.svg"],
   },
   icons: {
     icon: "/favicon.ico",
+    apple: "/icons/icon-192.svg",
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
+};
+
+export const viewport = {
+  themeColor: "#8a4b3c",
 };
 
 export default function RootLayout({
