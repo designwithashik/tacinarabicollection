@@ -678,11 +678,22 @@ export default function HomePage() {
 
       <a
         href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
-        className="fixed bottom-6 right-4 z-30 flex items-center gap-2 rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white shadow-soft"
         target="_blank"
         rel="noreferrer"
+        className="group fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center overflow-hidden rounded-full bg-[#25D366] shadow-soft transition-all duration-500 ease-out hover:w-56"
       >
-        <span>Order via WhatsApp</span>
+        <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center">
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+            alt="WhatsApp"
+            className="h-7 w-7"
+          />
+          <span className="absolute right-2 top-2 h-2.5 w-2.5 animate-ping rounded-full bg-red-500" />
+          <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+        </div>
+        <span className="whitespace-nowrap pr-5 text-sm font-semibold text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          Order via WhatsApp
+        </span>
       </a>
 
       {activeSheet ? (
