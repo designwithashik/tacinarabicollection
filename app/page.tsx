@@ -1,14 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
 import { products, type Product } from "../lib/products";
+import type { CartItem } from "../lib/cart";
+import { getStoredCart, setStoredCart } from "../lib/cart";
+import type { CustomerInfo } from "../lib/orders";
+import { addOrder } from "../lib/orders";
+import { buildWhatsAppMessage } from "../lib/whatsapp";
+import { getStoredInventory, type AdminProduct } from "../lib/inventory";
 
+// Contact numbers
 const whatsappNumber = "+8801522119189";
 const paymentNumber = "+8801701019292";
 
+// Filter presets
 const priceRanges = [
   { id: "under-500", label: "Under ৳500" },
   { id: "500-800", label: "৳500 - ৳800" },
@@ -21,14 +29,10 @@ const sortOptions = [
   { id: "high-low", label: "Price High-Low" },
 ];
 
-type CartItem = {
-  id: string;
-  name: string;
-  price: number;
-  size: string;
-  color: string;
-  quantity: number;
-  image: string;
+// Delivery fees by zone (BDT)
+const deliveryFees = {
+  inside: 60,
+  outside: 120,
 };
 
 type Filters = {
@@ -38,11 +42,9 @@ type Filters = {
   sort: string | null;
 };
 
-type CustomerInfo = {
-  name: string;
-  phone: string;
-  address: string;
-};
+type AddState = "idle" | "loading" | "success";
+
+type Language = "en" | "bn";
 
 const defaultFilters: Filters = {
   size: [],
@@ -51,79 +53,125 @@ const defaultFilters: Filters = {
   sort: "newest",
 };
 
+// Local storage keys
 const storageKeys = {
-  cart: "tacin-cart",
   viewed: "tacin-recently-viewed",
+  language: "tacin-lang",
 };
+
+const statusLabels = ["New", "Hot", "Limited"] as const;
+
+// Minimal EN/BN labels used for critical UI only
+const copy = {
+  en: {
+    buyNow: "Buy Now",
+    addToCart: "Add to Cart",
+    adding: "Adding...",
+    added: "Added",
+    checkout: "Checkout",
+    orderCod: "Order via WhatsApp (COD)",
+    payNow: "Pay Now (bKash / Nagad)",
+    confirmWhatsapp: "Confirm & Send on WhatsApp",
+    applyFilters: "Apply Filters",
+    clear: "Clear",
+    priceLabel: "Price",
+    subtotal: "Subtotal",
+    deliveryCharge: "Delivery Charge",
+    totalPayable: "Total Payable",
+    deliveryZone: "Delivery Zone",
+    insideDhaka: "Inside Dhaka",
+    outsideDhaka: "Outside Dhaka",
+  },
+  bn: {
+    buyNow: "এখনই কিনুন",
+    addToCart: "কার্টে যোগ করুন",
+    adding: "যোগ হচ্ছে...",
+    added: "যোগ হয়েছে",
+    checkout: "চেকআউট",
+    orderCod: "হোয়াটসঅ্যাপে অর্ডার (COD)",
+    payNow: "পে নাও (বিকাশ / নগদ)",
+    confirmWhatsapp: "নিশ্চিত করে হোয়াটসঅ্যাপে পাঠান",
+    applyFilters: "ফিল্টার প্রয়োগ করুন",
+    clear: "পরিষ্কার করুন",
+    priceLabel: "দাম",
+    subtotal: "পণ্যের মূল্য",
+    deliveryCharge: "ডেলিভারি চার্জ",
+    totalPayable: "মোট পরিশোধ",
+    deliveryZone: "ডেলিভারি এরিয়া",
+    insideDhaka: "ঢাকার ভিতরে",
+    outsideDhaka: "ঢাকার বাইরে",
+  },
+};
+
+const qtyUpdatedMessage = "Qty updated";
+const addedToCartNotice = "Added to cart";
 
 const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
 
-const getOrderTotal = (items: CartItem[]) =>
+const getStatusLabel = (index: number) =>
+  statusLabels[index % statusLabels.length];
+const getStockLabel = (index: number) =>
+  index % 3 === 2 ? "Limited stock" : "In stock";
+
+const getOrderSubtotal = (items: CartItem[]) =>
   items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-const buildWhatsAppMessage = (
-  customer: CustomerInfo,
-  items: CartItem[],
-  paymentMethod: string,
-  transactionId?: string
-) => {
-  const lines = [
-    `Assalamualaikum! New order from Tacin Arabi Collection`,
-    `Name: ${customer.name}`,
-    `Phone: ${customer.phone}`,
-    `Address: ${customer.address}`,
-    ``,
-    `Order Details:`,
-    ...items.map(
-      (item, index) =>
-        `${index + 1}. ${item.name} | Size: ${item.size} | Color: ${item.color} | Qty: ${item.quantity} | ${formatPrice(
-          item.price * item.quantity
-        )}`
-    ),
-    ``,
-    `Total: ${formatPrice(getOrderTotal(items))}`,
-    `Payment Method: ${paymentMethod}`,
-  ];
-
-  if (transactionId) {
-    lines.push(`Transaction ID: ${transactionId}`);
-  }
-
-  return encodeURIComponent(lines.join("\n"));
-};
 
 export default function HomePage() {
+  // ------------------------------
+  // State
+  // ------------------------------
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [cartNotice, setCartNotice] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [draftFilters, setDraftFilters] = useState<Filters>(defaultFilters);
-  const [activeSheet, setActiveSheet] = useState<"size" | "color" | "price" | "sort" | null>(null);
+  const [activeSheet, setActiveSheet] = useState<
+    "size" | "color" | "price" | "sort" | null
+  >(null);
   const [detailsProduct, setDetailsProduct] = useState<Product | null>(null);
   const [showCart, setShowCart] = useState(false);
   const [checkoutItems, setCheckoutItems] = useState<CartItem[]>([]);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPaymentInfo, setShowPaymentInfo] = useState(false);
   const [transactionId, setTransactionId] = useState("");
+  const [deliveryZone, setDeliveryZone] = useState<"inside" | "outside">("inside");
   const [customer, setCustomer] = useState<CustomerInfo>({
     name: "",
     phone: "",
     address: "",
   });
+  const [addStates, setAddStates] = useState<Record<string, AddState>>({});
+  const [quantityFeedback, setQuantityFeedback] = useState<Record<string, string>>({});
+  const [cartQuantityFeedback, setCartQuantityFeedback] = useState<Record<number, string>>({});
+  const [language, setLanguage] = useState<Language>("en");
+  const [cartBump, setCartBump] = useState(false);
+  const prevCartCount = useRef(cartItems.length);
+  const [isOnline, setIsOnline] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [adminProducts, setAdminProducts] = useState<AdminProduct[]>([]);
 
-  useEffect(() => {
-    const storedCart = localStorage.getItem(storageKeys.cart);
-    const storedViewed = localStorage.getItem(storageKeys.viewed);
+  const text = copy[language];
 
-    if (storedCart) {
-      try {
-        setCartItems(JSON.parse(storedCart));
-      } catch {
-        setCartItems([]);
-      }
+  // Lightweight analytics hook (optional dataLayer)
+  const logEvent = (eventName: string, payload: Record<string, unknown>) => {
+    if (typeof window === "undefined") return;
+    const dataLayer = (window as Window & { dataLayer?: unknown[] }).dataLayer;
+    if (Array.isArray(dataLayer)) {
+      dataLayer.push({ event: eventName, ...payload });
     }
+  };
+
+  // Initial hydration: storage, language, inventory
+  useEffect(() => {
+    const storedCart = getStoredCart();
+    const storedViewed = localStorage.getItem(storageKeys.viewed);
+    const storedLanguage = localStorage.getItem(storageKeys.language) as Language | null;
+
+    setCartItems(storedCart);
 
     if (storedViewed) {
       try {
@@ -132,28 +180,78 @@ export default function HomePage() {
         setRecentlyViewed([]);
       }
     }
+
+    if (storedLanguage === "en" || storedLanguage === "bn") {
+      setLanguage(storedLanguage);
+    }
+
+    setAdminProducts(getStoredInventory());
   }, []);
 
+  // Persist cart
   useEffect(() => {
-    localStorage.setItem(storageKeys.cart, JSON.stringify(cartItems));
+    setStoredCart(cartItems);
   }, [cartItems]);
 
+  // Persist recently viewed
   useEffect(() => {
     localStorage.setItem(storageKeys.viewed, JSON.stringify(recentlyViewed));
   }, [recentlyViewed]);
 
+  // Persist language toggle
+  useEffect(() => {
+    localStorage.setItem(storageKeys.language, language);
+  }, [language]);
+
+  // Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(null), 2000);
     return () => clearTimeout(timer);
   }, [toast]);
 
+  // Online/offline state
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // Skeleton shimmer delay
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIsLoading(false), 220);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  // Cart bump animation
+  useEffect(() => {
+    if (cartItems.length > prevCartCount.current) {
+      setCartBump(true);
+      const timer = window.setTimeout(() => setCartBump(false), 450);
+      return () => window.clearTimeout(timer);
+    }
+    prevCartCount.current = cartItems.length;
+  }, [cartItems.length]);
+
+  // ------------------------------
+  // Actions
+  // ------------------------------
   const updateSize = (productId: string, size: string) => {
     setSelectedSizes((prev) => ({ ...prev, [productId]: size }));
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
     setQuantities((prev) => ({ ...prev, [productId]: quantity }));
+    setQuantityFeedback((prev) => ({ ...prev, [productId]: qtyUpdatedMessage }));
+    window.setTimeout(() => {
+      setQuantityFeedback((prev) => ({ ...prev, [productId]: "" }));
+    }, 1000);
   };
 
   const markRecentlyViewed = (product: Product) => {
@@ -171,6 +269,7 @@ export default function HomePage() {
     const selectedSize = selectedSizes[product.id];
     if (!selectedSize) return;
 
+    setAddStates((prev) => ({ ...prev, [product.id]: "loading" }));
     const quantity = quantities[product.id] ?? 1;
     setCartItems((prev) => {
       const existing = prev.find(
@@ -196,7 +295,19 @@ export default function HomePage() {
         ...prev,
       ];
     });
-    setToast("Added to cart");
+    setToast(addedToCartNotice);
+    setCartNotice(`${product.name} ${addedToCartNotice}`);
+    logEvent("add_to_cart", {
+      productId: product.id,
+      quantity,
+      price: product.price,
+    });
+    window.setTimeout(() => {
+      setAddStates((prev) => ({ ...prev, [product.id]: "success" }));
+      window.setTimeout(() => {
+        setAddStates((prev) => ({ ...prev, [product.id]: "idle" }));
+      }, 1500);
+    }, 400);
   };
 
   const handleBuyNow = (product: Product) => {
@@ -215,6 +326,7 @@ export default function HomePage() {
         image: product.image,
       },
     ]);
+    logEvent("begin_checkout", { productId: product.id, quantity });
     setShowCheckout(true);
   };
 
@@ -223,31 +335,58 @@ export default function HomePage() {
     setCheckoutItems(cartItems);
     setShowCheckout(true);
     setShowCart(false);
+    logEvent("begin_checkout", { items: cartItems.length });
   };
 
-  const handleWhatsappRedirect = (
-    paymentMethod: string,
-    txId?: string
-  ) => {
-    const message = buildWhatsAppMessage(
+  const handleWhatsappRedirect = (paymentMethod: string) => {
+    const deliveryFee = deliveryFees[deliveryZone];
+    const total = checkoutTotal;
+    const deliveryZoneLabel =
+      deliveryZone === "inside" ? text.insideDhaka : text.outsideDhaka;
+    const message = buildWhatsAppMessage({
       customer,
-      checkoutItems,
+      items: checkoutItems,
       paymentMethod,
-      txId
-    );
+      deliveryZone: deliveryZoneLabel,
+      deliveryFee,
+      transactionId: transactionId.trim() || undefined,
+      total,
+    });
     const url = `https://wa.me/${whatsappNumber.replace(
       /\D/g,
       ""
     )}?text=${message}`;
     window.location.href = url;
+    addOrder({
+      id: `ORD-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      items: checkoutItems,
+      total,
+      paymentMethod,
+      deliveryZone,
+      customer,
+      status: "pending",
+    });
+    logEvent("purchase", {
+      total: checkoutTotal,
+      paymentMethod,
+      items: checkoutItems.length,
+    });
     setCartItems([]);
     setCheckoutItems([]);
     setShowCheckout(false);
     setShowPaymentInfo(false);
   };
 
+  // ------------------------------
+  // Derived data
+  // ------------------------------
+  const productSource = adminProducts.length
+    ? adminProducts.filter((item) => item.active !== false)
+    : products;
+
   const filteredProducts = useMemo(() => {
-    let result = [...products];
+    let result = [...productSource];
 
     if (filters.size.length) {
       result = result.filter((product) =>
@@ -280,7 +419,7 @@ export default function HomePage() {
     }
 
     return result;
-  }, [filters]);
+  }, [filters, productSource]);
 
   const activeChips = [
     ...filters.size.map((size) => ({ type: "size", value: size })),
@@ -330,6 +469,13 @@ export default function HomePage() {
         idx === index ? { ...item, quantity: Math.max(1, quantity) } : item
       )
     );
+    setCartQuantityFeedback((prev) => ({
+      ...prev,
+      [index]: qtyUpdatedMessage,
+    }));
+    window.setTimeout(() => {
+      setCartQuantityFeedback((prev) => ({ ...prev, [index]: "" }));
+    }, 1000);
   };
 
   const removeCartItem = (index: number) => {
@@ -339,35 +485,55 @@ export default function HomePage() {
   const isCustomerInfoValid =
     customer.name.trim() && customer.phone.trim() && customer.address.trim();
 
+  const checkoutSubtotal = getOrderSubtotal(checkoutItems);
+  const deliveryFee = deliveryFees[deliveryZone];
+  const checkoutTotal = checkoutSubtotal + deliveryFee;
+  const hasPaymentProof = Boolean(transactionId.trim());
+
+  // ------------------------------
+  // UI
+  // ------------------------------
   return (
     <div className="min-h-screen pb-24">
+      {!isOnline ? (
+        <div className="sticky top-0 z-50 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900">
+          ⚠️ You are offline — checkout is disabled.
+        </div>
+      ) : null}
       <header className="bg-base">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-10 pt-8 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-10 pt-6 md:flex-row md:items-center md:justify-between">
           <div className="max-w-xl">
-            <p className="text-sm font-semibold text-accent">
-              WhatsApp-first shopping
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-accent">
+                WhatsApp-first shopping
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  setLanguage((prev) => (prev === "en" ? "bn" : "en"))
+                }
+                className="rounded-full border border-[#e6d8ce] bg-white px-3 py-1 text-xs font-semibold text-ink"
+              >
+                {language === "en" ? "বাংলা" : "EN"}
+              </button>
+            </div>
             <h1 className="mt-3 font-heading text-3xl font-bold text-ink md:text-4xl">
-              Tacin Arabi Collection
+              WhatsApp checkout in minutes, shipped anywhere in Bangladesh.
             </h1>
             <p className="mt-3 text-sm text-muted md:text-base">
-              Discover curated fashion and ceramics crafted for Bangladesh.
-              Smooth ordering, COD, and bKash/Nagad payments, all wrapped in a
-              mobile-first experience.
+              Tacin Arabi Collection curates fashion and ceramics with fast COD
+              fulfillment and real-time WhatsApp ordering for busy customers.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft">
-                Cash on Delivery
+              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft opacity-0 animate-[fadeUp_0.9s_ease-out_forwards]">
+                COD Nationwide
               </span>
-              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft">
-                Nationwide Delivery
-              </span>
-              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft">
-                WhatsApp Support
+              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft opacity-0 animate-[fadeUp_0.9s_ease-out_forwards] [animation-delay:120ms]">
+                WhatsApp Ordering
               </span>
             </div>
           </div>
-          <div className="rounded-3xl bg-card p-6 shadow-soft">
+          <div className="rounded-3xl bg-card p-6 shadow-soft opacity-0 animate-[fadeUp_0.8s_ease-out_forwards]">
             <h2 className="font-heading text-xl font-semibold">
               Quick Order Promise
             </h2>
@@ -393,36 +559,139 @@ export default function HomePage() {
         </div>
       </header>
 
+      <section className="mx-auto max-w-6xl px-4 pb-8">
+        <div className="rounded-3xl bg-card p-6 shadow-soft">
+          <div className="flex flex-col gap-1">
+            <h2 className="font-heading text-2xl font-semibold">
+              Trusted delivery, transparent payments
+            </h2>
+            <p className="text-sm text-muted">
+              We confirm every order on WhatsApp before dispatch, so you stay in
+              control of size, color, and delivery timing.
+            </p>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-[#f0e4da] bg-white p-4">
+              <p className="text-xs font-semibold text-muted">Delivery Zones</p>
+              <p className="mt-2 text-sm font-semibold text-ink">
+                Inside Dhaka · Outside Dhaka
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Clear pricing shown before checkout.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#f0e4da] bg-white p-4">
+              <p className="text-xs font-semibold text-muted">Payment Options</p>
+              <p className="mt-2 text-sm font-semibold text-ink">
+                Cash on Delivery, bKash, Nagad
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Pay in the way that feels safest.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#f0e4da] bg-white p-4">
+              <p className="text-xs font-semibold text-muted">Support</p>
+              <p className="mt-2 text-sm font-semibold text-ink">
+                Real people on WhatsApp
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Fast replies for urgent questions.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-8">
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-3xl bg-card p-6 shadow-soft">
+            <h3 className="font-heading text-xl font-semibold">
+              How ordering works
+            </h3>
+            <p className="mt-2 text-sm text-muted">
+              A smooth three-step flow built for busy shoppers.
+            </p>
+            <ol className="mt-4 space-y-3 text-sm text-ink">
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
+                <span>Select size, quantity, then tap Buy Now.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
+                <span>Confirm delivery zone and payment method.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
+                <span>We verify on WhatsApp and dispatch quickly.</span>
+              </li>
+            </ol>
+          </div>
+          <div className="rounded-3xl bg-card p-6 shadow-soft">
+            <h3 className="font-heading text-xl font-semibold">
+              Why customers choose us
+            </h3>
+            <p className="mt-2 text-sm text-muted">
+              Built for trust, clarity, and calm shopping.
+            </p>
+            <ul className="mt-4 space-y-3 text-sm text-ink">
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
+                <span>Every order verified by a real team member.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
+                <span>Transparent pricing before WhatsApp checkout.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
+                <span>Fast updates on delivery timeline.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       <section className="sticky top-0 z-20 bg-base/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 overflow-x-auto px-4 py-3">
-          <button
-            type="button"
-            onClick={() => openSheet("size")}
-            className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
-          >
-            Size
-          </button>
-          <button
-            type="button"
-            onClick={() => openSheet("color")}
-            className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
-          >
-            Color
-          </button>
-          <button
-            type="button"
-            onClick={() => openSheet("price")}
-            className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
-          >
-            Price
-          </button>
-          <button
-            type="button"
-            onClick={() => openSheet("sort")}
-            className="rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
-          >
-            Sort
-          </button>
+        <div className="mx-auto max-w-6xl px-4 py-3">
+          <div className="flex items-center gap-2 overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => openSheet("size")}
+              className="flex min-h-[44px] items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-soft"
+            >
+              Filters
+              {(filters.size.length ||
+                filters.colors.length ||
+                filters.price) && (
+                <span className="rounded-full bg-accent px-2 text-xs text-white">
+                  {filters.size.length +
+                    filters.colors.length +
+                    (filters.price ? 1 : 0)}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => openSheet("sort")}
+              className="min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+            >
+              Sort
+            </button>
+            <button
+              type="button"
+              onClick={() => openSheet("price")}
+              className="min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+            >
+              Price
+            </button>
+            <button
+              type="button"
+              onClick={() => openSheet("color")}
+              className="min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+            >
+              Color
+            </button>
+          </div>
         </div>
       </section>
 
@@ -447,24 +716,60 @@ export default function HomePage() {
           </div>
         ) : null}
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              selectedSize={selectedSizes[product.id]}
-              quantity={quantities[product.id] ?? 1}
-              onSizeChange={(size) => updateSize(product.id, size)}
-              onQuantityChange={(quantity) => updateQuantity(product.id, quantity)}
-              onBuyNow={() => handleBuyNow(product)}
-              onAddToCart={() => handleAddToCart(product)}
-              onOpenDetails={() => {
-                markRecentlyViewed(product);
-                setDetailsProduct(product);
-              }}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={`skeleton-${index}`}
+                className="min-h-[560px] rounded-3xl bg-card p-4 shadow-soft"
+              >
+                <div className="aspect-[4/3] w-full animate-pulse rounded-2xl bg-[#efe5dc]" />
+                <div className="mt-4 space-y-3">
+                  <div className="h-4 w-2/3 animate-pulse rounded-full bg-[#efe5dc]" />
+                  <div className="h-3 w-1/3 animate-pulse rounded-full bg-[#efe5dc]" />
+                  <div className="h-8 w-full animate-pulse rounded-full bg-[#efe5dc]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="rounded-3xl bg-card p-6 text-center shadow-soft">
+            <p className="text-lg font-semibold text-ink">No products found.</p>
+            <p className="mt-2 text-sm text-muted">
+              Adjust filters or check back soon.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredProducts.map((product, index) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                selectedSize={selectedSizes[product.id]}
+                quantity={quantities[product.id] ?? 1}
+                onSizeChange={(size) => updateSize(product.id, size)}
+                onQuantityChange={(quantity) =>
+                  updateQuantity(product.id, quantity)
+                }
+                onBuyNow={() => handleBuyNow(product)}
+                onAddToCart={() => handleAddToCart(product)}
+                onOpenDetails={() => {
+                  markRecentlyViewed(product);
+                  setDetailsProduct(product);
+                }}
+                priceLabel={text.priceLabel}
+                buyNowLabel={text.buyNow}
+                addToCartLabel={text.addToCart}
+                addingLabel={text.adding}
+                addedLabel={text.added}
+                addState={addStates[product.id] ?? "idle"}
+                quantityFeedback={quantityFeedback[product.id]}
+                statusLabel={getStatusLabel(index)}
+                stockLabel={getStockLabel(index)}
+              />
+            ))}
+          </div>
+        )}
 
         {recentlyViewed.length > 0 ? (
           <section className="mt-12">
@@ -477,7 +782,7 @@ export default function HomePage() {
               </span>
             </div>
             <div className="grid gap-6 md:grid-cols-2">
-              {recentlyViewed.map((product) => (
+              {recentlyViewed.map((product, index) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -491,6 +796,15 @@ export default function HomePage() {
                   onAddToCart={() => handleAddToCart(product)}
                   onOpenDetails={() => setDetailsProduct(product)}
                   showBadge="Recently Viewed"
+                  priceLabel={text.priceLabel}
+                  buyNowLabel={text.buyNow}
+                  addToCartLabel={text.addToCart}
+                  addingLabel={text.adding}
+                  addedLabel={text.added}
+                  addState={addStates[product.id] ?? "idle"}
+                  quantityFeedback={quantityFeedback[product.id]}
+                  statusLabel={getStatusLabel(index)}
+                  stockLabel={getStockLabel(index)}
                 />
               ))}
             </div>
@@ -498,33 +812,106 @@ export default function HomePage() {
         ) : null}
       </main>
 
+      <footer className="border-t border-[#e6d8ce] bg-white">
+        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 md:grid-cols-3">
+          <div>
+            <h3 className="font-heading text-lg font-semibold">
+              Tacin Arabi Collection
+            </h3>
+            <p className="mt-2 text-sm text-muted">
+              WhatsApp-first shopping for fashion and ceramics across
+              Bangladesh.
+            </p>
+            <p className="mt-3 text-sm font-semibold text-ink">
+              WhatsApp: +8801522119189
+            </p>
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-ink">Store Policies</h4>
+            <ul className="mt-3 space-y-2 text-sm text-muted">
+              <li>Cash on Delivery available nationwide</li>
+              <li>Delivery confirmation before dispatch</li>
+              <li>Support available 10am–10pm daily</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-ink">Social Proof</h4>
+            <p className="mt-3 text-sm text-muted">
+              Thousands of shoppers trust our WhatsApp checkout for quick
+              confirmations and clear delivery updates.
+            </p>
+            <p className="mt-3 text-sm font-semibold text-ink">
+              “Fast replies, quality products, safe delivery.”
+            </p>
+          </div>
+        </div>
+      </footer>
+
       {toast ? (
         <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white">
           {toast}
         </div>
       ) : null}
 
+      {cartNotice ? (
+        <div className="fixed bottom-32 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft">
+          <span>{cartNotice}</span>
+          <button
+            type="button"
+            onClick={() => setCartNotice(null)}
+            className="text-accent"
+          >
+            ✕
+          </button>
+        </div>
+      ) : null}
+
       <button
         type="button"
         onClick={() => setShowCart(true)}
-        className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-soft"
+        className="group fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center overflow-hidden rounded-full bg-white shadow-soft transition-all duration-300 hover:w-32"
         aria-label="Open cart"
       >
-        <span className="text-xl">🛍️</span>
-        {cartItems.length > 0 ? (
-          <span className="absolute -top-1 -right-1 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">
-            {cartItems.length}
-          </span>
-        ) : null}
+        <span
+          className={clsx(
+            "relative flex h-14 w-14 items-center justify-center text-xl text-ink",
+            cartBump && "animate-cart-bounce"
+          )}
+        >
+          🛍️
+          {cartItems.length > 0 ? (
+            <span className="absolute -top-1 -right-1 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">
+              {cartItems.length}
+            </span>
+          ) : null}
+        </span>
+        <span className="whitespace-nowrap pr-4 text-sm font-semibold text-ink opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          Cart
+        </span>
       </button>
 
       <a
         href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
-        className="fixed bottom-6 right-4 z-30 flex items-center gap-2 rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white shadow-soft"
         target="_blank"
         rel="noreferrer"
+        aria-disabled={!isOnline}
+        className={clsx(
+          "group fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center overflow-hidden rounded-full bg-[#25D366] shadow-soft transition-all duration-500 ease-out hover:w-56",
+          !isOnline && "pointer-events-none opacity-60"
+        )}
       >
-        <span>Order via WhatsApp</span>
+        <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center">
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+            alt="WhatsApp"
+            className="h-7 w-7"
+          />
+          <span className="absolute right-2 top-2 h-2.5 w-2.5 animate-ping rounded-full bg-red-500" />
+          <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+        </div>
+        <span className="whitespace-nowrap pr-5 text-sm font-semibold text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          Order via WhatsApp
+        </span>
       </a>
 
       {activeSheet ? (
@@ -578,30 +965,36 @@ export default function HomePage() {
 
             {activeSheet === "color" ? (
               <div className="mt-4 flex flex-wrap gap-3">
-                {["Beige", "Olive", "Maroon", "Black", "Ivory", "Sand", "Terracotta"].map(
-                  (color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() =>
-                        setDraftFilters((prev) => ({
-                          ...prev,
-                          colors: prev.colors.includes(color)
-                            ? prev.colors.filter((item) => item !== color)
-                            : [...prev.colors, color],
-                        }))
-                      }
-                      className={clsx(
-                        "rounded-full border px-4 py-2 text-sm font-semibold",
-                        draftFilters.colors.includes(color)
-                          ? "border-accent bg-accent text-white"
-                          : "border-[#e6d8ce]"
-                      )}
-                    >
-                      {color}
-                    </button>
-                  )
-                )}
+                {[
+                  "Beige",
+                  "Olive",
+                  "Maroon",
+                  "Black",
+                  "Ivory",
+                  "Sand",
+                  "Terracotta",
+                ].map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() =>
+                      setDraftFilters((prev) => ({
+                        ...prev,
+                        colors: prev.colors.includes(color)
+                          ? prev.colors.filter((item) => item !== color)
+                          : [...prev.colors, color],
+                      }))
+                    }
+                    className={clsx(
+                      "rounded-full border px-4 py-2 text-sm font-semibold",
+                      draftFilters.colors.includes(color)
+                        ? "border-accent bg-accent text-white"
+                        : "border-[#e6d8ce]"
+                    )}
+                  >
+                    {color}
+                  </button>
+                ))}
               </div>
             ) : null}
 
@@ -659,16 +1052,16 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="rounded-full border border-[#e6d8ce] px-4 py-2 text-sm font-semibold text-ink"
+                className="min-h-[44px] rounded-full border border-[#e6d8ce] px-4 py-2 text-sm font-semibold text-ink"
               >
-                Clear
+                {text.clear}
               </button>
               <button
                 type="button"
                 onClick={applyFilters}
-                className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white"
+                className="min-h-[44px] rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white"
               >
-                Apply Filters
+                {text.applyFilters}
               </button>
             </div>
           </div>
@@ -705,13 +1098,22 @@ export default function HomePage() {
               </div>
               <div className="flex-1 text-sm text-muted">
                 <p>
-                  Category: <span className="font-semibold text-ink">{detailsProduct.category}</span>
+                  Category:{" "}
+                  <span className="font-semibold text-ink">
+                    {detailsProduct.category}
+                  </span>
                 </p>
                 <p>
-                  Colors: <span className="font-semibold text-ink">{detailsProduct.colors.join(", ")}</span>
+                  Colors:{" "}
+                  <span className="font-semibold text-ink">
+                    {detailsProduct.colors.join(", ")}
+                  </span>
                 </p>
                 <p>
-                  Price: <span className="font-semibold text-ink">{formatPrice(detailsProduct.price)}</span>
+                  {text.priceLabel}:{" "}
+                  <span className="font-semibold text-ink">
+                    {formatPrice(detailsProduct.price)}
+                  </span>
                 </p>
               </div>
             </div>
@@ -766,26 +1168,26 @@ export default function HomePage() {
                   onClick={() => handleBuyNow(detailsProduct)}
                   disabled={!selectedSizes[detailsProduct.id]}
                   className={clsx(
-                    "rounded-full px-4 py-2 text-sm font-semibold",
+                    "min-h-[44px] rounded-full px-4 py-2 text-sm font-semibold",
                     selectedSizes[detailsProduct.id]
                       ? "bg-accent text-white"
                       : "cursor-not-allowed bg-[#e6d8ce] text-muted"
                   )}
                 >
-                  Buy Now
+                  {text.buyNow}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleAddToCart(detailsProduct)}
                   disabled={!selectedSizes[detailsProduct.id]}
                   className={clsx(
-                    "rounded-full border px-4 py-2 text-sm font-semibold",
+                    "min-h-[44px] rounded-full border px-4 py-2 text-sm font-semibold",
                     selectedSizes[detailsProduct.id]
                       ? "border-accent text-accent"
                       : "cursor-not-allowed border-[#e6d8ce] text-muted"
                   )}
                 >
-                  Add to Cart
+                  {text.addToCart}
                 </button>
               </div>
             </div>
@@ -807,7 +1209,22 @@ export default function HomePage() {
               </button>
             </div>
             {cartItems.length === 0 ? (
-              <p className="mt-6 text-sm text-muted">Your cart is empty.</p>
+              <div className="mt-6 rounded-2xl border border-[#f0e4da] bg-base p-4 text-center">
+                <p className="text-lg">🛍️</p>
+                <p className="mt-2 text-sm font-semibold text-ink">
+                  Your cart is empty.
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  Start shopping to add items.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowCart(false)}
+                  className="mt-3 rounded-full border border-[#e6d8ce] px-4 py-2 text-xs font-semibold text-ink"
+                >
+                  Browse products
+                </button>
+              </div>
             ) : (
               <div className="mt-4 space-y-4">
                 {cartItems.map((item, index) => (
@@ -832,6 +1249,11 @@ export default function HomePage() {
                       <p className="text-sm font-semibold text-ink">
                         {formatPrice(item.price)}
                       </p>
+                      {cartQuantityFeedback[index] ? (
+                        <p className="mt-1 text-xs font-semibold text-accent">
+                          {cartQuantityFeedback[index]}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <div className="flex items-center gap-2 rounded-full border border-[#e6d8ce] px-2 py-1">
@@ -866,15 +1288,15 @@ export default function HomePage() {
                   </div>
                 ))}
                 <div className="flex items-center justify-between text-sm font-semibold">
-                  <span>Total</span>
-                  <span>{formatPrice(getOrderTotal(cartItems))}</span>
+                  <span>{text.subtotal}</span>
+                  <span>{formatPrice(getOrderSubtotal(cartItems))}</span>
                 </div>
                 <button
                   type="button"
                   onClick={handleCartCheckout}
-                  className="w-full rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white"
+                  className="min-h-[44px] w-full rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white"
                 >
-                  Checkout
+                  {text.checkout}
                 </button>
               </div>
             )}
@@ -919,13 +1341,62 @@ export default function HomePage() {
                   </p>
                 </div>
               ))}
-              <div className="flex items-center justify-between font-semibold">
-                <span>Total</span>
-                <span>{formatPrice(getOrderTotal(checkoutItems))}</span>
+            </div>
+            <div className="mt-4">
+              <p className="text-sm font-semibold text-ink">
+                {text.deliveryZone}
+              </p>
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeliveryZone("inside")}
+                  className={clsx(
+                    "min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
+                    deliveryZone === "inside"
+                      ? "border-accent bg-accent text-white"
+                      : "border-[#e6d8ce]"
+                  )}
+                >
+                  {text.insideDhaka}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeliveryZone("outside")}
+                  className={clsx(
+                    "min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
+                    deliveryZone === "outside"
+                      ? "border-accent bg-accent text-white"
+                      : "border-[#e6d8ce]"
+                  )}
+                >
+                  {text.outsideDhaka}
+                </button>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2 rounded-2xl border border-[#f0e4da] p-4 text-sm">
+              <div className="flex items-center justify-between">
+                <span>{text.subtotal}</span>
+                <span className="font-semibold">
+                  {formatPrice(checkoutSubtotal)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>{text.deliveryCharge}</span>
+                <span className="font-semibold">
+                  {formatPrice(deliveryFee)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-base font-semibold">
+                <span>{text.totalPayable}</span>
+                <span>{formatPrice(checkoutTotal)}</span>
               </div>
             </div>
             <div className="mt-4 space-y-3">
+              <label htmlFor="checkout-name" className="sr-only">
+                Name
+              </label>
               <input
+                id="checkout-name"
                 type="text"
                 placeholder="Name"
                 value={customer.name}
@@ -937,7 +1408,11 @@ export default function HomePage() {
                 }
                 className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
               />
+              <label htmlFor="checkout-phone" className="sr-only">
+                Phone
+              </label>
               <input
+                id="checkout-phone"
                 type="tel"
                 placeholder="Phone"
                 value={customer.phone}
@@ -949,7 +1424,11 @@ export default function HomePage() {
                 }
                 className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
               />
+              <label htmlFor="checkout-address" className="sr-only">
+                Address
+              </label>
               <textarea
+                id="checkout-address"
                 placeholder="Address"
                 rows={3}
                 value={customer.address}
@@ -977,28 +1456,28 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => handleWhatsappRedirect("COD")}
-                disabled={!isCustomerInfoValid}
+                disabled={!isCustomerInfoValid || !isOnline}
                 className={clsx(
-                  "rounded-full px-4 py-3 text-sm font-semibold",
-                  isCustomerInfoValid
+                  "min-h-[48px] rounded-full px-4 py-3 text-sm font-semibold",
+                  isCustomerInfoValid && isOnline
                     ? "bg-accent text-white"
                     : "cursor-not-allowed bg-[#e6d8ce] text-muted"
                 )}
               >
-                Order via WhatsApp (COD)
+                {text.orderCod}
               </button>
               <button
                 type="button"
                 onClick={() => setShowPaymentInfo(true)}
-                disabled={!isCustomerInfoValid}
+                disabled={!isCustomerInfoValid || !isOnline}
                 className={clsx(
-                  "rounded-full border px-4 py-3 text-sm font-semibold",
-                  isCustomerInfoValid
+                  "min-h-[48px] rounded-full border px-4 py-3 text-sm font-semibold",
+                  isCustomerInfoValid && isOnline
                     ? "border-accent text-accent"
                     : "cursor-not-allowed border-[#e6d8ce] text-muted"
                 )}
               >
-                Pay Now (bKash / Nagad)
+                {text.payNow}
               </button>
             </div>
           </div>
@@ -1033,7 +1512,11 @@ export default function HomePage() {
               <p className="text-xs text-muted">
                 Please pay first, then paste your Transaction ID below.
               </p>
+              <label htmlFor="transaction-id" className="sr-only">
+                Transaction ID
+              </label>
               <input
+                id="transaction-id"
                 type="text"
                 placeholder="Transaction ID"
                 value={transactionId}
@@ -1043,18 +1526,16 @@ export default function HomePage() {
             </div>
             <button
               type="button"
-              disabled={!transactionId.trim()}
-              onClick={() =>
-                handleWhatsappRedirect("bKash/Nagad", transactionId.trim())
-              }
+              disabled={!hasPaymentProof || !isOnline}
+              onClick={() => handleWhatsappRedirect("bKash/Nagad")}
               className={clsx(
-                "mt-6 w-full rounded-full px-4 py-3 text-sm font-semibold",
-                transactionId.trim()
+                "mt-6 min-h-[48px] w-full rounded-full px-4 py-3 text-sm font-semibold",
+                hasPaymentProof && isOnline
                   ? "bg-accent text-white"
                   : "cursor-not-allowed bg-[#e6d8ce] text-muted"
               )}
             >
-              Confirm & Send on WhatsApp
+              {text.confirmWhatsapp}
             </button>
           </div>
         </div>
