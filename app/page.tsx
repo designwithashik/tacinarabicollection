@@ -6,6 +6,9 @@ import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
 import Toast from "../components/Toast";
 import SkeletonProductCard from "../components/SkeletonProductCard";
+import SectionLoader from "../components/SectionLoader";
+import CartSkeleton from "../components/CartSkeleton";
+import SummaryPlaceholder from "../components/SummaryPlaceholder";
 import { products, type Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import {
@@ -164,8 +167,12 @@ export default function HomePage() {
   const [isOnline, setIsOnline] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isCartHydrating, setIsCartHydrating] = useState(true);
+  const [hasMounted, setHasMounted] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>([]);
   const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
+  const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
 
   const showToast = (nextToast: ToastState) => {
     setToast(nextToast);
@@ -184,6 +191,8 @@ export default function HomePage() {
 
   // Initial hydration: storage, language, inventory
   useEffect(() => {
+    setHasMounted(true);
+
     const storedCart = getStoredCart();
     const storedViewed = localStorage.getItem(storageKeys.viewed);
     const storedLanguage = localStorage.getItem(storageKeys.language) as Language | null;
@@ -205,6 +214,46 @@ export default function HomePage() {
     setAdminProducts(getStoredInventory());
     setIsCartHydrating(false);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = () => setPrefersReducedMotion(media.matches);
+    onChange();
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!showCart && !showCheckout && !showPaymentInfo) return;
+
+    const scrollY = window.scrollY;
+    const previousBodyStyle = document.body.style.cssText;
+    // Keep page position stable while bottom sheets are open.
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+
+    return () => {
+      document.body.style.cssText = previousBodyStyle;
+      window.scrollTo(0, scrollY);
+    };
+  }, [showCart, showCheckout, showPaymentInfo]);
+
+  useEffect(() => {
+    if (showCart) {
+      cartHeadingRef.current?.focus();
+    }
+  }, [showCart]);
+
+  useEffect(() => {
+    if (showCheckout) {
+      checkoutHeadingRef.current?.focus();
+    }
+  }, [showCheckout]);
 
   // Persist cart
   useEffect(() => {
@@ -583,6 +632,7 @@ export default function HomePage() {
     ? deliveryFees[deliveryZone]
     : 0;
   const checkoutTotal = checkoutSubtotal + deliveryFee;
+  const isSummaryLoading = !hasMounted || isCartHydrating;
   const hasPaymentProof = Boolean(transactionId.trim());
 
   // ------------------------------
@@ -620,15 +670,15 @@ export default function HomePage() {
               fulfillment and real-time WhatsApp ordering for busy customers.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft opacity-0 animate-[fadeUp_0.9s_ease-out_forwards]">
+              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft opacity-0 animate-[fadeUp_0.32s_ease-out_forwards]">
                 COD Nationwide
               </span>
-              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft opacity-0 animate-[fadeUp_0.9s_ease-out_forwards] [animation-delay:120ms]">
+              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft opacity-0 animate-[fadeUp_0.32s_ease-out_forwards] [animation-delay:120ms]">
                 WhatsApp Ordering
               </span>
             </div>
           </div>
-          <div className="rounded-3xl bg-card p-6 shadow-soft opacity-0 animate-[fadeUp_0.8s_ease-out_forwards]">
+          <div className="rounded-3xl bg-card p-6 shadow-soft opacity-0 animate-[fadeUp_0.3s_ease-out_forwards]">
             <h2 className="font-heading text-xl font-semibold">
               Quick Order Promise
             </h2>
@@ -811,21 +861,31 @@ export default function HomePage() {
           </div>
         ) : null}
 
-        {isLoading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <SkeletonProductCard key={`skeleton-${index}`} />
-            ))}
-          </div>
-        ) : filteredProducts.length === 0 ? (
+        <SectionLoader
+          loading={!hasMounted || isLoading}
+          loader={
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {/* Product placeholders prevent blank state flashes during hydration. */}
+              {Array.from({ length: 6 }).map((_, index) => (
+                <SkeletonProductCard key={`skeleton-${index}`} />
+              ))}
+            </div>
+          }
+        >
+          {filteredProducts.length === 0 ? (
           <div className="rounded-3xl bg-card p-6 text-center shadow-soft">
             <p className="text-lg font-semibold text-ink">No products found.</p>
             <p className="mt-2 text-sm text-muted">
               Adjust filters or check back soon.
             </p>
           </div>
-        ) : (
-          <div className="grid gap-6 opacity-0 animate-[fadeUp_0.28s_ease-out_forwards] md:grid-cols-2 lg:grid-cols-3">
+          ) : (
+          <div
+            className={clsx(
+              "grid gap-6 md:grid-cols-2 lg:grid-cols-3",
+              !prefersReducedMotion && "fade-enter"
+            )}
+          >
             {filteredProducts.map((product, index) => (
               <ProductCard
                 key={product.id}
@@ -854,7 +914,8 @@ export default function HomePage() {
               />
             ))}
           </div>
-        )}
+          )}
+        </SectionLoader>
 
         {recentlyViewed.length > 0 ? (
           <section className="mt-12">
@@ -957,7 +1018,7 @@ export default function HomePage() {
       <button
         type="button"
         onClick={() => setShowCart(true)}
-        className="interactive-feedback group fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center overflow-hidden rounded-full bg-white shadow-soft transition-all duration-300 hover:w-32"
+        className="floating-action interactive-feedback group fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-soft"
         aria-label="Open cart"
       >
         <span
@@ -967,14 +1028,14 @@ export default function HomePage() {
           )}
         >
           🛍️
-          {cartItems.length > 0 ? (
+          {hasMounted && cartItems.length > 0 ? (
             <span className="absolute -top-1 -right-1 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">
               {cartItems.length}
             </span>
+          ) : !hasMounted ? (
+            // Keeps button badge area visually stable before client cart hydration completes.
+            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#eadad0]" />
           ) : null}
-        </span>
-        <span className="whitespace-nowrap pr-4 text-sm font-semibold text-ink opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          Cart
         </span>
       </button>
 
@@ -984,7 +1045,7 @@ export default function HomePage() {
         rel="noreferrer"
         aria-disabled={!isOnline}
         className={clsx(
-          "interactive-feedback group fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center overflow-hidden rounded-full bg-[#25D366] shadow-soft transition-all duration-500 ease-out hover:w-56",
+          "floating-action interactive-feedback group fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] shadow-soft",
           !isOnline && "pointer-events-none opacity-60"
         )}
       >
@@ -994,12 +1055,14 @@ export default function HomePage() {
             alt="WhatsApp"
             className="h-7 w-7"
           />
-          <span className="absolute right-2 top-2 h-2.5 w-2.5 animate-ping rounded-full bg-red-500" />
+          <span
+            className={clsx(
+              "absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500",
+              !prefersReducedMotion && "animate-ping"
+            )}
+          />
           <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
         </div>
-        <span className="whitespace-nowrap pr-5 text-sm font-semibold text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          Order via WhatsApp
-        </span>
       </a>
 
       {activeSheet ? (
@@ -1287,7 +1350,13 @@ export default function HomePage() {
         <div className="fixed inset-0 z-40 flex items-end bg-black/40">
           <div className="w-full rounded-t-3xl bg-white p-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-ink">Your Cart</h3>
+              <h3
+                ref={cartHeadingRef}
+                tabIndex={-1}
+                className="text-lg font-semibold text-ink"
+              >
+                Your Cart
+              </h3>
               <button
                 type="button"
                 onClick={() => setShowCart(false)}
@@ -1297,20 +1366,7 @@ export default function HomePage() {
               </button>
             </div>
             {isCartHydrating ? (
-              <div className="mt-4 space-y-3" aria-live="polite" aria-busy="true">
-                {Array.from({ length: 2 }).map((_, index) => (
-                  <div
-                    key={`cart-skeleton-${index}`}
-                    className="flex items-center gap-4 rounded-2xl border border-[#f0e4da] p-3"
-                  >
-                    <div className="skeleton-shimmer h-20 w-20 rounded-xl" />
-                    <div className="flex-1 space-y-2">
-                      <div className="skeleton-shimmer h-3 w-2/3 rounded-full" />
-                      <div className="skeleton-shimmer h-3 w-1/2 rounded-full" />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <CartSkeleton />
             ) : cartItems.length === 0 ? (
               <div className="mt-6 rounded-2xl border border-[#f0e4da] bg-base p-4 text-center">
                 <p className="text-lg">🛍️</p>
@@ -1402,7 +1458,7 @@ export default function HomePage() {
                   <span>{text.subtotal}</span>
                   <span>
                     {isCartHydrating ? (
-                      <span className="skeleton-shimmer inline-block h-4 w-16 rounded-full" />
+                      <SummaryPlaceholder />
                     ) : (
                       formatPrice(getSafeCartSubtotal(cartItems))
                     )}
@@ -1429,7 +1485,11 @@ export default function HomePage() {
                 <p className="text-xs font-semibold text-muted">
                   Universal Checkout
                 </p>
-                <h3 className="text-lg font-semibold text-ink">
+                <h3
+                  ref={checkoutHeadingRef}
+                  tabIndex={-1}
+                  className="text-lg font-semibold text-ink"
+                >
                   Confirm your order
                 </h3>
               </div>
@@ -1494,18 +1554,18 @@ export default function HomePage() {
               <div className="flex items-center justify-between">
                 <span>{text.subtotal}</span>
                 <span className="font-semibold">
-                  {formatPrice(checkoutSubtotal)}
+                  {isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutSubtotal)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>{text.deliveryCharge}</span>
                 <span className="font-semibold">
-                  {formatPrice(deliveryFee)}
+                  {isSummaryLoading ? <SummaryPlaceholder widthClass="w-12" /> : formatPrice(deliveryFee)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-base font-semibold">
                 <span>{text.totalPayable}</span>
-                <span>{formatPrice(checkoutTotal)}</span>
+                <span>{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
               </div>
             </div>
             <div className="mt-4 space-y-3">
