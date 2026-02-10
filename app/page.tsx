@@ -6,7 +6,12 @@ import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
 import { products, type Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
-import { getStoredCart, setStoredCart } from "../lib/cart";
+import {
+  getSafeCartSubtotal,
+  getStoredCart,
+  normalizeCartItem,
+  setStoredCart,
+} from "../lib/cart";
 import type { CustomerInfo } from "../lib/orders";
 import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
@@ -113,8 +118,6 @@ const getStatusLabel = (index: number) =>
 const getStockLabel = (index: number) =>
   index % 3 === 2 ? "Limited stock" : "In stock";
 
-const getOrderSubtotal = (items: CartItem[]) =>
-  items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
 
 export default function HomePage() {
@@ -247,7 +250,9 @@ export default function HomePage() {
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
-    setQuantities((prev) => ({ ...prev, [productId]: quantity }));
+    // Clamp to keep quantity math deterministic and avoid invalid checkout totals.
+    const safeQuantity = Math.max(1, Math.floor(quantity || 1));
+    setQuantities((prev) => ({ ...prev, [productId]: safeQuantity }));
     setQuantityFeedback((prev) => ({ ...prev, [productId]: qtyUpdatedMessage }));
     window.setTimeout(() => {
       setQuantityFeedback((prev) => ({ ...prev, [productId]: "" }));
@@ -264,43 +269,60 @@ export default function HomePage() {
     });
   };
 
+  const buildNormalizedCartItem = (product: Product, selectedSize: string, quantity: number) =>
+    normalizeCartItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      size: selectedSize,
+      color: product.colors[0] ?? "",
+      quantity: Math.max(1, Math.floor(quantity || 1)),
+      imageUrl: product.image || null,
+      // Legacy key retained for compatibility with older payloads.
+      image: product.image,
+    });
+
   const handleAddToCart = (product: Product) => {
     markRecentlyViewed(product);
     const selectedSize = selectedSizes[product.id];
     if (!selectedSize) return;
 
     setAddStates((prev) => ({ ...prev, [product.id]: "loading" }));
-    const quantity = quantities[product.id] ?? 1;
+    const requestedQuantity = quantities[product.id] ?? 1;
+    const normalized = buildNormalizedCartItem(product, selectedSize, requestedQuantity);
+    // Defensive guard: skip malformed entries instead of polluting cart state.
+    if (!normalized) {
+      setToast("Unable to add item. Please try again.");
+      setAddStates((prev) => ({ ...prev, [product.id]: "idle" }));
+      return;
+    }
+
     setCartItems((prev) => {
       const existing = prev.find(
-        (item) => item.id === product.id && item.size === selectedSize
+        (item) => item.id === normalized.id && item.size === normalized.size
       );
       if (existing) {
         return prev.map((item) =>
-          item.id === product.id && item.size === selectedSize
-            ? { ...item, quantity: item.quantity + quantity }
+          item.id === normalized.id && item.size === normalized.size
+            ? {
+                ...item,
+                quantity: Math.max(
+                  1,
+                  Math.floor((item.quantity || 1) + normalized.quantity)
+                ),
+              }
             : item
         );
       }
-      return [
-        {
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          size: selectedSize,
-          color: product.colors[0],
-          quantity,
-          image: product.image,
-        },
-        ...prev,
-      ];
+      return [normalized, ...prev];
     });
+
     setToast(addedToCartNotice);
     setCartNotice(`${product.name} ${addedToCartNotice}`);
     logEvent("add_to_cart", {
       productId: product.id,
-      quantity,
-      price: product.price,
+      quantity: normalized.quantity,
+      price: normalized.price,
     });
     window.setTimeout(() => {
       setAddStates((prev) => ({ ...prev, [product.id]: "success" }));
@@ -314,24 +336,33 @@ export default function HomePage() {
     markRecentlyViewed(product);
     const selectedSize = selectedSizes[product.id];
     if (!selectedSize) return;
-    const quantity = quantities[product.id] ?? 1;
-    setCheckoutItems([
-      {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        size: selectedSize,
-        color: product.colors[0],
-        quantity,
-        image: product.image,
-      },
-    ]);
-    logEvent("begin_checkout", { productId: product.id, quantity });
+
+    const normalized = buildNormalizedCartItem(
+      product,
+      selectedSize,
+      quantities[product.id] ?? 1
+    );
+    // Defensive guard: keep checkout deterministic even if product payload is malformed.
+    if (!normalized) {
+      setToast("Unable to start checkout. Please try again.");
+      return;
+    }
+
+    setCheckoutItems([normalized]);
+    logEvent("begin_checkout", { productId: product.id, quantity: normalized.quantity });
     setShowCheckout(true);
   };
 
   const handleCartCheckout = () => {
-    if (cartItems.length === 0) return;
+    if (cartItems.length === 0) {
+      setToast("Your cart is empty.");
+      return;
+    }
+    const safeSubtotal = getSafeCartSubtotal(cartItems);
+    if (!Number.isFinite(safeSubtotal) || safeSubtotal <= 0) {
+      setToast("Unable to checkout. Please review your cart.");
+      return;
+    }
     setCheckoutItems(cartItems);
     setShowCheckout(true);
     setShowCart(false);
@@ -339,8 +370,20 @@ export default function HomePage() {
   };
 
   const handleWhatsappRedirect = (paymentMethod: string) => {
+    // Fail-safe guard: never attempt checkout with empty or invalid totals.
+    if (checkoutItems.length === 0) {
+      setToast("Your cart is empty.");
+      return;
+    }
+
     const deliveryFee = deliveryFees[deliveryZone];
-    const total = checkoutTotal;
+    const safeSubtotal = getSafeCartSubtotal(checkoutItems);
+    const total = safeSubtotal + deliveryFee;
+    if (!Number.isFinite(total) || total <= 0) {
+      setToast("Unable to complete checkout. Please try again.");
+      return;
+    }
+
     const deliveryZoneLabel =
       deliveryZone === "inside" ? text.insideDhaka : text.outsideDhaka;
     const message = buildWhatsAppMessage({
@@ -368,7 +411,7 @@ export default function HomePage() {
       status: "pending",
     });
     logEvent("purchase", {
-      total: checkoutTotal,
+      total,
       paymentMethod,
       items: checkoutItems.length,
     });
@@ -464,11 +507,14 @@ export default function HomePage() {
   };
 
   const updateCartQuantity = (index: number, quantity: number) => {
-    setCartItems((prev) =>
-      prev.map((item, idx) =>
-        idx === index ? { ...item, quantity: Math.max(1, quantity) } : item
-      )
-    );
+    const safeQuantity = Math.max(0, Math.floor(quantity || 0));
+    setCartItems((prev) => {
+      // Quantity 0 is treated as remove to avoid stale zero-quantity rows.
+      if (safeQuantity === 0) return prev.filter((_, idx) => idx !== index);
+      return prev.map((item, idx) =>
+        idx === index ? { ...item, quantity: safeQuantity } : item
+      );
+    });
     setCartQuantityFeedback((prev) => ({
       ...prev,
       [index]: qtyUpdatedMessage,
@@ -485,8 +531,10 @@ export default function HomePage() {
   const isCustomerInfoValid =
     customer.name.trim() && customer.phone.trim() && customer.address.trim();
 
-  const checkoutSubtotal = getOrderSubtotal(checkoutItems);
-  const deliveryFee = deliveryFees[deliveryZone];
+  const checkoutSubtotal = getSafeCartSubtotal(checkoutItems);
+  const deliveryFee = Number.isFinite(deliveryFees[deliveryZone])
+    ? deliveryFees[deliveryZone]
+    : 0;
   const checkoutTotal = checkoutSubtotal + deliveryFee;
   const hasPaymentProof = Boolean(transactionId.trim());
 
@@ -1233,7 +1281,7 @@ export default function HomePage() {
                     className="flex items-center gap-4 rounded-2xl border border-[#f0e4da] p-3"
                   >
                     <Image
-                      src={item.image}
+                      src={item.imageUrl ?? item.image ?? "/images/product-1.svg"}
                       alt={item.name}
                       width={80}
                       height={80}
@@ -1289,7 +1337,7 @@ export default function HomePage() {
                 ))}
                 <div className="flex items-center justify-between text-sm font-semibold">
                   <span>{text.subtotal}</span>
-                  <span>{formatPrice(getOrderSubtotal(cartItems))}</span>
+                  <span>{formatPrice(getSafeCartSubtotal(cartItems))}</span>
                 </div>
                 <button
                   type="button"
@@ -1456,7 +1504,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => handleWhatsappRedirect("COD")}
-                disabled={!isCustomerInfoValid || !isOnline}
+                disabled={!isCustomerInfoValid || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
                 className={clsx(
                   "min-h-[48px] rounded-full px-4 py-3 text-sm font-semibold",
                   isCustomerInfoValid && isOnline
@@ -1469,7 +1517,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setShowPaymentInfo(true)}
-                disabled={!isCustomerInfoValid || !isOnline}
+                disabled={!isCustomerInfoValid || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
                 className={clsx(
                   "min-h-[48px] rounded-full border px-4 py-3 text-sm font-semibold",
                   isCustomerInfoValid && isOnline
@@ -1526,7 +1574,7 @@ export default function HomePage() {
             </div>
             <button
               type="button"
-              disabled={!hasPaymentProof || !isOnline}
+              disabled={!hasPaymentProof || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
               onClick={() => handleWhatsappRedirect("bKash/Nagad")}
               className={clsx(
                 "mt-6 min-h-[48px] w-full rounded-full px-4 py-3 text-sm font-semibold",
