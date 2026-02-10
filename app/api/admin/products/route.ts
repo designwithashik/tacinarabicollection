@@ -4,7 +4,7 @@
  * Why it exists:
  *   - Persistent inventory without redeploy.
  * Notes:
- *   - Cloudinary unsigned upload provides imageUrl from admin client.
+ *   - Image URL is supplied by ImageKit upload flow in admin client.
  */
 
 import { randomUUID } from "crypto";

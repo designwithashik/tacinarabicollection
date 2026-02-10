@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import type { AdminProduct } from "../../../lib/inventory";
-import { uploadToCloudinaryUnsigned, validateImageUrl } from "../../../lib/images";
+import { validateImageUrl } from "../../../lib/images";
 
 const defaultDraft: AdminProduct = {
   id: "",
@@ -27,11 +27,11 @@ export default function AdminInventory() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const isEditing = Boolean(draft.id);
 
-  const hasCloudinaryConfig = useMemo(
+  const hasImageKitConfig = useMemo(
     () =>
       Boolean(
-        process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME &&
-          process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+        process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT &&
+          process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY
       ),
     []
   );
@@ -53,18 +53,54 @@ export default function AdminInventory() {
     void loadProducts();
   }, []);
 
+  const uploadToImageKit = async (file: File) => {
+    const authRes = await fetch("/api/auth/imagekit");
+    if (!authRes.ok) throw new Error("Auth failed");
+    const authData = (await authRes.json()) as {
+      signature: string;
+      expire: number;
+      token: string;
+    };
+
+    const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
+    if (!publicKey) {
+      throw new Error("ImageKit public key is missing.");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("fileName", file.name);
+    formData.append("publicKey", publicKey);
+    formData.append("signature", authData.signature);
+    formData.append("expire", String(authData.expire));
+    formData.append("token", authData.token);
+
+    const uploadRes = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!uploadRes.ok) {
+      throw new Error("Image upload failed");
+    }
+
+    const data = (await uploadRes.json()) as { url?: string };
+    if (!data.url) throw new Error("ImageKit did not return a URL");
+    return data.url;
+  };
+
   const uploadImageIfNeeded = async () => {
     if (!selectedFile) return draft.image;
 
-    if (!hasCloudinaryConfig) {
+    if (!hasImageKitConfig) {
       throw new Error(
-        "Cloudinary env is missing. Set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET."
+        "ImageKit env is missing. Set NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT and NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY."
       );
     }
 
     setUploading(true);
     try {
-      return await uploadToCloudinaryUnsigned(selectedFile);
+      return await uploadToImageKit(selectedFile);
     } finally {
       setUploading(false);
     }
@@ -81,7 +117,7 @@ export default function AdminInventory() {
     setError(null);
 
     try {
-      // Prefer Cloudinary upload when file is selected; fallback to manual URL if upload fails.
+      // Prefer ImageKit upload when file is selected; fallback to manual URL if upload fails.
       let imageUrl = draft.image;
       if (selectedFile) {
         try {
@@ -167,7 +203,7 @@ export default function AdminInventory() {
           Manage products, pricing, and visibility (KV persistence).
         </p>
         <p className="mt-1 text-xs text-muted">
-          Cloudinary unsigned upload requires cloud name + upload preset env vars.
+          ImageKit upload requires URL endpoint + public key + server auth route.
         </p>
       </div>
 
