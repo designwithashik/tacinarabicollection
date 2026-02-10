@@ -1,46 +1,42 @@
-/*
- * What this file does:
- *   - Creates admin products and persists them to KV.
- * Why it exists:
- *   - Persistent inventory without redeploy.
- * Notes:
- *   - Image URL is supplied by ImageKit upload flow in admin client.
- */
-
-import { randomUUID } from "crypto";
+import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
-import type { AdminProduct } from "../../../../lib/inventory";
-import { getKVProducts, setKVProducts } from "../../../../lib/kvProducts";
 
-export const runtime = "nodejs";
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { name, price, description, category, imageUrl, whatsappNumber } = body;
 
-export async function POST(req: Request) {
-  const body = (await req.json()) as Partial<AdminProduct> & {
-    imageUrl?: string;
-  };
-  const { name, price } = body;
-  const image = body.imageUrl ?? body.image;
+    // 1. Check if KV is connected
+    if (!process.env.KV_REST_API_URL) {
+      return NextResponse.json(
+        { error: "Vercel KV is not linked to this project." },
+        { status: 500 }
+      );
+    }
 
-  if (!name || typeof price !== "number" || !image) {
-    return NextResponse.json({ error: "Incomplete data" }, { status: 400 });
+    // 2. Generate a unique ID (Product Name + Timestamp)
+    const productId = `prod_${Date.now()}`;
+
+    // 3. Save to KV (We store products in a 'products' hash for easy listing)
+    await kv.hset("tacin_products", {
+      [productId]: {
+        id: productId,
+        name,
+        price,
+        description,
+        category,
+        imageUrl,
+        whatsappNumber,
+        createdAt: new Date().toISOString(),
+      },
+    });
+
+    return NextResponse.json({ success: true, id: productId });
+  } catch (error: any) {
+    console.error("KV SAVE ERROR:", error);
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" },
+      { status: 500 }
+    );
   }
-
-  const existing = await getKVProducts();
-
-  const newProduct: AdminProduct = {
-    id: randomUUID(),
-    name,
-    price: Number(price),
-    image,
-    category: body.category === "Ceramic" ? "Ceramic" : "Clothing",
-    colors: Array.isArray(body.colors) && body.colors.length ? body.colors : ["Beige"],
-    sizes: Array.isArray(body.sizes) && body.sizes.length ? body.sizes : ["M", "L", "XL"],
-    active: body.active !== false,
-    updatedAt: new Date().toISOString(),
-  };
-
-  const updated = [newProduct, ...existing];
-  await setKVProducts(updated);
-
-  return NextResponse.json({ success: true, product: newProduct });
 }
