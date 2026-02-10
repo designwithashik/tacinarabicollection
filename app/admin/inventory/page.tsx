@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import type { AdminProduct } from "../../../lib/inventory";
 import { validateImageUrl } from "../../../lib/images";
 
@@ -18,6 +20,7 @@ const defaultDraft: AdminProduct = {
 };
 
 export default function AdminInventory() {
+  const router = useRouter();
   const [items, setItems] = useState<AdminProduct[]>([]);
   const [draft, setDraft] = useState<AdminProduct>(defaultDraft);
   const [uploading, setUploading] = useState(false);
@@ -54,39 +57,44 @@ export default function AdminInventory() {
   }, []);
 
   const uploadToImageKit = async (file: File) => {
-    const authRes = await fetch("/api/auth/imagekit");
-    if (!authRes.ok) throw new Error("Auth failed");
-    const authData = (await authRes.json()) as {
-      signature: string;
-      expire: number;
-      token: string;
-    };
+    try {
+      // 1. Get the signature from the working API
+      const authRes = await fetch("/api/auth/imagekit");
+      const authData = (await authRes.json()) as {
+        signature?: string;
+        expire?: number;
+        token?: string;
+      };
+      if (!authRes.ok || !authData.signature || !authData.expire || !authData.token) {
+        throw new Error("Auth failed");
+      }
 
-    const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
-    if (!publicKey) {
-      throw new Error("ImageKit public key is missing.");
+      // 2. Prepare the form data for ImageKit
+      const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
+      if (!publicKey) throw new Error("ImageKit public key missing");
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("fileName", file.name);
+      formData.append("publicKey", publicKey);
+      formData.append("signature", authData.signature);
+      formData.append("expire", String(authData.expire));
+      formData.append("token", authData.token);
+
+      // 3. Post directly to ImageKit
+      const uploadRes = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadRes.ok) throw new Error("Upload failed");
+      const result = (await uploadRes.json()) as { url?: string };
+      if (!result.url) throw new Error("Upload missing URL");
+      return result.url; // This is the final image/video link
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Media upload failed. Check console.");
+      return null;
     }
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("fileName", file.name);
-    formData.append("publicKey", publicKey);
-    formData.append("signature", authData.signature);
-    formData.append("expire", String(authData.expire));
-    formData.append("token", authData.token);
-
-    const uploadRes = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!uploadRes.ok) {
-      throw new Error("Image upload failed");
-    }
-
-    const data = (await uploadRes.json()) as { url?: string };
-    if (!data.url) throw new Error("ImageKit did not return a URL");
-    return data.url;
   };
 
   const uploadImageIfNeeded = async () => {
@@ -106,7 +114,8 @@ export default function AdminInventory() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!draft.name || draft.price <= 0) {
       setError("Please fill out all required fields.");
       return;
@@ -117,17 +126,11 @@ export default function AdminInventory() {
     setError(null);
 
     try {
-      // Prefer ImageKit upload when file is selected; fallback to manual URL if upload fails.
+      // If a new file is selected, upload it first via ImageKit.
       let imageUrl = draft.image;
       if (selectedFile) {
-        try {
-          imageUrl = await uploadImageIfNeeded();
-        } catch {
-          if (!validateImageUrl(draft.image)) {
-            throw new Error("Image upload failed and fallback URL is invalid.");
-          }
-          imageUrl = draft.image;
-        }
+        const uploadedUrl = await uploadImageIfNeeded();
+        if (uploadedUrl) imageUrl = uploadedUrl;
       }
 
       if (!validateImageUrl(imageUrl)) {
@@ -135,10 +138,12 @@ export default function AdminInventory() {
         return;
       }
 
-      const payload: Partial<AdminProduct> = {
+      const payload: Partial<AdminProduct> & { imageUrl?: string } = {
         name: draft.name,
         price: Number(draft.price),
         image: imageUrl,
+        // Alias for compatibility with imageUrl-based payload handlers.
+        imageUrl,
         category: draft.category,
         colors: draft.colors,
         sizes: draft.sizes,
@@ -165,6 +170,7 @@ export default function AdminInventory() {
       setDraft(defaultDraft);
       setSelectedFile(null);
       await loadProducts();
+      router.refresh();
     } catch (saveError) {
       setError(
         saveError instanceof Error ? saveError.message : "Unable to save product."
@@ -207,7 +213,7 @@ export default function AdminInventory() {
         </p>
       </div>
 
-      <div className="rounded-3xl bg-white p-6 shadow-soft">
+      <form className="rounded-3xl bg-white p-6 shadow-soft" onSubmit={handleSave}>
         <h3 className="text-lg font-semibold">
           {isEditing ? "Update Product" : "Create Product"}
         </h3>
@@ -301,12 +307,17 @@ export default function AdminInventory() {
 
         <div className="mt-4 flex items-center gap-3">
           <button
-            type="button"
-            onClick={() => void handleSave()}
+            type="submit"
             disabled={saving || uploading}
             className="min-h-[44px] rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
           >
-            {saving || uploading ? "Saving..." : isEditing ? "Update Product" : "Save Product"}
+            {uploading
+              ? "Uploading..."
+              : saving
+              ? "Saving..."
+              : isEditing
+              ? "Update Product"
+              : "Save Product"}
           </button>
           <button
             type="button"
@@ -320,7 +331,7 @@ export default function AdminInventory() {
             Clear
           </button>
         </div>
-      </div>
+      </form>
 
       <div className="rounded-3xl bg-white p-6 shadow-soft">
         <h3 className="text-lg font-semibold">Inventory List</h3>

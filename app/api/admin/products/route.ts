@@ -15,8 +15,11 @@ import { getKVProducts, setKVProducts } from "../../../../lib/kvProducts";
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as Partial<AdminProduct>;
-  const { name, price, image } = body;
+  const body = (await req.json()) as Partial<AdminProduct> & {
+    imageUrl?: string;
+  };
+  const { name, price } = body;
+  const image = body.imageUrl ?? body.image;
 
   if (!name || typeof price !== "number" || !image) {
     return NextResponse.json({ error: "Incomplete data" }, { status: 400 });

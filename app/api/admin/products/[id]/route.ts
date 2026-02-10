@@ -17,8 +17,16 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const body = (await req.json()) as Partial<AdminProduct>;
+  const body = (await req.json()) as Partial<AdminProduct> & {
+    imageUrl?: string;
+  };
   const { id } = params;
+
+  const { imageUrl: _imageUrl, ...bodyWithoutImageUrl } = body;
+  const normalizedPatch: Partial<AdminProduct> = {
+    ...bodyWithoutImageUrl,
+    ...(body.imageUrl ? { image: body.imageUrl } : {}),
+  };
 
   const current = await getKVProducts();
 
@@ -26,7 +34,7 @@ export async function PUT(
     p.id === id
       ? {
           ...p,
-          ...body,
+          ...normalizedPatch,
           id,
           updatedAt: new Date().toISOString(),
         }
