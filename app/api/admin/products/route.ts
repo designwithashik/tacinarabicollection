@@ -1,6 +1,32 @@
 import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
+export async function GET() {
+  try {
+    if (!process.env.KV_REST_API_URL) {
+      return NextResponse.json(
+        { error: "Vercel KV is not linked to this project." },
+        { status: 500 }
+      );
+    }
+
+    const stored = (await kv.hgetall<Record<string, unknown>>("tacin_products")) ?? {};
+    const items = Object.values(stored).filter(
+      (value): value is Record<string, unknown> => Boolean(value && typeof value === "object")
+    );
+
+    return NextResponse.json(items);
+  } catch (error: any) {
+    console.error("KV READ ERROR:", error);
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -26,7 +52,12 @@ export async function POST(request: Request) {
         description,
         category,
         imageUrl,
+        image: imageUrl,
         whatsappNumber,
+        active: true,
+        colors: ["Beige"],
+        sizes: ["M", "L", "XL"],
+        updatedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       },
     });

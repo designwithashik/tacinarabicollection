@@ -1,14 +1,12 @@
 /*
  * What this file does:
- *   - Deletes a single admin product from KV.
+ *   - Deletes a product from KV hash storage.
  * Why it exists:
- *   - Persistent inventory cleanup without redeploy.
- * Notes:
- *   - Admin-only route for destructive product actions.
+ *   - Keeps admin delete flow consistent with GET/POST key.
  */
 
+import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
-import { getKVProducts, setKVProducts } from "../../../../../../lib/kvProducts";
 
 export const runtime = "nodejs";
 
@@ -16,9 +14,10 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
-  const { id } = params;
-  const current = await getKVProducts();
-  const updated = current.filter((p) => p.id !== id);
-  await setKVProducts(updated);
-  return NextResponse.json({ success: true });
+  try {
+    await kv.hdel("tacin_products", params.id);
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+  }
 }

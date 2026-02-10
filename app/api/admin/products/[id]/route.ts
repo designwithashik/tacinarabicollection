@@ -1,15 +1,12 @@
 /*
  * What this file does:
- *   - Updates a single admin product in KV.
+ *   - Updates a single admin product in KV hash storage.
  * Why it exists:
- *   - Persistent inventory edits without redeploy.
- * Notes:
- *   - Uses node runtime and updates updatedAt automatically.
+ *   - Keeps admin edit flow consistent with POST/GET storage key.
  */
 
+import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
-import type { AdminProduct } from "../../../../../lib/inventory";
-import { getKVProducts, setKVProducts } from "../../../../../lib/kvProducts";
 
 export const runtime = "nodejs";
 
@@ -17,31 +14,22 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const body = (await req.json()) as Partial<AdminProduct> & {
-    imageUrl?: string;
-  };
-  const { id } = params;
+  try {
+    const body = (await req.json()) as Record<string, unknown> & { imageUrl?: string };
+    const { id } = params;
 
-  const { imageUrl: _imageUrl, ...bodyWithoutImageUrl } = body;
-  const normalizedPatch: Partial<AdminProduct> = {
-    ...bodyWithoutImageUrl,
-    ...(body.imageUrl ? { image: body.imageUrl } : {}),
-  };
+    const existing = (await kv.hget<Record<string, unknown>>("tacin_products", id)) ?? {};
+    const patch = {
+      ...body,
+      ...(body.imageUrl ? { image: body.imageUrl } : {}),
+      updatedAt: new Date().toISOString(),
+      id,
+    };
 
-  const current = await getKVProducts();
+    await kv.hset("tacin_products", { [id]: { ...existing, ...patch } });
 
-  const updated = current.map((p) =>
-    p.id === id
-      ? {
-          ...p,
-          ...normalizedPatch,
-          id,
-          updatedAt: new Date().toISOString(),
-        }
-      : p
-  );
-
-  await setKVProducts(updated);
-
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+  }
 }
