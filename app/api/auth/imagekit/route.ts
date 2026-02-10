@@ -1,39 +1,39 @@
-/*
- * What this file does:
- *   - Returns ImageKit auth parameters for secure client-side uploads.
- * Why it exists:
- *   - Allows admin inventory uploads without exposing private key in browser.
- * Notes:
- *   - Uses ImageKit private key server-side only.
- */
-
 import ImageKit from "imagekit";
 import { NextResponse } from "next/server";
 
-export const runtime = "nodejs";
+// Force this route to be dynamic so it doesn't get cached as a 404
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  // Initialize only at request-time so build doesn't fail when env vars
-  // are absent in non-runtime contexts (e.g., static page-data collection).
-  const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
-  const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
-  const urlEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT;
+  try {
+    const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
+    const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
+    const urlEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT;
 
-  if (!publicKey || !privateKey || !urlEndpoint) {
-    return NextResponse.json(
-      {
-        error:
-          "ImageKit env vars are missing. Set NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY, IMAGEKIT_PRIVATE_KEY, and NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT.",
-      },
-      { status: 500 }
-    );
+    // Safety check: If vars are missing, return a 500 JSON error, NOT a 404
+    if (!publicKey || !privateKey || !urlEndpoint) {
+      return NextResponse.json(
+        {
+          error: "Keys missing in Vercel environment variables",
+          debug: {
+            publicKey: !!publicKey,
+            privateKey: !!privateKey,
+            url: !!urlEndpoint,
+          },
+        },
+        { status: 500 }
+      );
+    }
+
+    const imagekit = new ImageKit({
+      publicKey: publicKey,
+      privateKey: privateKey,
+      urlEndpoint: urlEndpoint,
+    });
+
+    const authenticationParameters = imagekit.getAuthenticationParameters();
+    return NextResponse.json(authenticationParameters);
+  } catch (error) {
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
-
-  const imagekit = new ImageKit({
-    publicKey,
-    privateKey,
-    urlEndpoint,
-  });
-
-  return NextResponse.json(imagekit.getAuthenticationParameters());
 }
