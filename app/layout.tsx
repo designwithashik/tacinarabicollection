@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Playfair_Display, Inter } from "next/font/google";
 import type { Metadata } from "next";
+import GlobalAnimatedWrapper from "../components/AnimatedWrapper";
 
 const headingFont = Playfair_Display({
   subsets: ["latin"],
@@ -50,7 +51,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${headingFont.variable} ${bodyFont.variable}`}>
-      <body>{children}</body>
+      <body><GlobalAnimatedWrapper>{children}</GlobalAnimatedWrapper></body>
     </html>
   );
 }

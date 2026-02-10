@@ -9,6 +9,7 @@ import SkeletonProductCard from "../components/SkeletonProductCard";
 import SectionLoader from "../components/SectionLoader";
 import CartSkeleton from "../components/CartSkeleton";
 import SummaryPlaceholder from "../components/SummaryPlaceholder";
+import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import { products, type Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import {
@@ -941,8 +942,8 @@ export default function HomePage({
             )}
           >
             {filteredProducts.map((product, index) => (
-              <ProductCard
-                key={product.id}
+              <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.24)}>
+                <ProductCard
                 product={product}
                 selectedSize={selectedSizes[product.id]}
                 quantity={quantities[product.id] ?? 1}
@@ -966,6 +967,7 @@ export default function HomePage({
                 statusLabel={getStatusLabel(index)}
                 stockLabel={getStockLabel(index)}
               />
+              </AnimatedWrapper>
             ))}
           </div>
           )}
@@ -983,8 +985,8 @@ export default function HomePage({
             </div>
             <div className="grid gap-6 md:grid-cols-2">
               {recentlyViewed.map((product, index) => (
-                <ProductCard
-                  key={product.id}
+                <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.16)}>
+                  <ProductCard
                   product={product}
                   selectedSize={selectedSizes[product.id]}
                   quantity={quantities[product.id] ?? 1}
@@ -1006,6 +1008,7 @@ export default function HomePage({
                   statusLabel={getStatusLabel(index)}
                   stockLabel={getStockLabel(index)}
                 />
+                </AnimatedWrapper>
               ))}
             </div>
           </section>
