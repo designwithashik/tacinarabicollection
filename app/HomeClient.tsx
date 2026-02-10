@@ -129,9 +129,13 @@ const getStatusLabel = (index: number) =>
 const getStockLabel = (index: number) =>
   index % 3 === 2 ? "Limited stock" : "In stock";
 
+type HomeClientProps = {
+  initialAdminProducts?: AdminProduct[];
+};
 
-
-export default function HomePage() {
+export default function HomePage({
+  initialAdminProducts = [],
+}: HomeClientProps) {
   // ------------------------------
   // State
   // ------------------------------
@@ -169,7 +173,7 @@ export default function HomePage() {
   const [isCartHydrating, setIsCartHydrating] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const [adminProducts, setAdminProducts] = useState<AdminProduct[]>([]);
+  const [adminProducts, setAdminProducts] = useState<AdminProduct[]>(initialAdminProducts);
   const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
@@ -224,8 +228,8 @@ export default function HomePage() {
       const data = (await res.json()) as AdminProduct[];
       setAdminProducts(Array.isArray(data) ? data : []);
     } catch {
-      // Graceful fallback keeps static catalog if KV is unavailable.
-      setAdminProducts([]);
+      // Graceful fallback keeps existing inventory state if KV is unavailable.
+      setAdminProducts((current) => current);
     }
   }, []);
 

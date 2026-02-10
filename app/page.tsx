@@ -1,8 +1,30 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import HomeClient from './HomeClient';
+import { kv } from "@vercel/kv";
+import HomeClient from "./HomeClient";
+import type { AdminProduct } from "../lib/inventory";
 
-export default function HomePage() {
-  return <HomeClient />;
+const isAdminProduct = (value: unknown): value is AdminProduct => {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<AdminProduct>;
+  return (
+    typeof candidate.id === "string" &&
+    typeof candidate.name === "string" &&
+    typeof candidate.price === "number" &&
+    typeof candidate.image === "string"
+  );
+};
+
+export default async function HomePage() {
+  let initialAdminProducts: AdminProduct[] = [];
+
+  try {
+    const stored = (await kv.hgetall<Record<string, unknown>>("tacin_products")) ?? {};
+    initialAdminProducts = Object.values(stored).filter(isAdminProduct);
+  } catch {
+    initialAdminProducts = [];
+  }
+
+  return <HomeClient initialAdminProducts={initialAdminProducts} />;
 }
