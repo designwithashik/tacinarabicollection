@@ -1,18 +1,5 @@
 import "./globals.css";
-import { Playfair_Display, Inter } from "next/font/google";
 import type { Metadata } from "next";
-
-const headingFont = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  variable: "--font-heading",
-});
-
-const bodyFont = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-body",
-});
 
 export const metadata: Metadata = {
   title: "Tacin Arabi Collection | WhatsApp-first Shopping",
@@ -49,7 +36,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${headingFont.variable} ${bodyFont.variable}`}>
+    <html
+      lang="en"
+      style={
+        {
+          "--font-heading": '"Playfair Display", Georgia, Times, serif',
+          "--font-body":
+            'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+        } as React.CSSProperties
+      }
+    >
       <body>{children}</body>
     </html>
   );
