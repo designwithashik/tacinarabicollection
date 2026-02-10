@@ -17,6 +17,24 @@ Use these phases to evaluate and improve changes without losing UX features:
 5. **Performance**: Run `next build` and verify images, fonts, and CSS load as
    expected in production.
 
+## Environment setup for persistent admin inventory
+
+Create `.env.local` (and mirror these in Vercel project settings):
+
+```bash
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloud_name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your_unsigned_preset
+KV_REST_API_URL=your_kv_rest_url
+KV_REST_API_TOKEN=your_kv_rest_token
+```
+
+Notes:
+
+- Cloudinary unsigned uploads require an **unsigned upload preset** configured
+  in Cloudinary console.
+- The upload preset is public by design; do not place API secrets in client
+  code.
+
 ## How to resolve conflicts without losing animations
 Conflicts usually happen when multiple branches edit the same lines. To keep the
 enhanced UX/animation version, prefer the "ours/current" side for these files:

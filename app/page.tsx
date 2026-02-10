@@ -20,7 +20,7 @@ import {
 import type { CustomerInfo } from "../lib/orders";
 import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
-import { getStoredInventory, type AdminProduct } from "../lib/inventory";
+import type { AdminProduct } from "../lib/inventory";
 
 // Contact numbers
 const whatsappNumber = "+8801522119189";
@@ -211,8 +211,23 @@ export default function HomePage() {
       setLanguage(storedLanguage);
     }
 
-    setAdminProducts(getStoredInventory());
     setIsCartHydrating(false);
+  }, []);
+
+  useEffect(() => {
+    const loadPublicInventory = async () => {
+      try {
+        const res = await fetch("/api/products", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as AdminProduct[];
+        setAdminProducts(Array.isArray(data) ? data : []);
+      } catch {
+        // Graceful fallback keeps static catalog if KV is unavailable.
+        setAdminProducts([]);
+      }
+    };
+
+    void loadPublicInventory();
   }, []);
 
   useEffect(() => {
