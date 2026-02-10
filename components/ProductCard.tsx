@@ -61,7 +61,7 @@ export default function ProductCard({
     <div className="flex min-h-[560px] h-full flex-col rounded-3xl border border-[#efe1d8] bg-card p-4 shadow-soft">
       <button
         type="button"
-        className="group relative w-full overflow-hidden rounded-2xl bg-base"
+        className="interactive-feedback group relative w-full overflow-hidden rounded-2xl bg-base"
         onClick={onOpenDetails}
       >
         <Image
@@ -102,7 +102,7 @@ export default function ProductCard({
               key={size}
               type="button"
               className={clsx(
-                "min-h-[44px] rounded-full border px-4 py-1 text-sm font-medium transition",
+                "interactive-feedback min-h-[44px] rounded-full border px-4 py-1 text-sm font-medium transition",
                 selectedSize === size
                   ? "border-accent bg-accent text-white"
                   : "border-[#e5d7cc] bg-white text-ink"
@@ -124,7 +124,7 @@ export default function ProductCard({
           <div className="mt-2 flex items-center gap-2 rounded-full border border-[#e5d7cc] bg-white px-3 py-1">
             <button
               type="button"
-              className="min-h-[28px] min-w-[28px] text-base font-semibold text-ink"
+              className="interactive-feedback min-h-[28px] min-w-[28px] text-base font-semibold text-ink"
               onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
             >
               -
@@ -134,7 +134,7 @@ export default function ProductCard({
             </span>
             <button
               type="button"
-              className="min-h-[28px] min-w-[28px] text-base font-semibold text-ink"
+              className="interactive-feedback min-h-[28px] min-w-[28px] text-base font-semibold text-ink"
               onClick={() => onQuantityChange(quantity + 1)}
             >
               +
@@ -150,7 +150,7 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "min-h-[44px] rounded-full px-5 py-2 text-sm font-semibold transition",
+              "interactive-feedback min-h-[44px] rounded-full px-5 py-2 text-sm font-semibold transition",
               sizeMissing
                 ? "cursor-not-allowed bg-[#e6d8ce] text-muted"
                 : "bg-accent text-white"
@@ -163,7 +163,7 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "min-h-[44px] rounded-full border px-5 py-2 text-sm font-semibold transition",
+              "interactive-feedback min-h-[44px] rounded-full border px-5 py-2 text-sm font-semibold transition",
               sizeMissing || addState === "loading"
                 ? "cursor-not-allowed border-[#e6d8ce] text-muted"
                 : "border-accent text-accent"

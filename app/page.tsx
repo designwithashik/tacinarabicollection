@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
+import Toast from "../components/Toast";
+import SkeletonProductCard from "../components/SkeletonProductCard";
 import { products, type Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import {
@@ -48,6 +50,12 @@ type Filters = {
 };
 
 type AddState = "idle" | "loading" | "success";
+
+type ToastState = {
+  type: "success" | "error" | "info";
+  message: string;
+  onRetry?: () => void;
+};
 
 type Language = "en" | "bn";
 
@@ -128,7 +136,7 @@ export default function HomePage() {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
   const [cartNotice, setCartNotice] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [draftFilters, setDraftFilters] = useState<Filters>(defaultFilters);
@@ -155,7 +163,13 @@ export default function HomePage() {
   const prevCartCount = useRef(cartItems.length);
   const [isOnline, setIsOnline] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCartHydrating, setIsCartHydrating] = useState(true);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>([]);
+  const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
+
+  const showToast = (nextToast: ToastState) => {
+    setToast(nextToast);
+  };
 
   const text = copy[language];
 
@@ -189,6 +203,7 @@ export default function HomePage() {
     }
 
     setAdminProducts(getStoredInventory());
+    setIsCartHydrating(false);
   }, []);
 
   // Persist cart
@@ -209,7 +224,7 @@ export default function HomePage() {
   // Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 2000);
+    const timer = setTimeout(() => setToast(null), 2500);
     return () => clearTimeout(timer);
   }, [toast]);
 
@@ -292,7 +307,7 @@ export default function HomePage() {
     const normalized = buildNormalizedCartItem(product, selectedSize, requestedQuantity);
     // Defensive guard: skip malformed entries instead of polluting cart state.
     if (!normalized) {
-      setToast("Unable to add item. Please try again.");
+      showToast({ type: "error", message: "Failed to add item." });
       setAddStates((prev) => ({ ...prev, [product.id]: "idle" }));
       return;
     }
@@ -317,7 +332,7 @@ export default function HomePage() {
       return [normalized, ...prev];
     });
 
-    setToast(addedToCartNotice);
+    showToast({ type: "success", message: "Added to cart!" });
     setCartNotice(`${product.name} ${addedToCartNotice}`);
     logEvent("add_to_cart", {
       productId: product.id,
@@ -344,7 +359,7 @@ export default function HomePage() {
     );
     // Defensive guard: keep checkout deterministic even if product payload is malformed.
     if (!normalized) {
-      setToast("Unable to start checkout. Please try again.");
+      showToast({ type: "error", message: "Unable to start checkout." });
       return;
     }
 
@@ -355,12 +370,12 @@ export default function HomePage() {
 
   const handleCartCheckout = () => {
     if (cartItems.length === 0) {
-      setToast("Your cart is empty.");
+      showToast({ type: "info", message: "Your cart is empty." });
       return;
     }
     const safeSubtotal = getSafeCartSubtotal(cartItems);
     if (!Number.isFinite(safeSubtotal) || safeSubtotal <= 0) {
-      setToast("Unable to checkout. Please review your cart.");
+      showToast({ type: "error", message: "Unable to checkout. Please review your cart." });
       return;
     }
     setCheckoutItems(cartItems);
@@ -372,7 +387,7 @@ export default function HomePage() {
   const handleWhatsappRedirect = (paymentMethod: string) => {
     // Fail-safe guard: never attempt checkout with empty or invalid totals.
     if (checkoutItems.length === 0) {
-      setToast("Your cart is empty.");
+      showToast({ type: "info", message: "Your cart is empty." });
       return;
     }
 
@@ -380,7 +395,7 @@ export default function HomePage() {
     const safeSubtotal = getSafeCartSubtotal(checkoutItems);
     const total = safeSubtotal + deliveryFee;
     if (!Number.isFinite(total) || total <= 0) {
-      setToast("Unable to complete checkout. Please try again.");
+      showToast({ type: "error", message: "Unable to complete checkout. Please try again." });
       return;
     }
 
@@ -506,15 +521,32 @@ export default function HomePage() {
     setDraftFilters(defaultFilters);
   };
 
-  const updateCartQuantity = (index: number, quantity: number) => {
+  const updateCartQuantity = async (index: number, quantity: number) => {
+    showToast({ type: "info", message: "Updating cart..." });
+    setCartActionLoading((prev) => ({ ...prev, [index]: true }));
     const safeQuantity = Math.max(0, Math.floor(quantity || 0));
-    setCartItems((prev) => {
-      // Quantity 0 is treated as remove to avoid stale zero-quantity rows.
-      if (safeQuantity === 0) return prev.filter((_, idx) => idx !== index);
-      return prev.map((item, idx) =>
-        idx === index ? { ...item, quantity: safeQuantity } : item
-      );
-    });
+    try {
+      // Keep feedback local to the touched row while applying optimistic update.
+      setCartItems((prev) => {
+        // Quantity 0 is treated as remove to avoid stale zero-quantity rows.
+        if (safeQuantity === 0) return prev.filter((_, idx) => idx !== index);
+        return prev.map((item, idx) =>
+          idx === index ? { ...item, quantity: safeQuantity } : item
+        );
+      });
+      showToast({ type: "success", message: "Cart updated." });
+    } catch {
+      showToast({
+        type: "error",
+        message: "Failed to update quantity.",
+        onRetry: () => {
+          void updateCartQuantity(index, quantity);
+        },
+      });
+    } finally {
+      setCartActionLoading((prev) => ({ ...prev, [index]: false }));
+    }
+
     setCartQuantityFeedback((prev) => ({
       ...prev,
       [index]: qtyUpdatedMessage,
@@ -524,8 +556,23 @@ export default function HomePage() {
     }, 1000);
   };
 
-  const removeCartItem = (index: number) => {
-    setCartItems((prev) => prev.filter((_, idx) => idx !== index));
+  const removeCartItem = async (index: number) => {
+    showToast({ type: "info", message: "Updating cart..." });
+    setCartActionLoading((prev) => ({ ...prev, [index]: true }));
+    try {
+      setCartItems((prev) => prev.filter((_, idx) => idx !== index));
+      showToast({ type: "success", message: "Item removed." });
+    } catch {
+      showToast({
+        type: "error",
+        message: "Failed to remove item.",
+        onRetry: () => {
+          void removeCartItem(index);
+        },
+      });
+    } finally {
+      setCartActionLoading((prev) => ({ ...prev, [index]: false }));
+    }
   };
 
   const isCustomerInfoValid =
@@ -705,7 +752,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => openSheet("size")}
-              className="flex min-h-[44px] items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-soft"
+              className="interactive-feedback flex min-h-[44px] items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-soft"
             >
               Filters
               {(filters.size.length ||
@@ -721,21 +768,21 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => openSheet("sort")}
-              className="min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+              className="interactive-feedback min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
             >
               Sort
             </button>
             <button
               type="button"
               onClick={() => openSheet("price")}
-              className="min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+              className="interactive-feedback min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
             >
               Price
             </button>
             <button
               type="button"
               onClick={() => openSheet("color")}
-              className="min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
+              className="interactive-feedback min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
             >
               Color
             </button>
@@ -751,7 +798,7 @@ export default function HomePage() {
                 key={`${chip.type}-${chip.value}`}
                 type="button"
                 onClick={() => removeChip(chip)}
-                className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink shadow-soft"
+                className="interactive-feedback rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink shadow-soft"
               >
                 {chip.type === "price"
                   ? priceRanges.find((range) => range.id === chip.value)?.label
@@ -767,17 +814,7 @@ export default function HomePage() {
         {isLoading ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <div
-                key={`skeleton-${index}`}
-                className="min-h-[560px] rounded-3xl bg-card p-4 shadow-soft"
-              >
-                <div className="aspect-[4/3] w-full animate-pulse rounded-2xl bg-[#efe5dc]" />
-                <div className="mt-4 space-y-3">
-                  <div className="h-4 w-2/3 animate-pulse rounded-full bg-[#efe5dc]" />
-                  <div className="h-3 w-1/3 animate-pulse rounded-full bg-[#efe5dc]" />
-                  <div className="h-8 w-full animate-pulse rounded-full bg-[#efe5dc]" />
-                </div>
-              </div>
+              <SkeletonProductCard key={`skeleton-${index}`} />
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
@@ -788,7 +825,7 @@ export default function HomePage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 opacity-0 animate-[fadeUp_0.28s_ease-out_forwards] md:grid-cols-2 lg:grid-cols-3">
             {filteredProducts.map((product, index) => (
               <ProductCard
                 key={product.id}
@@ -896,9 +933,12 @@ export default function HomePage() {
       </footer>
 
       {toast ? (
-        <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white">
-          {toast}
-        </div>
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onRetry={toast.onRetry}
+          onClose={() => setToast(null)}
+        />
       ) : null}
 
       {cartNotice ? (
@@ -917,7 +957,7 @@ export default function HomePage() {
       <button
         type="button"
         onClick={() => setShowCart(true)}
-        className="group fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center overflow-hidden rounded-full bg-white shadow-soft transition-all duration-300 hover:w-32"
+        className="interactive-feedback group fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center overflow-hidden rounded-full bg-white shadow-soft transition-all duration-300 hover:w-32"
         aria-label="Open cart"
       >
         <span
@@ -944,7 +984,7 @@ export default function HomePage() {
         rel="noreferrer"
         aria-disabled={!isOnline}
         className={clsx(
-          "group fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center overflow-hidden rounded-full bg-[#25D366] shadow-soft transition-all duration-500 ease-out hover:w-56",
+          "interactive-feedback group fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center overflow-hidden rounded-full bg-[#25D366] shadow-soft transition-all duration-500 ease-out hover:w-56",
           !isOnline && "pointer-events-none opacity-60"
         )}
       >
@@ -964,7 +1004,7 @@ export default function HomePage() {
 
       {activeSheet ? (
         <div className="fixed inset-0 z-40 flex items-end bg-black/40">
-          <div className="w-full rounded-t-3xl bg-white p-6">
+          <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-ink">
                 {activeSheet === "size"
@@ -1118,7 +1158,7 @@ export default function HomePage() {
 
       {detailsProduct ? (
         <div className="fixed inset-0 z-40 flex items-end bg-black/40">
-          <div className="w-full rounded-t-3xl bg-white p-6">
+          <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted">Quick View</p>
@@ -1251,12 +1291,27 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setShowCart(false)}
-                className="text-sm font-semibold text-accent"
+                className="interactive-feedback text-sm font-semibold text-accent"
               >
                 Close
               </button>
             </div>
-            {cartItems.length === 0 ? (
+            {isCartHydrating ? (
+              <div className="mt-4 space-y-3" aria-live="polite" aria-busy="true">
+                {Array.from({ length: 2 }).map((_, index) => (
+                  <div
+                    key={`cart-skeleton-${index}`}
+                    className="flex items-center gap-4 rounded-2xl border border-[#f0e4da] p-3"
+                  >
+                    <div className="skeleton-shimmer h-20 w-20 rounded-xl" />
+                    <div className="flex-1 space-y-2">
+                      <div className="skeleton-shimmer h-3 w-2/3 rounded-full" />
+                      <div className="skeleton-shimmer h-3 w-1/2 rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : cartItems.length === 0 ? (
               <div className="mt-6 rounded-2xl border border-[#f0e4da] bg-base p-4 text-center">
                 <p className="text-lg">🛍️</p>
                 <p className="mt-2 text-sm font-semibold text-ink">
@@ -1268,7 +1323,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => setShowCart(false)}
-                  className="mt-3 rounded-full border border-[#e6d8ce] px-4 py-2 text-xs font-semibold text-ink"
+                  className="interactive-feedback mt-3 rounded-full border border-[#e6d8ce] px-4 py-2 text-xs font-semibold text-ink"
                 >
                   Browse products
                 </button>
@@ -1278,7 +1333,10 @@ export default function HomePage() {
                 {cartItems.map((item, index) => (
                   <div
                     key={`${item.id}-${item.size}-${index}`}
-                    className="flex items-center gap-4 rounded-2xl border border-[#f0e4da] p-3"
+                    className={clsx(
+                      "flex items-center gap-4 rounded-2xl border border-[#f0e4da] p-3 transition duration-200",
+                      cartActionLoading[index] && "scale-[0.98] opacity-70"
+                    )}
                   >
                     <Image
                       src={item.imageUrl ?? item.image ?? "/images/product-1.svg"}
@@ -1307,9 +1365,11 @@ export default function HomePage() {
                       <div className="flex items-center gap-2 rounded-full border border-[#e6d8ce] px-2 py-1">
                         <button
                           type="button"
+                          disabled={cartActionLoading[index]}
                           onClick={() =>
-                            updateCartQuantity(index, item.quantity - 1)
+                            void updateCartQuantity(index, item.quantity - 1)
                           }
+                          className="interactive-feedback"
                         >
                           -
                         </button>
@@ -1318,31 +1378,40 @@ export default function HomePage() {
                         </span>
                         <button
                           type="button"
+                          disabled={cartActionLoading[index]}
                           onClick={() =>
-                            updateCartQuantity(index, item.quantity + 1)
+                            void updateCartQuantity(index, item.quantity + 1)
                           }
+                          className="interactive-feedback"
                         >
                           +
                         </button>
                       </div>
                       <button
                         type="button"
-                        onClick={() => removeCartItem(index)}
-                        className="text-xs font-semibold text-accent"
+                        disabled={cartActionLoading[index]}
+                        onClick={() => void removeCartItem(index)}
+                        className="interactive-feedback text-xs font-semibold text-accent"
                       >
-                        Remove
+                        {cartActionLoading[index] ? "Updating..." : "Remove"}
                       </button>
                     </div>
                   </div>
                 ))}
                 <div className="flex items-center justify-between text-sm font-semibold">
                   <span>{text.subtotal}</span>
-                  <span>{formatPrice(getSafeCartSubtotal(cartItems))}</span>
+                  <span>
+                    {isCartHydrating ? (
+                      <span className="skeleton-shimmer inline-block h-4 w-16 rounded-full" />
+                    ) : (
+                      formatPrice(getSafeCartSubtotal(cartItems))
+                    )}
+                  </span>
                 </div>
                 <button
                   type="button"
                   onClick={handleCartCheckout}
-                  className="min-h-[44px] w-full rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white"
+                  className="interactive-feedback min-h-[44px] w-full rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white"
                 >
                   {text.checkout}
                 </button>
@@ -1354,7 +1423,7 @@ export default function HomePage() {
 
       {showCheckout ? (
         <div className="fixed inset-0 z-40 flex items-end bg-black/40">
-          <div className="w-full rounded-t-3xl bg-white p-6">
+          <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted">
@@ -1367,7 +1436,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setShowCheckout(false)}
-                className="text-sm font-semibold text-accent"
+                className="interactive-feedback text-sm font-semibold text-accent"
               >
                 Close
               </button>
@@ -1399,7 +1468,7 @@ export default function HomePage() {
                   type="button"
                   onClick={() => setDeliveryZone("inside")}
                   className={clsx(
-                    "min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
+                    "interactive-feedback min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
                     deliveryZone === "inside"
                       ? "border-accent bg-accent text-white"
                       : "border-[#e6d8ce]"
@@ -1411,7 +1480,7 @@ export default function HomePage() {
                   type="button"
                   onClick={() => setDeliveryZone("outside")}
                   className={clsx(
-                    "min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
+                    "interactive-feedback min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
                     deliveryZone === "outside"
                       ? "border-accent bg-accent text-white"
                       : "border-[#e6d8ce]"
@@ -1506,7 +1575,7 @@ export default function HomePage() {
                 onClick={() => handleWhatsappRedirect("COD")}
                 disabled={!isCustomerInfoValid || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
                 className={clsx(
-                  "min-h-[48px] rounded-full px-4 py-3 text-sm font-semibold",
+                  "interactive-feedback min-h-[48px] rounded-full px-4 py-3 text-sm font-semibold",
                   isCustomerInfoValid && isOnline
                     ? "bg-accent text-white"
                     : "cursor-not-allowed bg-[#e6d8ce] text-muted"
@@ -1519,7 +1588,7 @@ export default function HomePage() {
                 onClick={() => setShowPaymentInfo(true)}
                 disabled={!isCustomerInfoValid || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
                 className={clsx(
-                  "min-h-[48px] rounded-full border px-4 py-3 text-sm font-semibold",
+                  "interactive-feedback min-h-[48px] rounded-full border px-4 py-3 text-sm font-semibold",
                   isCustomerInfoValid && isOnline
                     ? "border-accent text-accent"
                     : "cursor-not-allowed border-[#e6d8ce] text-muted"
@@ -1534,7 +1603,7 @@ export default function HomePage() {
 
       {showPaymentInfo ? (
         <div className="fixed inset-0 z-50 flex items-end bg-black/40">
-          <div className="w-full rounded-t-3xl bg-white p-6">
+          <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted">Payment Info</p>
@@ -1545,7 +1614,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setShowPaymentInfo(false)}
-                className="text-sm font-semibold text-accent"
+                className="interactive-feedback text-sm font-semibold text-accent"
               >
                 Close
               </button>
@@ -1577,7 +1646,7 @@ export default function HomePage() {
               disabled={!hasPaymentProof || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
               onClick={() => handleWhatsappRedirect("bKash/Nagad")}
               className={clsx(
-                "mt-6 min-h-[48px] w-full rounded-full px-4 py-3 text-sm font-semibold",
+                "interactive-feedback mt-6 min-h-[48px] w-full rounded-full px-4 py-3 text-sm font-semibold",
                 hasPaymentProof && isOnline
                   ? "bg-accent text-white"
                   : "cursor-not-allowed bg-[#e6d8ce] text-muted"
