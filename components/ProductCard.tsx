@@ -1,4 +1,5 @@
 "use client";
+// Client component required for interactive product card buttons.
 
 import Image from "next/image";
 import clsx from "clsx";

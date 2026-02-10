@@ -19,7 +19,7 @@ export async function PUT(
     const body = (await req.json()) as Record<string, unknown> & { imageUrl?: string };
     const { id } = params;
 
-    const existing = (await kv.hget<Record<string, unknown>>("tacin_products", id)) ?? {};
+    const existing = (await kv.hget<Record<string, unknown>>("tacin_collection_final", id)) ?? {};
     const patch = {
       ...body,
       ...(body.imageUrl ? { image: body.imageUrl } : {}),
@@ -27,7 +27,7 @@ export async function PUT(
       id,
     };
 
-    await kv.hset("tacin_products", { [id]: { ...existing, ...patch } });
+    await kv.hset("tacin_collection_final", { [id]: { ...existing, ...patch } });
 
     revalidatePath("/");
     revalidatePath("/admin/inventory");

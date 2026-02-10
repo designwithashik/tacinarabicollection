@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const stored = (await kv.hgetall<Record<string, unknown>>("tacin_products")) ?? {};
+    const stored = (await kv.hgetall<Record<string, unknown>>("tacin_collection_final")) ?? {};
     const items = Object.values(stored).filter(
       (value): value is Record<string, unknown> => Boolean(value && typeof value === "object")
     );

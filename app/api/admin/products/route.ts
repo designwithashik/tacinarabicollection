@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 export const runtime = "nodejs";
 
-const PRODUCTS_HASH_KEY = "tacin_products";
+const PRODUCTS_HASH_KEY = "tacin_collection_final";
 
 export async function GET() {
   try {

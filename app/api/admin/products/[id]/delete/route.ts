@@ -16,7 +16,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await kv.hdel("tacin_products", params.id);
+    await kv.hdel("tacin_collection_final", params.id);
 
     revalidatePath("/");
     revalidatePath("/admin/inventory");

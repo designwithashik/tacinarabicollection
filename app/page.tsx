@@ -5,7 +5,7 @@ import { kv } from "@vercel/kv";
 import HomeClient from "./HomeClient";
 import type { AdminProduct } from "../lib/inventory";
 
-const PRODUCTS_HASH_KEY = "tacin_products";
+const PRODUCTS_HASH_KEY = "tacin_collection_final";
 
 const isAdminProduct = (value: unknown): value is AdminProduct => {
   if (!value || typeof value !== "object") return false;
