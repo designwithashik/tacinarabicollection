@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
@@ -214,21 +214,56 @@ export default function HomePage() {
     setIsCartHydrating(false);
   }, []);
 
+  const loadPublicInventory = useCallback(async () => {
+    try {
+      const res = await fetch("/api/products", {
+        cache: "no-store",
+        next: { revalidate: 0 },
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as AdminProduct[];
+      setAdminProducts(Array.isArray(data) ? data : []);
+    } catch {
+      // Graceful fallback keeps static catalog if KV is unavailable.
+      setAdminProducts([]);
+    }
+  }, []);
+
   useEffect(() => {
-    const loadPublicInventory = async () => {
-      try {
-        const res = await fetch("/api/products", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = (await res.json()) as AdminProduct[];
-        setAdminProducts(Array.isArray(data) ? data : []);
-      } catch {
-        // Graceful fallback keeps static catalog if KV is unavailable.
-        setAdminProducts([]);
+    void loadPublicInventory();
+  }, [loadPublicInventory]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        void loadPublicInventory();
       }
     };
 
-    void loadPublicInventory();
-  }, []);
+    const onInventoryUpdated = () => {
+      void loadPublicInventory();
+    };
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "tacin:inventory-updated-at") {
+        void loadPublicInventory();
+      }
+    };
+
+    window.addEventListener("focus", onVisibilityOrFocus);
+    document.addEventListener("visibilitychange", onVisibilityOrFocus);
+    window.addEventListener("tacin:inventory-updated", onInventoryUpdated);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("focus", onVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", onVisibilityOrFocus);
+      window.removeEventListener("tacin:inventory-updated", onInventoryUpdated);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [loadPublicInventory]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

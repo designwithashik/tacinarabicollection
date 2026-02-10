@@ -173,6 +173,11 @@ export default function AdminInventory() {
       setDraft(defaultDraft);
       setSelectedFile(null);
       await loadProducts();
+      if (typeof window !== "undefined") {
+        const stamp = String(Date.now());
+        window.localStorage.setItem("tacin:inventory-updated-at", stamp);
+        window.dispatchEvent(new Event("tacin:inventory-updated"));
+      }
       router.refresh();
     } catch (saveError) {
       setError(
@@ -199,6 +204,12 @@ export default function AdminInventory() {
         setSelectedFile(null);
       }
       await loadProducts();
+      if (typeof window !== "undefined") {
+        const stamp = String(Date.now());
+        window.localStorage.setItem("tacin:inventory-updated-at", stamp);
+        window.dispatchEvent(new Event("tacin:inventory-updated"));
+      }
+      router.refresh();
     } catch {
       setError("Failed to delete product.");
     }
