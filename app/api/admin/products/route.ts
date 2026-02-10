@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 
 export const runtime = "nodejs";
 
+const PRODUCTS_HASH_KEY = "tacin_products";
+
 export async function GET() {
   try {
     if (!process.env.KV_REST_API_URL) {
@@ -13,7 +15,7 @@ export async function GET() {
       );
     }
 
-    const stored = (await kv.hgetall<Record<string, unknown>>("tacin_products")) ?? {};
+    const stored = (await kv.hgetall<Record<string, unknown>>(PRODUCTS_HASH_KEY)) ?? {};
     const items = Object.values(stored).filter(
       (value): value is Record<string, unknown> => Boolean(value && typeof value === "object")
     );
@@ -42,10 +44,10 @@ export async function POST(request: Request) {
     }
 
     // 2. Generate a unique ID (Product Name + Timestamp)
-    const productId = `prod_${Date.now()}`;
+    const productId = `prod_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-    // 3. Save to KV (We store products in a 'products' hash for easy listing)
-    await kv.hset("tacin_products", {
+    // 3. Append to KV hash (adds one field; does not replace the whole collection)
+    await kv.hset(PRODUCTS_HASH_KEY, {
       [productId]: {
         id: productId,
         name,
