@@ -7,6 +7,7 @@
 
 import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,10 @@ export async function DELETE(
 ) {
   try {
     await kv.hdel("tacin_products", params.id);
+
+    revalidatePath("/");
+    revalidatePath("/admin/inventory");
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });

@@ -1,5 +1,6 @@
 import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 export const runtime = "nodejs";
 
@@ -61,6 +62,10 @@ export async function POST(request: Request) {
         createdAt: new Date().toISOString(),
       },
     });
+
+    // Force fresh data on storefront and admin inventory after write.
+    revalidatePath("/");
+    revalidatePath("/admin/inventory");
 
     return NextResponse.json({ success: true, id: productId });
   } catch (error: any) {
