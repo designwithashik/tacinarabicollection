@@ -10,6 +10,8 @@ import SectionLoader from "../components/SectionLoader";
 import CartSkeleton from "../components/CartSkeleton";
 import SummaryPlaceholder from "../components/SummaryPlaceholder";
 import { AnimatedWrapper } from "../components/AnimatedWrapper";
+import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
+import { SlidersHorizontal } from "lucide-react";
 import { products, type Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import {
@@ -40,6 +42,8 @@ const sortOptions = [
   { id: "high-low", label: "Price High-Low" },
 ];
 
+const categories: CategoryFilter[] = ["All", "Clothing", "Ceramic"];
+
 // Delivery fees by zone (BDT)
 const deliveryFees = {
   inside: 60,
@@ -52,6 +56,8 @@ type Filters = {
   price: string | null;
   sort: string | null;
 };
+
+type CategoryFilter = "All" | Product["category"];
 
 type AddState = "idle" | "loading" | "success";
 
@@ -148,9 +154,8 @@ export default function HomePage({
   const [cartNotice, setCartNotice] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [draftFilters, setDraftFilters] = useState<Filters>(defaultFilters);
-  const [activeSheet, setActiveSheet] = useState<
-    "size" | "color" | "price" | "sort" | null
-  >(null);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("All");
+  const [activeSheet, setActiveSheet] = useState<DrawerTab | null>(null);
   const [detailsProduct, setDetailsProduct] = useState<Product | null>(null);
   const [showCart, setShowCart] = useState(false);
   const [checkoutItems, setCheckoutItems] = useState<CartItem[]>([]);
@@ -550,6 +555,10 @@ export default function HomePage({
   const filteredProducts = useMemo(() => {
     let result = [...productSource];
 
+    if (selectedCategory !== "All") {
+      result = result.filter((product) => product.category === selectedCategory);
+    }
+
     if (filters.size.length) {
       result = result.filter((product) =>
         filters.size.some((size) => product.sizes.includes(size))
@@ -581,7 +590,7 @@ export default function HomePage({
     }
 
     return result;
-  }, [filters, productSource]);
+  }, [filters, productSource, selectedCategory]);
 
   const activeChips = [
     ...filters.size.map((size) => ({ type: "size", value: size })),
@@ -611,7 +620,7 @@ export default function HomePage({
     });
   };
 
-  const openSheet = (sheet: "size" | "color" | "price" | "sort") => {
+  const openSheet = (sheet: DrawerTab) => {
     setDraftFilters(filters);
     setActiveSheet(sheet);
   };
@@ -623,6 +632,7 @@ export default function HomePage({
 
   const clearFilters = () => {
     setDraftFilters(defaultFilters);
+    setSelectedCategory("All");
   };
 
   const updateCartQuantity = async (index: number, quantity: number) => {
@@ -852,46 +862,36 @@ export default function HomePage({
       </section>
 
       <section className="sticky top-0 z-20 bg-base/95 backdrop-blur">
-        <div className="mx-auto max-w-6xl px-4 py-3">
-          <div className="flex items-center gap-2 overflow-x-auto">
-            <button
-              type="button"
-              onClick={() => openSheet("size")}
-              className="interactive-feedback flex min-h-[44px] items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-soft"
-            >
-              Filters
-              {(filters.size.length ||
-                filters.colors.length ||
-                filters.price) && (
-                <span className="rounded-full bg-accent px-2 text-xs text-white">
-                  {filters.size.length +
-                    filters.colors.length +
-                    (filters.price ? 1 : 0)}
-                </span>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => openSheet("sort")}
-              className="interactive-feedback min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
-            >
-              Sort
-            </button>
-            <button
-              type="button"
-              onClick={() => openSheet("price")}
-              className="interactive-feedback min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
-            >
-              Price
-            </button>
-            <button
-              type="button"
-              onClick={() => openSheet("color")}
-              className="interactive-feedback min-h-[44px] rounded-full border border-[#e6d8ce] bg-white px-4 py-2 text-sm font-semibold text-ink"
-            >
-              Color
-            </button>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+          <div className="flex flex-1 items-center gap-2 overflow-x-auto">
+            {categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setSelectedCategory(category)}
+                className={clsx(
+                  "interactive-feedback min-h-[42px] whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold",
+                  selectedCategory === category
+                    ? "border-accent bg-accent text-white"
+                    : "border-[#e6d8ce] bg-white text-ink"
+                )}
+              >
+                {category}
+              </button>
+            ))}
           </div>
+          <button
+            type="button"
+            onClick={() => openSheet("size")}
+            className="interactive-feedback flex min-h-[44px] items-center gap-2 rounded-full bg-charcoal px-4 py-2 text-sm font-semibold text-white shadow-soft"
+          >
+            Filters
+            {(filters.size.length || filters.colors.length || filters.price) ? (
+              <span className="rounded-full bg-gold px-2 text-xs text-charcoal">
+                {filters.size.length + filters.colors.length + (filters.price ? 1 : 0)}
+              </span>
+            ) : null}
+          </button>
         </div>
       </section>
 
@@ -1074,6 +1074,15 @@ export default function HomePage({
 
       <button
         type="button"
+        onClick={() => openSheet("size")}
+        className="floating-action interactive-feedback fixed bottom-42 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-charcoal text-white shadow-soft"
+        aria-label="Open filters"
+      >
+        <SlidersHorizontal className="h-5 w-5" />
+      </button>
+
+      <button
+        type="button"
         onClick={() => setShowCart(true)}
         className="floating-action interactive-feedback group fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-soft"
         aria-label="Open cart"
@@ -1122,159 +1131,20 @@ export default function HomePage({
         </div>
       </a>
 
-      {activeSheet ? (
-        <div className="fixed inset-0 z-40 flex items-end bg-black/40">
-          <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-ink">
-                {activeSheet === "size"
-                  ? "Filter by Size"
-                  : activeSheet === "color"
-                  ? "Filter by Color"
-                  : activeSheet === "price"
-                  ? "Filter by Price"
-                  : "Sort Products"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setActiveSheet(null)}
-                className="text-sm font-semibold text-accent"
-              >
-                Close
-              </button>
-            </div>
-
-            {activeSheet === "size" ? (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {["M", "L", "XL"].map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() =>
-                      setDraftFilters((prev) => ({
-                        ...prev,
-                        size: prev.size.includes(size)
-                          ? prev.size.filter((item) => item !== size)
-                          : [...prev.size, size],
-                      }))
-                    }
-                    className={clsx(
-                      "rounded-full border px-4 py-2 text-sm font-semibold",
-                      draftFilters.size.includes(size)
-                        ? "border-accent bg-accent text-white"
-                        : "border-[#e6d8ce]"
-                    )}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
-            {activeSheet === "color" ? (
-              <div className="mt-4 flex flex-wrap gap-3">
-                {[
-                  "Beige",
-                  "Olive",
-                  "Maroon",
-                  "Black",
-                  "Ivory",
-                  "Sand",
-                  "Terracotta",
-                ].map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() =>
-                      setDraftFilters((prev) => ({
-                        ...prev,
-                        colors: prev.colors.includes(color)
-                          ? prev.colors.filter((item) => item !== color)
-                          : [...prev.colors, color],
-                      }))
-                    }
-                    className={clsx(
-                      "rounded-full border px-4 py-2 text-sm font-semibold",
-                      draftFilters.colors.includes(color)
-                        ? "border-accent bg-accent text-white"
-                        : "border-[#e6d8ce]"
-                    )}
-                  >
-                    {color}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
-            {activeSheet === "price" ? (
-              <div className="mt-4 flex flex-col gap-2">
-                {priceRanges.map((range) => (
-                  <button
-                    key={range.id}
-                    type="button"
-                    onClick={() =>
-                      setDraftFilters((prev) => ({
-                        ...prev,
-                        price: prev.price === range.id ? null : range.id,
-                      }))
-                    }
-                    className={clsx(
-                      "rounded-2xl border px-4 py-3 text-left text-sm font-semibold",
-                      draftFilters.price === range.id
-                        ? "border-accent bg-accent text-white"
-                        : "border-[#e6d8ce]"
-                    )}
-                  >
-                    {range.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
-            {activeSheet === "sort" ? (
-              <div className="mt-4 flex flex-col gap-2">
-                {sortOptions.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() =>
-                      setDraftFilters((prev) => ({
-                        ...prev,
-                        sort: option.id,
-                      }))
-                    }
-                    className={clsx(
-                      "rounded-2xl border px-4 py-3 text-left text-sm font-semibold",
-                      draftFilters.sort === option.id
-                        ? "border-accent bg-accent text-white"
-                        : "border-[#e6d8ce]"
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
-            <div className="mt-6 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="min-h-[44px] rounded-full border border-[#e6d8ce] px-4 py-2 text-sm font-semibold text-ink"
-              >
-                {text.clear}
-              </button>
-              <button
-                type="button"
-                onClick={applyFilters}
-                className="min-h-[44px] rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white"
-              >
-                {text.applyFilters}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <FilterDrawer
+        open={Boolean(activeSheet)}
+        activeTab={activeSheet ?? "size"}
+        draftFilters={draftFilters}
+        priceRanges={priceRanges}
+        sortOptions={sortOptions}
+        onClose={() => setActiveSheet(null)}
+        onTabChange={setActiveSheet}
+        onDraftChange={setDraftFilters}
+        onApply={applyFilters}
+        onClear={clearFilters}
+        clearLabel={text.clear}
+        applyLabel={text.applyFilters}
+      />
 
       {detailsProduct ? (
         <div className="fixed inset-0 z-40 flex items-end bg-black/40">
