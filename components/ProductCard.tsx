@@ -8,26 +8,16 @@ import type { Product } from "../lib/products";
 
 const sizes = ["M", "L", "XL"] as const;
 
-const slugify = (value: string) =>
-  value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "")
-    .slice(0, 80) || "tacin-arabi-product";
-
-const toOptimizedImageKitUrl = (source: string, productName: string) => {
+const toOptimizedImageKitUrl = (source: string) => {
   if (!source.startsWith("https://ik.imagekit.io/")) return source;
 
-  const seoName = slugify(productName);
   const [base] = source.split("?");
   const hasTr = /\/tr:/.test(base);
-  const transform = "w-840,h-1050,c-maintain_ratio,q-70,f-webp";
+  const transform = "w-1080,h-1350,c-at_max,q-90,f-webp";
 
-  const transformedBase = hasTr
+  return hasTr
     ? base.replace(/\/tr:[^/]+\//, `/tr:${transform}/`)
     : base.replace("https://ik.imagekit.io/", `https://ik.imagekit.io/tr:${transform}/`);
-
-  return `${transformedBase}?ik-seo=${encodeURIComponent(`${seoName}.webp`)}`;
 };
 
 type AddState = "idle" | "loading" | "success";
@@ -81,8 +71,8 @@ export default function ProductCard({
 
   const imageSrc = useMemo(() => {
     if (!product.image || !product.image.trim()) return null;
-    return toOptimizedImageKitUrl(product.image, product.name);
-  }, [product.image, product.name]);
+    return toOptimizedImageKitUrl(product.image);
+  }, [product.image]);
 
   const sizeMissing = !selectedSize;
   const addLabel =
@@ -111,11 +101,11 @@ export default function ProductCard({
             onError={() => setImageFailed(true)}
           />
         ) : (
-          <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-b from-[#f6efe3] via-[#f2e6d3] to-[#e8dcc6]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.65),transparent_45%),radial-gradient(circle_at_70%_75%,rgba(200,169,107,0.3),transparent_42%)]" />
+          <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-b from-[#f3f4f6] via-[#eceff2] to-[#e5e7eb]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.75),transparent_45%),radial-gradient(circle_at_70%_75%,rgba(148,163,184,0.22),transparent_42%)]" />
             <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-white/40 bg-white/45 p-3 text-left backdrop-blur-sm">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/70">Tacin Arabi</p>
-              <p className="mt-1 font-heading text-sm font-semibold text-charcoal/85">Luxury Placeholder</p>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/70">Image unavailable</p>
+              <p className="mt-1 font-heading text-sm font-semibold text-charcoal/85">Preview loading</p>
             </div>
           </div>
         )}
