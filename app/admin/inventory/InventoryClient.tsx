@@ -8,7 +8,7 @@ import type { AdminProduct } from "../../../lib/inventory";
 import { validateImageUrl } from "../../../lib/images";
 
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
-const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added"] as const;
+const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
 
 const defaultDraft: AdminProduct = {
   id: "",

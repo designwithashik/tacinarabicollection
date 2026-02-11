@@ -84,7 +84,29 @@ const storageKeys = {
 const statusLabels = ["New", "Hot", "Limited"] as const;
 
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
-const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added"] as const;
+const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
+
+const normalizeInventoryResponse = (payload: unknown): AdminProduct[] => {
+  if (Array.isArray(payload)) {
+    return payload.filter(
+      (item): item is AdminProduct => Boolean(item && typeof item === "object")
+    );
+  }
+
+  if (payload && typeof payload === "object") {
+    const objectPayload = payload as Record<string, unknown>;
+
+    if ("id" in objectPayload) {
+      return [objectPayload as AdminProduct];
+    }
+
+    return Object.values(objectPayload).filter(
+      (item): item is AdminProduct => Boolean(item && typeof item === "object")
+    );
+  }
+
+  return [];
+};
 
 // Minimal EN/BN labels used for critical UI only
 const copy = {
@@ -227,8 +249,8 @@ export default function HomePage({
         next: { revalidate: 0 },
       });
       if (!res.ok) return;
-      const data = (await res.json()) as AdminProduct[];
-      setAdminProducts(Array.isArray(data) ? data : []);
+      const data = (await res.json()) as unknown;
+      setAdminProducts(normalizeInventoryResponse(data));
     } catch {
       // Keep existing state if live inventory fetch fails.
       setAdminProducts((current) => current);

@@ -10,13 +10,42 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-export async function GET() {
-  try {
-    const stored = (await kv.hgetall<Record<string, unknown>>("tacin_collection_final")) ?? {};
-    const items = Object.values(stored).filter(
+const PRODUCTS_KEY = "tacin_collection_final";
+
+const normalizeCollection = (payload: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(payload)) {
+    return payload.filter(
       (value): value is Record<string, unknown> => Boolean(value && typeof value === "object")
     );
-    return NextResponse.json(items);
+  }
+
+  if (payload && typeof payload === "object") {
+    const objectPayload = payload as Record<string, unknown>;
+
+    if ("id" in objectPayload) {
+      return [objectPayload];
+    }
+
+    return Object.values(objectPayload).filter(
+      (value): value is Record<string, unknown> => Boolean(value && typeof value === "object")
+    );
+  }
+
+  return [];
+};
+
+export async function GET() {
+  try {
+    const hashCollection = (await kv.hgetall<Record<string, unknown>>(PRODUCTS_KEY)) ?? {};
+    const hashItems = normalizeCollection(hashCollection);
+
+    if (hashItems.length > 0) {
+      return NextResponse.json(hashItems);
+    }
+
+    // Legacy fallback in case older deployments stored this key with kv.set().
+    const rawCollection = await kv.get<unknown>(PRODUCTS_KEY);
+    return NextResponse.json(normalizeCollection(rawCollection));
   } catch {
     return NextResponse.json([]);
   }

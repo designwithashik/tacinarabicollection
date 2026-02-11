@@ -43,11 +43,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Generate a unique ID (Product Name + Timestamp)
+    // 2. Read current collection to guarantee append semantics.
+    const existingCollection =
+      (await kv.hgetall<Record<string, unknown>>(PRODUCTS_HASH_KEY)) ?? {};
+
+    // 3. Generate a unique ID (Product Name + Timestamp)
     const productId = `prod_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-    // 3. Append to KV hash (adds one field; does not replace the whole collection)
+    // 4. Append to KV hash (adds one field; does not replace the whole collection)
     await kv.hset(PRODUCTS_HASH_KEY, {
+      ...existingCollection,
       [productId]: {
         id: productId,
         name,

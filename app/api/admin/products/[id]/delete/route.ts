@@ -16,7 +16,17 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await kv.hdel("tacin_collection_final", params.id);
+    const existingCollection =
+      (await kv.hgetall<Record<string, unknown>>("tacin_collection_final")) ?? {};
+
+    const nextCollection = Object.fromEntries(
+      Object.entries(existingCollection).filter(([id]) => id !== params.id)
+    );
+
+    await kv.del("tacin_collection_final");
+    if (Object.keys(nextCollection).length > 0) {
+      await kv.hset("tacin_collection_final", nextCollection);
+    }
 
     revalidatePath("/");
     revalidatePath("/admin/inventory");
