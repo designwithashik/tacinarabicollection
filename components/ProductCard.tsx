@@ -8,6 +8,28 @@ import type { Product } from "../lib/products";
 
 const sizes = ["M", "L", "XL"] as const;
 
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "")
+    .slice(0, 80) || "tacin-arabi-product";
+
+const toOptimizedImageKitUrl = (source: string, productName: string) => {
+  if (!source.startsWith("https://ik.imagekit.io/")) return source;
+
+  const seoName = slugify(productName);
+  const [base] = source.split("?");
+  const hasTr = /\/tr:/.test(base);
+  const transform = "w-840,h-1050,c-maintain_ratio,q-70,f-webp";
+
+  const transformedBase = hasTr
+    ? base.replace(/\/tr:[^/]+\//, `/tr:${transform}/`)
+    : base.replace("https://ik.imagekit.io/", `https://ik.imagekit.io/tr:${transform}/`);
+
+  return `${transformedBase}?ik-seo=${encodeURIComponent(`${seoName}.webp`)}`;
+};
+
 type AddState = "idle" | "loading" | "success";
 
 type Props = {
@@ -59,8 +81,8 @@ export default function ProductCard({
 
   const imageSrc = useMemo(() => {
     if (!product.image || !product.image.trim()) return null;
-    return product.image;
-  }, [product.image]);
+    return toOptimizedImageKitUrl(product.image, product.name);
+  }, [product.image, product.name]);
 
   const sizeMissing = !selectedSize;
   const addLabel =
