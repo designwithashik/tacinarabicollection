@@ -251,7 +251,7 @@ export default function HomePage({
       if (!res.ok) return;
       const data = (await res.json()) as unknown;
       console.log("DATA:", data);
-      const shaped = Array.isArray(data) ? data.flat() : [data];
+      const shaped = Array.isArray(data) ? data.flat() : (data ? [data] : []);
       setAdminProducts(normalizeInventoryResponse(shaped));
     } catch {
       // Keep existing state if live inventory fetch fails.

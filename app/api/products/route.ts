@@ -10,6 +10,10 @@ export const runtime = "nodejs";
 
 const PRODUCTS_KEY = "tacin_collection_final";
 
+const hasKvConnection = Boolean(
+  (process.env.KV_URL || process.env.KV_REST_API_URL) && process.env.KV_REST_API_TOKEN
+);
+
 type ProductRecord = Record<string, unknown>;
 
 const normalizeCollection = (payload: unknown): ProductRecord[] => {
@@ -35,6 +39,10 @@ const normalizeCollection = (payload: unknown): ProductRecord[] => {
 };
 
 export async function GET() {
+  if (!hasKvConnection) {
+    return NextResponse.json([]);
+  }
+
   try {
     const rawCollection = await kv.get<unknown>(PRODUCTS_KEY);
     const normalized = normalizeCollection(rawCollection);
