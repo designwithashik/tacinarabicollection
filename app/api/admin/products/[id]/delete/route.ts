@@ -1,8 +1,6 @@
 /*
  * What this file does:
- *   - Deletes a product from KV hash storage.
- * Why it exists:
- *   - Keeps admin delete flow consistent with GET/POST key.
+ *   - Deletes a product from KV collection storage.
  */
 
 import { kv } from "@vercel/kv";
@@ -11,28 +9,45 @@ import { revalidatePath } from "next/cache";
 
 export const runtime = "nodejs";
 
+const PRODUCTS_KEY = "tacin_collection_final";
+
+type ProductRecord = Record<string, unknown>;
+
+const toArray = (payload: unknown): ProductRecord[] => {
+  if (Array.isArray(payload)) {
+    return payload.filter(
+      (item): item is ProductRecord => Boolean(item && typeof item === "object")
+    );
+  }
+
+  if (payload && typeof payload === "object") {
+    return [payload as ProductRecord];
+  }
+
+  return [];
+};
+
 export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const existingCollection =
-      (await kv.hgetall<Record<string, unknown>>("tacin_collection_final")) ?? {};
+    // CRITICAL: Fetch existing and force array before filtering.
+    const existing = (await kv.get<unknown>(PRODUCTS_KEY)) ?? [];
+    const array = toArray(existing);
+    const updated = array.filter((item) => item.id !== params.id);
 
-    const nextCollection = Object.fromEntries(
-      Object.entries(existingCollection).filter(([id]) => id !== params.id)
-    );
-
-    await kv.del("tacin_collection_final");
-    if (Object.keys(nextCollection).length > 0) {
-      await kv.hset("tacin_collection_final", nextCollection);
-    }
+    // CRITICAL: Save WHOLE array back.
+    await kv.set(PRODUCTS_KEY, updated);
 
     revalidatePath("/");
     revalidatePath("/admin/inventory");
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

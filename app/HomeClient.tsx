@@ -250,7 +250,9 @@ export default function HomePage({
       });
       if (!res.ok) return;
       const data = (await res.json()) as unknown;
-      setAdminProducts(normalizeInventoryResponse(data));
+      console.log("DATA:", data);
+      const shaped = Array.isArray(data) ? data.flat() : [data];
+      setAdminProducts(normalizeInventoryResponse(shaped));
     } catch {
       // Keep existing state if live inventory fetch fails.
       setAdminProducts((current) => current);

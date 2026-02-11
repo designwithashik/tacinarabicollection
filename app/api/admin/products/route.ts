@@ -4,7 +4,23 @@ import { revalidatePath } from "next/cache";
 
 export const runtime = "nodejs";
 
-const PRODUCTS_HASH_KEY = "tacin_collection_final";
+const PRODUCTS_KEY = "tacin_collection_final";
+
+type ProductRecord = Record<string, unknown>;
+
+const toArray = (payload: unknown): ProductRecord[] => {
+  if (Array.isArray(payload)) {
+    return payload.filter(
+      (item): item is ProductRecord => Boolean(item && typeof item === "object")
+    );
+  }
+
+  if (payload && typeof payload === "object") {
+    return [payload as ProductRecord];
+  }
+
+  return [];
+};
 
 export async function GET() {
   try {
@@ -15,12 +31,8 @@ export async function GET() {
       );
     }
 
-    const stored = (await kv.hgetall<Record<string, unknown>>(PRODUCTS_HASH_KEY)) ?? {};
-    const items = Object.values(stored).filter(
-      (value): value is Record<string, unknown> => Boolean(value && typeof value === "object")
-    );
-
-    return NextResponse.json(items);
+    const existing = await kv.get<unknown>(PRODUCTS_KEY);
+    return NextResponse.json(toArray(existing));
   } catch (error: any) {
     console.error("KV READ ERROR:", error);
     return NextResponse.json(
@@ -35,7 +47,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, price, description, category, imageUrl, whatsappNumber } = body;
 
-    // 1. Check if KV is connected
     if (!process.env.KV_REST_API_URL) {
       return NextResponse.json(
         { error: "Vercel KV is not linked to this project." },
@@ -43,34 +54,32 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Read current collection to guarantee append semantics.
-    const existingCollection =
-      (await kv.hgetall<Record<string, unknown>>(PRODUCTS_HASH_KEY)) ?? {};
+    // CRITICAL: Always read collection first and force array shape.
+    const existing = (await kv.get<unknown>(PRODUCTS_KEY)) ?? [];
+    const array = toArray(existing);
 
-    // 3. Generate a unique ID (Product Name + Timestamp)
     const productId = `prod_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-    // 4. Append to KV hash (adds one field; does not replace the whole collection)
-    await kv.hset(PRODUCTS_HASH_KEY, {
-      ...existingCollection,
-      [productId]: {
-        id: productId,
-        name,
-        price,
-        description,
-        category,
-        imageUrl,
-        image: imageUrl,
-        whatsappNumber,
-        active: true,
-        colors: ["Beige"],
-        sizes: ["M", "L", "XL"],
-        updatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      },
-    });
+    const newItem: ProductRecord = {
+      id: productId,
+      name,
+      price,
+      description,
+      category,
+      imageUrl,
+      image: imageUrl,
+      whatsappNumber,
+      active: true,
+      colors: ["Beige"],
+      sizes: ["M", "L", "XL"],
+      updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
 
-    // Force fresh data on storefront and admin inventory after write.
+    // CRITICAL: Save whole array back, never single object overwrite.
+    const updated = [newItem, ...array.filter((item) => item?.id !== productId)];
+    await kv.set(PRODUCTS_KEY, updated);
+
     revalidatePath("/");
     revalidatePath("/admin/inventory");
 
