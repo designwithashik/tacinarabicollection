@@ -12,7 +12,6 @@ import SummaryPlaceholder from "../components/SummaryPlaceholder";
 import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import { SlidersHorizontal } from "lucide-react";
-import { products, type Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import {
   getSafeCartSubtotal,
@@ -56,7 +55,7 @@ type Filters = {
   sort: string | null;
 };
 
-type CategoryFilter = "All" | Product["category"];
+type CategoryFilter = "All" | AdminProduct["category"];
 
 type AddState = "idle" | "loading" | "success";
 
@@ -82,6 +81,9 @@ const storageKeys = {
 };
 
 const statusLabels = ["New", "Hot", "Limited"] as const;
+
+const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
+const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added"] as const;
 
 // Minimal EN/BN labels used for critical UI only
 const copy = {
@@ -227,7 +229,7 @@ export default function HomePage({
       const data = (await res.json()) as AdminProduct[];
       setAdminProducts(Array.isArray(data) ? data : []);
     } catch {
-      // Graceful fallback keeps existing inventory state if KV is unavailable.
+      // Keep existing state if live inventory fetch fails.
       setAdminProducts((current) => current);
     }
   }, []);
@@ -250,20 +252,24 @@ export default function HomePage({
     };
 
     const onStorage = (event: StorageEvent) => {
-      if (event.key === "tacin:inventory-updated-at") {
+      if (event.key === INVENTORY_UPDATED_STORAGE_KEY) {
         void loadPublicInventory();
       }
     };
 
     window.addEventListener("focus", onVisibilityOrFocus);
     document.addEventListener("visibilitychange", onVisibilityOrFocus);
-    window.addEventListener("tacin:inventory-updated", onInventoryUpdated);
+    INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
+      window.addEventListener(eventName, onInventoryUpdated);
+    });
     window.addEventListener("storage", onStorage);
 
     return () => {
       window.removeEventListener("focus", onVisibilityOrFocus);
       document.removeEventListener("visibilitychange", onVisibilityOrFocus);
-      window.removeEventListener("tacin:inventory-updated", onInventoryUpdated);
+      INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
+        window.removeEventListener(eventName, onInventoryUpdated);
+      });
       window.removeEventListener("storage", onStorage);
     };
   }, [loadPublicInventory]);
@@ -537,9 +543,7 @@ export default function HomePage({
   // ------------------------------
   // Derived data
   // ------------------------------
-  const productSource = adminProducts.length
-    ? adminProducts.filter((item) => item.active !== false)
-    : products;
+  const productSource = adminProducts.filter((item) => item.active !== false);
 
   const filteredProducts = useMemo(() => {
     let result = [...productSource];
