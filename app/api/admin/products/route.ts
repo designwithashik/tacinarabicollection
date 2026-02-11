@@ -1,47 +1,17 @@
-import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import {
+  loadInventoryArray,
+  saveInventoryArray,
+  toStorefrontProduct,
+} from "../../../lib/server/inventoryStore";
 
 export const runtime = "nodejs";
 
-const PRODUCTS_KEY = "tacin_collection_final";
-
-type ProductRecord = Record<string, unknown>;
-
-const normalizeCollection = (payload: unknown): ProductRecord[] => {
-  if (Array.isArray(payload)) {
-    return payload.filter(
-      (item): item is ProductRecord => Boolean(item && typeof item === "object")
-    );
-  }
-
-  if (payload && typeof payload === "object") {
-    const objectPayload = payload as ProductRecord;
-
-    if (typeof objectPayload.id === "string") {
-      return [objectPayload];
-    }
-
-    return Object.values(objectPayload).filter(
-      (item): item is ProductRecord => Boolean(item && typeof item === "object")
-    );
-  }
-
-  return [];
-};
-
-const loadCollection = async (): Promise<ProductRecord[]> => {
-  const stored = await kv.get<unknown>(PRODUCTS_KEY);
-  const normalized = normalizeCollection(stored);
-  if (normalized.length > 0) return normalized;
-
-  const legacy = (await kv.hgetall<Record<string, unknown>>(PRODUCTS_KEY)) ?? {};
-  return normalizeCollection(legacy);
-};
-
 export async function GET() {
   try {
-    return NextResponse.json(await loadCollection());
+    const items = await loadInventoryArray();
+    return NextResponse.json(items.map(toStorefrontProduct));
   } catch {
     return NextResponse.json([]);
   }
@@ -52,32 +22,30 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, price, description, category, imageUrl, whatsappNumber } = body;
 
-    const array = await loadCollection();
-    const productId = `prod_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const existing = await loadInventoryArray();
 
-    const newItem: ProductRecord = {
-      id: productId,
-      name,
-      price,
-      description,
-      category,
-      imageUrl,
-      image: imageUrl,
-      whatsappNumber,
+    const newProduct = {
+      id: crypto.randomUUID(),
+      name: String(name ?? "").trim(),
+      price: Number(price),
+      imageUrl: typeof imageUrl === "string" && imageUrl.startsWith("http") ? imageUrl : null,
       active: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      category: typeof category === "string" ? category : "Clothing",
+      description: typeof description === "string" ? description : "",
+      whatsappNumber: typeof whatsappNumber === "string" ? whatsappNumber : "",
       colors: ["Beige"],
       sizes: ["M", "L", "XL"],
-      updatedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
     };
 
-    const updated = [newItem, ...array.filter((item) => item?.id !== productId)];
-    await kv.set(PRODUCTS_KEY, updated);
+    const updated = [...existing, newProduct];
+    await saveInventoryArray(updated);
 
     revalidatePath("/");
     revalidatePath("/admin/inventory");
 
-    return NextResponse.json({ success: true, id: productId });
+    return NextResponse.json({ success: true, id: newProduct.id });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Unable to save product." },
