@@ -12,6 +12,7 @@ import SummaryPlaceholder from "../components/SummaryPlaceholder";
 import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import { SlidersHorizontal } from "lucide-react";
+import type { Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import {
   getSafeCartSubtotal,
