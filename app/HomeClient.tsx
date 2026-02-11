@@ -610,6 +610,8 @@ export default function HomePage({
     return result;
   }, [filters, productSource, selectedCategory]);
 
+  const visibleProducts = hasMounted && Array.isArray(filteredProducts) ? filteredProducts : [];
+
   const activeChips = [
     ...filters.size.map((size) => ({ type: "size", value: size })),
     ...filters.colors.map((color) => ({ type: "color", value: color })),
@@ -945,7 +947,7 @@ export default function HomePage({
             </div>
           }
         >
-          {filteredProducts.length === 0 ? (
+          {visibleProducts.length === 0 ? (
           <div className="rounded-3xl bg-card p-6 text-center shadow-soft">
             <p className="text-lg font-semibold text-ink">No products found.</p>
             <p className="mt-2 text-sm text-muted">
@@ -959,7 +961,7 @@ export default function HomePage({
               !prefersReducedMotion && "fade-enter"
             )}
           >
-            {filteredProducts.map((product, index) => (
+            {visibleProducts.map((product, index) => (
               <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.24)}>
                 <ProductCard
                 product={product}

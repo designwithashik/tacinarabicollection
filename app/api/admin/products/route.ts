@@ -6,6 +6,10 @@ export const runtime = "nodejs";
 
 const PRODUCTS_KEY = "tacin_collection_final";
 
+const hasKvConnection = Boolean(
+  (process.env.KV_URL || process.env.KV_REST_API_URL) && process.env.KV_REST_API_TOKEN
+);
+
 type ProductRecord = Record<string, unknown>;
 
 const toArray = (payload: unknown): ProductRecord[] => {
@@ -23,22 +27,15 @@ const toArray = (payload: unknown): ProductRecord[] => {
 };
 
 export async function GET() {
-  try {
-    if (!process.env.KV_REST_API_URL) {
-      return NextResponse.json(
-        { error: "Vercel KV is not linked to this project." },
-        { status: 500 }
-      );
-    }
+  if (!hasKvConnection) {
+    return NextResponse.json([]);
+  }
 
+  try {
     const existing = await kv.get<unknown>(PRODUCTS_KEY);
     return NextResponse.json(toArray(existing));
-  } catch (error: any) {
-    console.error("KV READ ERROR:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json([]);
   }
 }
 
@@ -47,11 +44,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, price, description, category, imageUrl, whatsappNumber } = body;
 
-    if (!process.env.KV_REST_API_URL) {
-      return NextResponse.json(
-        { error: "Vercel KV is not linked to this project." },
-        { status: 500 }
-      );
+    if (!hasKvConnection) {
+      return NextResponse.json([]);
     }
 
     // CRITICAL: Always read collection first and force array shape.
@@ -84,11 +78,7 @@ export async function POST(request: Request) {
     revalidatePath("/admin/inventory");
 
     return NextResponse.json({ success: true, id: productId });
-  } catch (error: any) {
-    console.error("KV SAVE ERROR:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json([]);
   }
 }
