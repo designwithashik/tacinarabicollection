@@ -6,9 +6,6 @@ export const runtime = "nodejs";
 
 const PRODUCTS_KEY = "tacin_collection_final";
 
-const hasKvConnection = Boolean(
-  (process.env.KV_URL || process.env.KV_REST_API_URL) && process.env.KV_REST_API_TOKEN
-);
 
 type ProductRecord = Record<string, unknown>;
 
@@ -27,10 +24,6 @@ const toArray = (payload: unknown): ProductRecord[] => {
 };
 
 export async function GET() {
-  if (!hasKvConnection) {
-    return NextResponse.json([]);
-  }
-
   try {
     const existing = await kv.get<unknown>(PRODUCTS_KEY);
     return NextResponse.json(toArray(existing));
@@ -43,10 +36,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { name, price, description, category, imageUrl, whatsappNumber } = body;
-
-    if (!hasKvConnection) {
-      return NextResponse.json([]);
-    }
 
     // CRITICAL: Always read collection first and force array shape.
     const existing = (await kv.get<unknown>(PRODUCTS_KEY)) ?? [];
