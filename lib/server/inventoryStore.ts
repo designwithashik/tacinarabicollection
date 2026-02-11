@@ -2,6 +2,8 @@ import { kv } from "@vercel/kv";
 
 export const INVENTORY_PRODUCTS_KEY = "inventory:products";
 
+type InventoryRecord = Record<string, unknown>;
+
 export type InventoryProduct = {
   id: string;
   name: string;
@@ -17,7 +19,7 @@ export type InventoryProduct = {
   whatsappNumber?: string;
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
+const isRecord = (value: unknown): value is InventoryRecord =>
   Boolean(value && typeof value === "object");
 
 const normalizeImageUrl = (value: unknown): string | null => {
@@ -41,14 +43,12 @@ const toInventoryProduct = (source: unknown): InventoryProduct | null => {
 
   if (!id || !name || !Number.isFinite(price)) return null;
 
-  const imageUrl =
-    normalizeImageUrl(source.imageUrl) ?? normalizeImageUrl(source.image) ?? null;
-
   return {
     id,
     name,
     price,
-    imageUrl,
+    imageUrl:
+      normalizeImageUrl(source.imageUrl) ?? normalizeImageUrl(source.image) ?? null,
     active: source.active !== false,
     createdAt:
       typeof source.createdAt === "number"
@@ -71,7 +71,7 @@ const toInventoryProduct = (source: unknown): InventoryProduct | null => {
   };
 };
 
-export const normalizeInventoryCollection = (payload: unknown): InventoryProduct[] => {
+const normalizeInventoryCollection = (payload: unknown): InventoryProduct[] => {
   if (Array.isArray(payload)) {
     return payload.map(toInventoryProduct).filter((p): p is InventoryProduct => Boolean(p));
   }
@@ -90,23 +90,41 @@ export const normalizeInventoryCollection = (payload: unknown): InventoryProduct
   return [];
 };
 
-export const loadInventoryArray = async (): Promise<InventoryProduct[]> => {
-  const current = await kv.get<unknown>(INVENTORY_PRODUCTS_KEY);
-  const normalized = normalizeInventoryCollection(current);
-  if (normalized.length > 0) return normalized;
+async function tryLegacyMigration(): Promise<InventoryProduct[] | null> {
+  try {
+    const legacy = await kv.hgetall<Record<string, unknown>>("tacin_collection_final");
+    if (!legacy || Object.keys(legacy).length === 0) return null;
 
-  const legacyArray = await kv.get<unknown>("tacin_collection_final");
-  const normalizedLegacyArray = normalizeInventoryCollection(legacyArray);
-  if (normalizedLegacyArray.length > 0) return normalizedLegacyArray;
+    const normalized = Object.values(legacy)
+      .map(toInventoryProduct)
+      .filter((item): item is InventoryProduct => Boolean(item));
 
-  const legacyHash = (await kv.hgetall<Record<string, unknown>>("tacin_collection_final")) ?? {};
-  return normalizeInventoryCollection(legacyHash);
-};
+    return normalized.length ? normalized : null;
+  } catch {
+    // WRONGTYPE / missing / inaccessible legacy key should never crash runtime.
+    return null;
+  }
+}
 
-export const saveInventoryArray = async (products: InventoryProduct[]) => {
-  await kv.set(INVENTORY_PRODUCTS_KEY, products);
-};
+export async function loadInventoryArray(): Promise<InventoryProduct[]> {
+  const canonical = await kv.get<InventoryProduct[] | unknown>(INVENTORY_PRODUCTS_KEY);
 
+  if (Array.isArray(canonical)) {
+    return normalizeInventoryCollection(canonical);
+  }
+
+  const migrated = await tryLegacyMigration();
+  if (migrated && migrated.length > 0) {
+    await kv.set(INVENTORY_PRODUCTS_KEY, migrated);
+    return migrated;
+  }
+
+  return [];
+}
+
+export async function saveInventoryArray(items: InventoryProduct[]) {
+  await kv.set(INVENTORY_PRODUCTS_KEY, items);
+}
 
 export type StorefrontProduct = {
   id: string;
