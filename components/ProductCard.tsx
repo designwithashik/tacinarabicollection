@@ -2,14 +2,11 @@
 
 import clsx from "clsx";
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
-import { ShoppingBag } from "lucide-react";
+import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/products";
 
 const sizes = ["M", "L", "XL"] as const;
-
-const easeLuxury: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 const toOptimizedImageKitUrl = (source: string) => {
   if (!source.startsWith("https://ik.imagekit.io/")) return source;
@@ -51,18 +48,12 @@ export default function ProductCard({
   selectedSize,
   onSizeChange,
   onBuyNow,
-  onAddToCart,
   onOpenDetails,
   showBadge,
   buyNowLabel,
-  addingLabel,
-  addedLabel,
-  addState,
-  statusLabel,
-  stockLabel,
 }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
-  const [isActive, setIsActive] = useState(false);
+  const [showSizes, setShowSizes] = useState(false);
 
   useEffect(() => {
     setImageFailed(false);
@@ -74,123 +65,85 @@ export default function ProductCard({
   }, [product.image]);
 
   const sizeMissing = !selectedSize;
-  const ctaLabel = addState === "loading" ? addingLabel : addState === "success" ? addedLabel : buyNowLabel;
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
       viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.8, ease: easeLuxury }}
-      className="group relative"
-      onMouseEnter={() => setIsActive(true)}
-      onMouseLeave={() => setIsActive(false)}
+      transition={{ duration: 0.5 }}
+      className="group flex flex-col"
+      onMouseEnter={() => setShowSizes(true)}
+      onMouseLeave={() => setShowSizes(false)}
     >
       <button
         type="button"
-        className="interactive-feedback relative w-full overflow-hidden rounded-[32px] bg-[#f7f7f7] shadow-sm transition-all duration-700 hover:shadow-2xl"
+        className="interactive-feedback relative w-full overflow-hidden rounded-2xl bg-[#f9f9f9]"
         onClick={onOpenDetails}
         aria-label={`Open details for ${product.name}`}
       >
         {imageSrc && !imageFailed ? (
-          <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 1.5, ease: easeLuxury }}>
-            <Image
-              src={imageSrc}
-              alt={product.name}
-              width={720}
-              height={960}
-              className="aspect-[3/4] w-full object-cover"
-              onError={() => setImageFailed(true)}
-              priority={false}
-            />
-          </motion.div>
+          <Image
+            src={imageSrc}
+            alt={product.name}
+            width={720}
+            height={960}
+            className="aspect-[3/4] h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105"
+            onError={() => setImageFailed(true)}
+          />
         ) : (
-          <div className="relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-b from-[#f3f4f6] via-[#eceff2] to-[#e5e7eb]" />
+          <div className="aspect-[3/4] h-full w-full bg-[#f1f1f1]" />
         )}
 
-        <div className="absolute left-6 top-6 rounded-full border border-white/20 bg-white/60 px-4 py-1.5 backdrop-blur-md">
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-black">{product.category}</span>
-        </div>
-
         {showBadge ? (
-          <div className="absolute right-6 top-6 rounded-full bg-accent px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white">
+          <span className="absolute right-4 top-4 rounded-full bg-black px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white">
             {showBadge}
-          </div>
+          </span>
         ) : null}
       </button>
 
-      <div className="mt-6 px-2">
-        <div className="mb-4 flex items-end justify-between gap-3">
-          <div className="space-y-1">
-            <h3 className="font-heading text-[18px] leading-tight text-black">{product.name}</h3>
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gray-400">
-              {statusLabel} • {stockLabel}
-            </p>
-          </div>
-          <div className="text-right">
-            <span className="block text-[10px] uppercase tracking-[0.3em] text-gray-400">Price</span>
-            <span className="text-xl font-light text-black">৳{product.price}</span>
-          </div>
+      <div className="mt-4 flex flex-col space-y-1 px-1">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="text-sm font-medium uppercase tracking-wider text-zinc-900">{product.name}</h3>
+          <span className="text-sm font-semibold text-zinc-900">৳{product.price}</span>
         </div>
 
-        <AnimatePresence>
-          {(isActive || sizeMissing) && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.35, ease: easeLuxury }}
-              className="mb-6 flex gap-3"
-            >
-              {sizes.map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => onSizeChange(size)}
-                  className={clsx(
-                    "h-10 w-10 rounded-full border text-[11px] transition-all duration-300",
-                    selectedSize === size
-                      ? "scale-110 border-black bg-black text-white shadow-lg"
-                      : "border-gray-200 text-gray-500 hover:border-black hover:text-black"
-                  )}
-                >
-                  {size}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <p className="pb-2 text-xs uppercase tracking-[0.3em] text-zinc-400">{product.category}</p>
+
+        {(showSizes || sizeMissing) && (
+          <div className="mb-3 flex gap-2">
+            {sizes.map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => onSizeChange(size)}
+                className={clsx(
+                  "h-8 w-8 rounded-full border text-[10px] transition-all duration-300",
+                  selectedSize === size
+                    ? "border-zinc-900 bg-zinc-900 text-white"
+                    : "border-zinc-200 text-zinc-500 hover:border-zinc-900 hover:text-zinc-900"
+                )}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        )}
 
         <button
           type="button"
           onClick={onBuyNow}
           disabled={sizeMissing}
           className={clsx(
-            "group/cta relative w-full overflow-hidden rounded-full bg-black py-4 transition-all duration-500",
-            sizeMissing ? "cursor-not-allowed opacity-60" : "hover:bg-zinc-800 active:scale-[0.98]"
+            "w-full rounded-lg border py-3 text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300",
+            sizeMissing
+              ? "cursor-not-allowed border-zinc-200 text-zinc-400"
+              : "border-zinc-200 text-zinc-800 hover:bg-zinc-900 hover:text-white"
           )}
         >
-          <div className="flex items-center justify-center gap-2 text-white">
-            <span className="text-[11px] font-bold uppercase tracking-[0.3em]">{ctaLabel}</span>
-            <ShoppingBag size={14} className="transition-transform group-hover/cta:translate-x-1" />
-          </div>
+          {buyNowLabel}
         </button>
       </div>
-
-      <button
-        type="button"
-        aria-label="Quick add to cart"
-        onClick={onAddToCart}
-        disabled={sizeMissing || addState === "loading"}
-        className={clsx(
-          "interactive-feedback absolute bottom-[82px] right-8 z-20 hidden h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/95 text-lg text-charcoal shadow-soft transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] md:flex",
-          sizeMissing || addState === "loading"
-            ? "cursor-not-allowed opacity-60"
-            : "opacity-0 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100"
-        )}
-      >
-        +
-      </button>
     </motion.article>
   );
 }
