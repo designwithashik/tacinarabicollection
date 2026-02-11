@@ -250,7 +250,6 @@ export default function HomePage({
       });
       if (!res.ok) return;
       const data = (await res.json()) as unknown;
-      console.log("DATA:", data);
       const shaped = Array.isArray(data) ? data.flat() : (data ? [data] : []);
       setAdminProducts(normalizeInventoryResponse(shaped));
     } catch {
