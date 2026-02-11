@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -33,13 +33,9 @@ export default function AdminInventory() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const isEditing = Boolean(draft.id);
 
-  const hasImageKitConfig = useMemo(
-    () =>
-      Boolean(
-        process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT &&
-          process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY
-      ),
-    []
+  const hasImageKitConfig = Boolean(
+    process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT &&
+      process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY
   );
 
   const loadProducts = async () => {
