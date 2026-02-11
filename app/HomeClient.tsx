@@ -5,7 +5,7 @@ import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
 import Toast from "../components/Toast";
-import SkeletonProductCard from "../components/SkeletonProductCard";
+import SkeletonCard from "../components/ui/SkeletonCard";
 import SectionLoader from "../components/SectionLoader";
 import CartSkeleton from "../components/CartSkeleton";
 import SummaryPlaceholder from "../components/SummaryPlaceholder";
@@ -922,7 +922,7 @@ export default function HomePage({
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {/* Product placeholders prevent blank state flashes during hydration. */}
               {Array.from({ length: 6 }).map((_, index) => (
-                <SkeletonProductCard key={`skeleton-${index}`} />
+                <SkeletonCard key={`skeleton-${index}`} />
               ))}
             </div>
           }
