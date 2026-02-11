@@ -70,8 +70,10 @@ export default function ProductCard({
       ? addedLabel
       : addToCartLabel;
 
+  const canQuickAdd = !sizeMissing && addState !== "loading";
+
   return (
-    <div className="group flex min-h-[620px] h-full flex-col rounded-3xl border border-[#efe1d8] bg-card p-4 shadow-soft">
+    <div className="group relative flex min-h-[620px] h-full flex-col rounded-[24px] border border-[#efe1d8] bg-card p-4 shadow-soft">
       <button
         type="button"
         className="interactive-feedback relative w-full overflow-hidden rounded-2xl bg-base"
@@ -176,7 +178,7 @@ export default function ProductCard({
             <p className="mt-2 text-xs font-semibold text-accent">{quantityFeedback}</p>
           ) : null}
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="mt-2 flex flex-col gap-2">
           <button
             type="button"
             className={clsx(
@@ -193,10 +195,11 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "interactive-feedback min-h-[44px] rounded-full border px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] transition",
+              "interactive-feedback min-h-[44px] rounded-full border px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] transition",
               sizeMissing || addState === "loading"
                 ? "cursor-not-allowed border-[#e6d8ce] text-muted"
-                : "border-accent text-accent"
+                : "border-accent text-accent",
+              addState === "success" && "bg-accent text-white border-accent scale-[1.02]"
             )}
             onClick={onAddToCart}
             disabled={sizeMissing || addState === "loading"}
@@ -205,6 +208,20 @@ export default function ProductCard({
           </button>
         </div>
       </div>
+      <button
+        type="button"
+        aria-label="Quick add to cart"
+        onClick={onAddToCart}
+        disabled={!canQuickAdd}
+        className={clsx(
+          "interactive-feedback absolute bottom-6 right-6 z-20 hidden h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/95 text-lg text-charcoal shadow-soft transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] md:flex",
+          canQuickAdd
+            ? "opacity-0 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100"
+            : "cursor-not-allowed opacity-60"
+        )}
+      >
+        +
+      </button>
     </div>
   );
 }

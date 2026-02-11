@@ -16,14 +16,13 @@ import { products, type Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import {
   getSafeCartSubtotal,
-  getStoredCart,
   normalizeCartItem,
-  setStoredCart,
 } from "../lib/cart";
 import type { CustomerInfo } from "../lib/orders";
 import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
 import type { AdminProduct } from "../lib/inventory";
+import useCart from "../hooks/useCart";
 
 // Contact numbers
 const whatsappNumber = "+8801522119189";
@@ -148,7 +147,7 @@ export default function HomePage({
   // ------------------------------
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const { cartItems, setCartItems, isCartHydrating, clearCart } = useCart();
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [cartNotice, setCartNotice] = useState<string | null>(null);
@@ -176,7 +175,6 @@ export default function HomePage({
   const prevCartCount = useRef(cartItems.length);
   const [isOnline, setIsOnline] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCartHydrating, setIsCartHydrating] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>(initialAdminProducts);
@@ -203,11 +201,8 @@ export default function HomePage({
   useEffect(() => {
     setHasMounted(true);
 
-    const storedCart = getStoredCart();
     const storedViewed = localStorage.getItem(storageKeys.viewed);
     const storedLanguage = localStorage.getItem(storageKeys.language) as Language | null;
-
-    setCartItems(storedCart);
 
     if (storedViewed) {
       try {
@@ -220,8 +215,6 @@ export default function HomePage({
     if (storedLanguage === "en" || storedLanguage === "bn") {
       setLanguage(storedLanguage);
     }
-
-    setIsCartHydrating(false);
   }, []);
 
   const loadPublicInventory = useCallback(async () => {
@@ -315,10 +308,6 @@ export default function HomePage({
     }
   }, [showCheckout]);
 
-  // Persist cart
-  useEffect(() => {
-    setStoredCart(cartItems);
-  }, [cartItems]);
 
   // Persist recently viewed
   useEffect(() => {
@@ -539,7 +528,7 @@ export default function HomePage({
       paymentMethod,
       items: checkoutItems.length,
     });
-    setCartItems([]);
+    clearCart();
     setCheckoutItems([]);
     setShowCheckout(false);
     setShowPaymentInfo(false);
