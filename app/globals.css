@@ -52,8 +52,102 @@ a:focus-visible {
   }
 }
 
+@keyframes toast-slide-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes panel-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes subtle-shimmer {
+  0% {
+    background-position: -240px 0;
+  }
+  100% {
+    background-position: calc(240px + 100%) 0;
+  }
+}
+
 .animate-cart-bounce {
   animation: cart-bounce 0.45s ease-out;
+}
+
+.interactive-feedback {
+  transition: transform 220ms ease-out, box-shadow 220ms ease-out,
+    opacity 220ms ease-out, background-color 220ms ease-out,
+    border-color 220ms ease-out;
+}
+
+.interactive-feedback:hover {
+  box-shadow: 0 12px 28px rgba(38, 30, 22, 0.08);
+}
+
+.interactive-feedback:active {
+  transform: scale(0.97);
+}
+
+.toast-enter {
+  animation: toast-slide-up 240ms ease-out;
+}
+
+.panel-enter {
+  animation: panel-slide-up 260ms ease-out;
+}
+
+.fade-enter {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: fadeUp 280ms ease-out forwards;
+}
+
+.floating-action {
+  transition: transform 240ms ease-out, box-shadow 240ms ease-out,
+    opacity 240ms ease-out;
+}
+
+.floating-action:hover {
+  transform: translateY(-1px) scale(1.02);
+}
+
+.floating-action:active {
+  transform: scale(0.96);
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #efe5dc 25%, #f6ede6 45%, #efe5dc 65%);
+  background-size: 240px 100%;
+  animation: subtle-shimmer 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interactive-feedback:active {
+    transform: none;
+  }
+
+  .skeleton-shimmer {
+    animation: none;
+    background: #efe5dc;
+  }
+
+  .toast-enter,
+  .panel-enter {
+    animation: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
