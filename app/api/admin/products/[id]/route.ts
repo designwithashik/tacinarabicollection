@@ -5,7 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { loadInventoryArray, saveInventoryArray } from "../../../../lib/server/inventoryStore";
+import { loadInventoryArray, saveInventoryArray } from "@/lib/server/inventoryStore";
 
 export const runtime = "nodejs";
 

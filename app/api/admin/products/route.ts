@@ -4,7 +4,7 @@ import {
   loadInventoryArray,
   saveInventoryArray,
   toStorefrontProduct,
-} from "../../../lib/server/inventoryStore";
+} from "@/lib/server/inventoryStore";
 
 export const runtime = "nodejs";
 

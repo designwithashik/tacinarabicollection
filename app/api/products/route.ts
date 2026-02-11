@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { loadInventoryArray, toStorefrontProduct } from "../../../lib/server/inventoryStore";
+import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
 
 export const runtime = "nodejs";
 

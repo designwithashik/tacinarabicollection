@@ -3,7 +3,7 @@ export const revalidate = 0;
 
 import HomeClient from "./HomeClient";
 import type { AdminProduct } from "../lib/inventory";
-import { loadInventoryArray, toStorefrontProduct } from "../lib/server/inventoryStore";
+import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
 
 export default async function HomePage() {
   let initialAdminProducts: AdminProduct[] = [];

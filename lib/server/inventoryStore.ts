@@ -1,3 +1,5 @@
+"use server";
+
 import { kv } from "@vercel/kv";
 
 export const INVENTORY_PRODUCTS_KEY = "inventory:products";
