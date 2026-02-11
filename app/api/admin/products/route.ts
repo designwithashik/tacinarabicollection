@@ -6,10 +6,9 @@ export const runtime = "nodejs";
 
 const PRODUCTS_KEY = "tacin_collection_final";
 
-
 type ProductRecord = Record<string, unknown>;
 
-const toArray = (payload: unknown): ProductRecord[] => {
+const normalizeCollection = (payload: unknown): ProductRecord[] => {
   if (Array.isArray(payload)) {
     return payload.filter(
       (item): item is ProductRecord => Boolean(item && typeof item === "object")
@@ -17,16 +16,32 @@ const toArray = (payload: unknown): ProductRecord[] => {
   }
 
   if (payload && typeof payload === "object") {
-    return [payload as ProductRecord];
+    const objectPayload = payload as ProductRecord;
+
+    if (typeof objectPayload.id === "string") {
+      return [objectPayload];
+    }
+
+    return Object.values(objectPayload).filter(
+      (item): item is ProductRecord => Boolean(item && typeof item === "object")
+    );
   }
 
   return [];
 };
 
+const loadCollection = async (): Promise<ProductRecord[]> => {
+  const stored = await kv.get<unknown>(PRODUCTS_KEY);
+  const normalized = normalizeCollection(stored);
+  if (normalized.length > 0) return normalized;
+
+  const legacy = (await kv.hgetall<Record<string, unknown>>(PRODUCTS_KEY)) ?? {};
+  return normalizeCollection(legacy);
+};
+
 export async function GET() {
   try {
-    const existing = await kv.get<unknown>(PRODUCTS_KEY);
-    return NextResponse.json(toArray(existing));
+    return NextResponse.json(await loadCollection());
   } catch {
     return NextResponse.json([]);
   }
@@ -37,10 +52,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, price, description, category, imageUrl, whatsappNumber } = body;
 
-    // CRITICAL: Always read collection first and force array shape.
-    const existing = (await kv.get<unknown>(PRODUCTS_KEY)) ?? [];
-    const array = toArray(existing);
-
+    const array = await loadCollection();
     const productId = `prod_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
     const newItem: ProductRecord = {
@@ -59,7 +71,6 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    // CRITICAL: Save whole array back, never single object overwrite.
     const updated = [newItem, ...array.filter((item) => item?.id !== productId)];
     await kv.set(PRODUCTS_KEY, updated);
 
@@ -67,7 +78,10 @@ export async function POST(request: Request) {
     revalidatePath("/admin/inventory");
 
     return NextResponse.json({ success: true, id: productId });
-  } catch {
-    return NextResponse.json([]);
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error?.message || "Unable to save product." },
+      { status: 500 }
+    );
   }
 }

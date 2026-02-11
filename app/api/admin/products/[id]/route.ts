@@ -13,7 +13,7 @@ const PRODUCTS_KEY = "tacin_collection_final";
 
 type ProductRecord = Record<string, unknown>;
 
-const toArray = (payload: unknown): ProductRecord[] => {
+const normalizeCollection = (payload: unknown): ProductRecord[] => {
   if (Array.isArray(payload)) {
     return payload.filter(
       (item): item is ProductRecord => Boolean(item && typeof item === "object")
@@ -21,10 +21,27 @@ const toArray = (payload: unknown): ProductRecord[] => {
   }
 
   if (payload && typeof payload === "object") {
-    return [payload as ProductRecord];
+    const objectPayload = payload as ProductRecord;
+
+    if (typeof objectPayload.id === "string") {
+      return [objectPayload];
+    }
+
+    return Object.values(objectPayload).filter(
+      (item): item is ProductRecord => Boolean(item && typeof item === "object")
+    );
   }
 
   return [];
+};
+
+const loadCollection = async (): Promise<ProductRecord[]> => {
+  const stored = await kv.get<unknown>(PRODUCTS_KEY);
+  const normalized = normalizeCollection(stored);
+  if (normalized.length > 0) return normalized;
+
+  const legacy = (await kv.hgetall<Record<string, unknown>>(PRODUCTS_KEY)) ?? {};
+  return normalizeCollection(legacy);
 };
 
 export async function PUT(
@@ -35,10 +52,9 @@ export async function PUT(
     const body = (await req.json()) as ProductRecord & { imageUrl?: string };
     const { id } = params;
 
-    const existing = (await kv.get<unknown>(PRODUCTS_KEY)) ?? [];
-    const array = toArray(existing);
-
+    const array = await loadCollection();
     const current = array.find((item) => item.id === id) ?? {};
+
     const patch: ProductRecord = {
       ...body,
       ...(body.imageUrl ? { image: body.imageUrl } : {}),

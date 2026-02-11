@@ -13,7 +13,7 @@ const PRODUCTS_KEY = "tacin_collection_final";
 
 type ProductRecord = Record<string, unknown>;
 
-const toArray = (payload: unknown): ProductRecord[] => {
+const normalizeCollection = (payload: unknown): ProductRecord[] => {
   if (Array.isArray(payload)) {
     return payload.filter(
       (item): item is ProductRecord => Boolean(item && typeof item === "object")
@@ -21,10 +21,27 @@ const toArray = (payload: unknown): ProductRecord[] => {
   }
 
   if (payload && typeof payload === "object") {
-    return [payload as ProductRecord];
+    const objectPayload = payload as ProductRecord;
+
+    if (typeof objectPayload.id === "string") {
+      return [objectPayload];
+    }
+
+    return Object.values(objectPayload).filter(
+      (item): item is ProductRecord => Boolean(item && typeof item === "object")
+    );
   }
 
   return [];
+};
+
+const loadCollection = async (): Promise<ProductRecord[]> => {
+  const stored = await kv.get<unknown>(PRODUCTS_KEY);
+  const normalized = normalizeCollection(stored);
+  if (normalized.length > 0) return normalized;
+
+  const legacy = (await kv.hgetall<Record<string, unknown>>(PRODUCTS_KEY)) ?? {};
+  return normalizeCollection(legacy);
 };
 
 export async function DELETE(
@@ -32,12 +49,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // CRITICAL: Fetch existing and force array before filtering.
-    const existing = (await kv.get<unknown>(PRODUCTS_KEY)) ?? [];
-    const array = toArray(existing);
+    const array = await loadCollection();
     const updated = array.filter((item) => item.id !== params.id);
 
-    // CRITICAL: Save WHOLE array back.
     await kv.set(PRODUCTS_KEY, updated);
 
     revalidatePath("/");
