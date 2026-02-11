@@ -1,12 +1,15 @@
 "use client";
-// Client component required for interactive product card buttons.
 
-import Image from "next/image";
 import clsx from "clsx";
+import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
+import { ShoppingBag } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/products";
 
 const sizes = ["M", "L", "XL"] as const;
+
+const easeLuxury: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 const toOptimizedImageKitUrl = (source: string) => {
   if (!source.startsWith("https://ik.imagekit.io/")) return source;
@@ -46,24 +49,20 @@ type Props = {
 export default function ProductCard({
   product,
   selectedSize,
-  quantity,
   onSizeChange,
-  onQuantityChange,
   onBuyNow,
   onAddToCart,
   onOpenDetails,
   showBadge,
-  priceLabel,
   buyNowLabel,
-  addToCartLabel,
   addingLabel,
   addedLabel,
   addState,
-  quantityFeedback,
   statusLabel,
   stockLabel,
 }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
+  const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
     setImageFailed(false);
@@ -75,165 +74,123 @@ export default function ProductCard({
   }, [product.image]);
 
   const sizeMissing = !selectedSize;
-  const addLabel =
-    addState === "loading"
-      ? addingLabel
-      : addState === "success"
-      ? addedLabel
-      : addToCartLabel;
-
-  const canQuickAdd = !sizeMissing && addState !== "loading";
+  const ctaLabel = addState === "loading" ? addingLabel : addState === "success" ? addedLabel : buyNowLabel;
 
   return (
-    <div className="group relative flex min-h-[620px] h-full flex-col rounded-[24px] border border-[#efe1d8] bg-card p-4 shadow-soft">
+    <motion.article
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.8, ease: easeLuxury }}
+      className="group relative"
+      onMouseEnter={() => setIsActive(true)}
+      onMouseLeave={() => setIsActive(false)}
+    >
       <button
         type="button"
-        className="interactive-feedback relative w-full overflow-hidden rounded-2xl bg-base"
+        className="interactive-feedback relative w-full overflow-hidden rounded-[32px] bg-[#f7f7f7] shadow-sm transition-all duration-700 hover:shadow-2xl"
         onClick={onOpenDetails}
+        aria-label={`Open details for ${product.name}`}
       >
         {imageSrc && !imageFailed ? (
-          <Image
-            src={imageSrc}
-            alt={product.name}
-            width={520}
-            height={650}
-            className="aspect-[4/5] w-full object-cover transition-[transform] duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
-            onError={() => setImageFailed(true)}
-          />
+          <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 1.5, ease: easeLuxury }}>
+            <Image
+              src={imageSrc}
+              alt={product.name}
+              width={720}
+              height={960}
+              className="aspect-[3/4] w-full object-cover"
+              onError={() => setImageFailed(true)}
+              priority={false}
+            />
+          </motion.div>
         ) : (
-          <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-b from-[#f3f4f6] via-[#eceff2] to-[#e5e7eb]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.75),transparent_45%),radial-gradient(circle_at_70%_75%,rgba(148,163,184,0.22),transparent_42%)]" />
-            <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-white/40 bg-white/45 p-3 text-left backdrop-blur-sm">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/70">Image unavailable</p>
-              <p className="mt-1 font-heading text-sm font-semibold text-charcoal/85">Preview loading</p>
-            </div>
-          </div>
+          <div className="relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-b from-[#f3f4f6] via-[#eceff2] to-[#e5e7eb]" />
         )}
 
-        <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/30 bg-white/35 p-3 text-left backdrop-blur-sm">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/80">{product.category}</p>
-          <p className="mt-1 font-heading text-base font-semibold text-charcoal transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
-            {product.name}
-          </p>
-          <p className="mt-1 text-xs font-semibold text-charcoal/85 transition-all duration-500 delay-75 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
-            {stockLabel}
-          </p>
+        <div className="absolute left-6 top-6 rounded-full border border-white/20 bg-white/60 px-4 py-1.5 backdrop-blur-md">
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-black">{product.category}</span>
         </div>
 
         {showBadge ? (
-          <span className="absolute left-3 top-3 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white">
+          <div className="absolute right-6 top-6 rounded-full bg-accent px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white">
             {showBadge}
-          </span>
+          </div>
         ) : null}
-        <span className="absolute right-3 top-3 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink">
-          {statusLabel}
-        </span>
       </button>
 
-      <div className="mt-4 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-heading text-lg font-semibold text-ink">{product.name}</h3>
-          <p className="mt-1 text-sm text-muted">{product.category}</p>
-          <p className="mt-1 text-xs font-semibold text-accent">{stockLabel}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted">{priceLabel}</p>
-          <p className="text-lg font-semibold text-ink">৳{product.price}</p>
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <p className="text-sm font-medium text-ink">Select Size</p>
-        <div className="mt-2 flex gap-2">
-          {sizes.map((size) => (
-            <button
-              key={size}
-              type="button"
-              className={clsx(
-                "interactive-feedback min-h-[44px] rounded-full border px-4 py-1 text-sm font-medium transition",
-                selectedSize === size
-                  ? "border-accent bg-accent text-white"
-                  : "border-[#e5d7cc] bg-white text-ink"
-              )}
-              onClick={() => onSizeChange(size)}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-        {sizeMissing ? (
-          <p className="mt-2 text-xs text-accent">Select a size to continue.</p>
-        ) : null}
-      </div>
-
-      <div className="mt-4 flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-ink">Qty</p>
-          <div className="mt-2 flex items-center gap-2 rounded-full border border-[#e5d7cc] bg-white px-3 py-1">
-            <button
-              type="button"
-              className="interactive-feedback min-h-[28px] min-w-[28px] text-base font-semibold text-ink"
-              onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-            >
-              -
-            </button>
-            <span className="min-w-[1.5rem] text-center text-sm font-semibold">{quantity}</span>
-            <button
-              type="button"
-              className="interactive-feedback min-h-[28px] min-w-[28px] text-base font-semibold text-ink"
-              onClick={() => onQuantityChange(quantity + 1)}
-            >
-              +
-            </button>
+      <div className="mt-6 px-2">
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div className="space-y-1">
+            <h3 className="font-heading text-[18px] leading-tight text-black">{product.name}</h3>
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gray-400">
+              {statusLabel} • {stockLabel}
+            </p>
           </div>
-          {quantityFeedback ? (
-            <p className="mt-2 text-xs font-semibold text-accent">{quantityFeedback}</p>
-          ) : null}
+          <div className="text-right">
+            <span className="block text-[10px] uppercase tracking-[0.3em] text-gray-400">Price</span>
+            <span className="text-xl font-light text-black">৳{product.price}</span>
+          </div>
         </div>
-        <div className="mt-2 flex flex-col gap-2">
-          <button
-            type="button"
-            className={clsx(
-              "interactive-feedback min-h-[44px] rounded-full px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] transition",
-              sizeMissing
-                ? "cursor-not-allowed bg-[#e6d8ce] text-muted"
-                : "bg-accent text-white"
-            )}
-            onClick={onBuyNow}
-            disabled={sizeMissing}
-          >
-            {buyNowLabel}
-          </button>
-          <button
-            type="button"
-            className={clsx(
-              "interactive-feedback min-h-[44px] rounded-full border px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] transition",
-              sizeMissing || addState === "loading"
-                ? "cursor-not-allowed border-[#e6d8ce] text-muted"
-                : "border-accent text-accent",
-              addState === "success" && "bg-accent text-white border-accent scale-[1.02]"
-            )}
-            onClick={onAddToCart}
-            disabled={sizeMissing || addState === "loading"}
-          >
-            {addLabel}
-          </button>
-        </div>
+
+        <AnimatePresence>
+          {(isActive || sizeMissing) && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.35, ease: easeLuxury }}
+              className="mb-6 flex gap-3"
+            >
+              {sizes.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => onSizeChange(size)}
+                  className={clsx(
+                    "h-10 w-10 rounded-full border text-[11px] transition-all duration-300",
+                    selectedSize === size
+                      ? "scale-110 border-black bg-black text-white shadow-lg"
+                      : "border-gray-200 text-gray-500 hover:border-black hover:text-black"
+                  )}
+                >
+                  {size}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <button
+          type="button"
+          onClick={onBuyNow}
+          disabled={sizeMissing}
+          className={clsx(
+            "group/cta relative w-full overflow-hidden rounded-full bg-black py-4 transition-all duration-500",
+            sizeMissing ? "cursor-not-allowed opacity-60" : "hover:bg-zinc-800 active:scale-[0.98]"
+          )}
+        >
+          <div className="flex items-center justify-center gap-2 text-white">
+            <span className="text-[11px] font-bold uppercase tracking-[0.3em]">{ctaLabel}</span>
+            <ShoppingBag size={14} className="transition-transform group-hover/cta:translate-x-1" />
+          </div>
+        </button>
       </div>
+
       <button
         type="button"
         aria-label="Quick add to cart"
         onClick={onAddToCart}
-        disabled={!canQuickAdd}
+        disabled={sizeMissing || addState === "loading"}
         className={clsx(
-          "interactive-feedback absolute bottom-6 right-6 z-20 hidden h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/95 text-lg text-charcoal shadow-soft transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] md:flex",
-          canQuickAdd
-            ? "opacity-0 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100"
-            : "cursor-not-allowed opacity-60"
+          "interactive-feedback absolute bottom-[82px] right-8 z-20 hidden h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/95 text-lg text-charcoal shadow-soft transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] md:flex",
+          sizeMissing || addState === "loading"
+            ? "cursor-not-allowed opacity-60"
+            : "opacity-0 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100"
         )}
       >
         +
       </button>
-    </div>
+    </motion.article>
   );
 }
