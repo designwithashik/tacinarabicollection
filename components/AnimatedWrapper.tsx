@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import type { PropsWithChildren } from "react";
 
 type AnimatedWrapperProps = PropsWithChildren<{
@@ -13,8 +14,13 @@ const luxuryEase: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 export function AnimatedWrapper({ children, className, delay = 0 }: AnimatedWrapperProps) {
   const reduceMotion = useReducedMotion();
+  const [hasMounted, setHasMounted] = useState(false);
 
-  if (reduceMotion) {
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  if (!hasMounted || reduceMotion) {
     return <div className={className}>{children}</div>;
   }
 
@@ -34,8 +40,13 @@ export function AnimatedWrapper({ children, className, delay = 0 }: AnimatedWrap
 export default function GlobalAnimatedWrapper({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
+  const [hasMounted, setHasMounted] = useState(false);
 
-  if (reduceMotion) {
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  if (!hasMounted || reduceMotion) {
     return <>{children}</>;
   }
 

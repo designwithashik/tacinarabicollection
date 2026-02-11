@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation";
 import type { AdminProduct } from "../../../lib/inventory";
 import { validateImageUrl } from "../../../lib/images";
 
+const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
+const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
+
 const defaultDraft: AdminProduct = {
   id: "",
   name: "",
@@ -47,8 +50,9 @@ export default function AdminInventory() {
         next: { revalidate: 0 },
       });
       if (!res.ok) throw new Error();
-      const data = (await res.json()) as AdminProduct[];
-      setItems(Array.isArray(data) ? data : []);
+      const data = (await res.json()) as unknown;
+      const shaped = Array.isArray(data) ? data.flat() : (data ? [data] : []);
+      setItems(shaped as AdminProduct[]);
     } catch {
       setError("Failed to load inventory from KV.");
       setItems([]);
@@ -175,8 +179,10 @@ export default function AdminInventory() {
       await loadProducts();
       if (typeof window !== "undefined") {
         const stamp = String(Date.now());
-        window.localStorage.setItem("tacin:inventory-updated-at", stamp);
-        window.dispatchEvent(new Event("tacin:inventory-updated"));
+        window.localStorage.setItem(INVENTORY_UPDATED_STORAGE_KEY, stamp);
+        INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
+          window.dispatchEvent(new Event(eventName));
+        });
       }
       router.refresh();
     } catch (saveError) {
@@ -206,8 +212,10 @@ export default function AdminInventory() {
       await loadProducts();
       if (typeof window !== "undefined") {
         const stamp = String(Date.now());
-        window.localStorage.setItem("tacin:inventory-updated-at", stamp);
-        window.dispatchEvent(new Event("tacin:inventory-updated"));
+        window.localStorage.setItem(INVENTORY_UPDATED_STORAGE_KEY, stamp);
+        INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
+          window.dispatchEvent(new Event(eventName));
+        });
       }
       router.refresh();
     } catch {

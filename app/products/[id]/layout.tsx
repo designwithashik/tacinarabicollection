@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { kv } from "@vercel/kv";
 import { products } from "../../../lib/products";
+import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
 
 export const dynamic = "force-dynamic";
 
@@ -15,14 +15,8 @@ type ProductLike = {
   id: string;
   name: string;
   image?: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
   price?: number;
-};
-
-const isProductLike = (value: unknown): value is ProductLike => {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as Partial<ProductLike>;
-  return typeof candidate.id === "string" && typeof candidate.name === "string";
 };
 
 const slugify = (value: string) =>
@@ -49,14 +43,11 @@ const toImageKitPreviewUrl = (input: string, name: string) => {
 
 const getProductById = async (id: string): Promise<ProductLike | null> => {
   try {
-    const fromHash = await kv.hget<unknown>("tacin_collection_final", id);
-    if (isProductLike(fromHash)) return fromHash;
-
-    const all = (await kv.hgetall<Record<string, unknown>>("tacin_collection_final")) ?? {};
-    const maybe = Object.values(all).find(
-      (item) => isProductLike(item) && (item as ProductLike).id === id
-    );
-    if (isProductLike(maybe)) return maybe;
+    const inventory = await loadInventoryArray();
+    const fromInventory = inventory.find((item) => item.id === id);
+    if (fromInventory) {
+      return toStorefrontProduct(fromInventory);
+    }
   } catch {
     // fallback below
   }

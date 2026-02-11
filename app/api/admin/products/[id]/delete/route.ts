@@ -1,13 +1,11 @@
 /*
  * What this file does:
- *   - Deletes a product from KV hash storage.
- * Why it exists:
- *   - Keeps admin delete flow consistent with GET/POST key.
+ *   - Deletes a product from KV collection storage.
  */
 
-import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { loadInventoryArray, saveInventoryArray } from "@/lib/server/inventoryStore";
 
 export const runtime = "nodejs";
 
@@ -16,13 +14,19 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await kv.hdel("tacin_collection_final", params.id);
+    const existing = await loadInventoryArray();
+    const updated = existing.filter((item) => item.id !== params.id);
+
+    await saveInventoryArray(updated);
 
     revalidatePath("/");
     revalidatePath("/admin/inventory");
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

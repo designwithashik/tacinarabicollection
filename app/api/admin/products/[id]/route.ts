@@ -1,13 +1,11 @@
 /*
  * What this file does:
- *   - Updates a single admin product in KV hash storage.
- * Why it exists:
- *   - Keeps admin edit flow consistent with POST/GET storage key.
+ *   - Updates a single admin product in KV collection storage.
  */
 
-import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { loadInventoryArray, saveInventoryArray } from "@/lib/server/inventoryStore";
 
 export const runtime = "nodejs";
 
@@ -19,21 +17,35 @@ export async function PUT(
     const body = (await req.json()) as Record<string, unknown> & { imageUrl?: string };
     const { id } = params;
 
-    const existing = (await kv.hget<Record<string, unknown>>("tacin_collection_final", id)) ?? {};
-    const patch = {
+    const existing = await loadInventoryArray();
+    const current = existing.find((item) => item.id === id);
+    if (!current) {
+      return NextResponse.json({ error: "Product not found." }, { status: 404 });
+    }
+
+    const updatedProduct = {
+      ...current,
       ...body,
-      ...(body.imageUrl ? { image: body.imageUrl } : {}),
-      updatedAt: new Date().toISOString(),
+      imageUrl:
+        typeof body.imageUrl === "string" && body.imageUrl.startsWith("http")
+          ? body.imageUrl
+          : current.imageUrl,
+      price: typeof body.price === "number" ? body.price : current.price,
+      updatedAt: Date.now(),
       id,
     };
 
-    await kv.hset("tacin_collection_final", { [id]: { ...existing, ...patch } });
+    const updated = existing.map((item) => (item.id === id ? updatedProduct : item));
+    await saveInventoryArray(updated);
 
     revalidatePath("/");
     revalidatePath("/admin/inventory");
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

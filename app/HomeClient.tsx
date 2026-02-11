@@ -12,7 +12,7 @@ import SummaryPlaceholder from "../components/SummaryPlaceholder";
 import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import { SlidersHorizontal } from "lucide-react";
-import { products, type Product } from "../lib/products";
+import type { Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import {
   getSafeCartSubtotal,
@@ -56,7 +56,7 @@ type Filters = {
   sort: string | null;
 };
 
-type CategoryFilter = "All" | Product["category"];
+type CategoryFilter = "All" | AdminProduct["category"];
 
 type AddState = "idle" | "loading" | "success";
 
@@ -82,6 +82,31 @@ const storageKeys = {
 };
 
 const statusLabels = ["New", "Hot", "Limited"] as const;
+
+const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
+const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
+
+const normalizeInventoryResponse = (payload: unknown): AdminProduct[] => {
+  if (Array.isArray(payload)) {
+    return payload.filter(
+      (item): item is AdminProduct => Boolean(item && typeof item === "object")
+    );
+  }
+
+  if (payload && typeof payload === "object") {
+    const objectPayload = payload as Record<string, unknown>;
+
+    if ("id" in objectPayload) {
+      return [objectPayload as AdminProduct];
+    }
+
+    return Object.values(objectPayload).filter(
+      (item): item is AdminProduct => Boolean(item && typeof item === "object")
+    );
+  }
+
+  return [];
+};
 
 // Minimal EN/BN labels used for critical UI only
 const copy = {
@@ -224,10 +249,11 @@ export default function HomePage({
         next: { revalidate: 0 },
       });
       if (!res.ok) return;
-      const data = (await res.json()) as AdminProduct[];
-      setAdminProducts(Array.isArray(data) ? data : []);
+      const data = (await res.json()) as unknown;
+      const shaped = Array.isArray(data) ? data.flat() : (data ? [data] : []);
+      setAdminProducts(normalizeInventoryResponse(shaped));
     } catch {
-      // Graceful fallback keeps existing inventory state if KV is unavailable.
+      // Keep existing state if live inventory fetch fails.
       setAdminProducts((current) => current);
     }
   }, []);
@@ -250,20 +276,24 @@ export default function HomePage({
     };
 
     const onStorage = (event: StorageEvent) => {
-      if (event.key === "tacin:inventory-updated-at") {
+      if (event.key === INVENTORY_UPDATED_STORAGE_KEY) {
         void loadPublicInventory();
       }
     };
 
     window.addEventListener("focus", onVisibilityOrFocus);
     document.addEventListener("visibilitychange", onVisibilityOrFocus);
-    window.addEventListener("tacin:inventory-updated", onInventoryUpdated);
+    INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
+      window.addEventListener(eventName, onInventoryUpdated);
+    });
     window.addEventListener("storage", onStorage);
 
     return () => {
       window.removeEventListener("focus", onVisibilityOrFocus);
       document.removeEventListener("visibilitychange", onVisibilityOrFocus);
-      window.removeEventListener("tacin:inventory-updated", onInventoryUpdated);
+      INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
+        window.removeEventListener(eventName, onInventoryUpdated);
+      });
       window.removeEventListener("storage", onStorage);
     };
   }, [loadPublicInventory]);
@@ -537,9 +567,7 @@ export default function HomePage({
   // ------------------------------
   // Derived data
   // ------------------------------
-  const productSource = adminProducts.length
-    ? adminProducts.filter((item) => item.active !== false)
-    : products;
+  const productSource = adminProducts.filter((item) => item.active !== false);
 
   const filteredProducts = useMemo(() => {
     let result = [...productSource];
@@ -580,6 +608,8 @@ export default function HomePage({
 
     return result;
   }, [filters, productSource, selectedCategory]);
+
+  const visibleProducts = hasMounted && Array.isArray(filteredProducts) ? filteredProducts : [];
 
   const activeChips = [
     ...filters.size.map((size) => ({ type: "size", value: size })),
@@ -916,7 +946,7 @@ export default function HomePage({
             </div>
           }
         >
-          {filteredProducts.length === 0 ? (
+          {visibleProducts.length === 0 ? (
           <div className="rounded-3xl bg-card p-6 text-center shadow-soft">
             <p className="text-lg font-semibold text-ink">No products found.</p>
             <p className="mt-2 text-sm text-muted">
@@ -930,7 +960,7 @@ export default function HomePage({
               !prefersReducedMotion && "fade-enter"
             )}
           >
-            {filteredProducts.map((product, index) => (
+            {visibleProducts.map((product, index) => (
               <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.24)}>
                 <ProductCard
                 product={product}

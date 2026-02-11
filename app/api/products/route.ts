@@ -1,22 +1,17 @@
 /*
  * What this file does:
- *   - Exposes public product list from KV hash storage.
- * Why it exists:
- *   - Keeps storefront inventory in sync with admin product writes.
+ *   - Exposes public product list from canonical inventory storage.
  */
 
-import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
+import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const stored = (await kv.hgetall<Record<string, unknown>>("tacin_collection_final")) ?? {};
-    const items = Object.values(stored).filter(
-      (value): value is Record<string, unknown> => Boolean(value && typeof value === "object")
-    );
-    return NextResponse.json(items);
+    const products = await loadInventoryArray();
+    return NextResponse.json(products.filter((p) => p.active).map(toStorefrontProduct));
   } catch {
     return NextResponse.json([]);
   }
