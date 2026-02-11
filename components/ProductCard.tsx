@@ -3,6 +3,7 @@
 
 import Image from "next/image";
 import clsx from "clsx";
+import { useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/products";
 
 const sizes = ["M", "L", "XL"] as const;
@@ -50,6 +51,17 @@ export default function ProductCard({
   statusLabel,
   stockLabel,
 }: Props) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [product.id, product.image]);
+
+  const imageSrc = useMemo(() => {
+    if (!product.image || !product.image.trim()) return null;
+    return product.image;
+  }, [product.image]);
+
   const sizeMissing = !selectedSize;
   const addLabel =
     addState === "loading"
@@ -65,13 +77,24 @@ export default function ProductCard({
         className="interactive-feedback relative w-full overflow-hidden rounded-2xl bg-base"
         onClick={onOpenDetails}
       >
-        <Image
-          src={product.image}
-          alt={product.name}
-          width={520}
-          height={650}
-          className="aspect-[4/5] w-full object-cover transition-[transform] duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
-        />
+        {imageSrc && !imageFailed ? (
+          <Image
+            src={imageSrc}
+            alt={product.name}
+            width={520}
+            height={650}
+            className="aspect-[4/5] w-full object-cover transition-[transform] duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-b from-[#f6efe3] via-[#f2e6d3] to-[#e8dcc6]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.65),transparent_45%),radial-gradient(circle_at_70%_75%,rgba(200,169,107,0.3),transparent_42%)]" />
+            <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-white/40 bg-white/45 p-3 text-left backdrop-blur-sm">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/70">Tacin Arabi</p>
+              <p className="mt-1 font-heading text-sm font-semibold text-charcoal/85">Luxury Placeholder</p>
+            </div>
+          </div>
+        )}
 
         <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/30 bg-white/35 p-3 text-left backdrop-blur-sm">
           <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/80">{product.category}</p>
