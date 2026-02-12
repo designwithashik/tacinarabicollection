@@ -724,6 +724,20 @@ export default function HomePage({
   const isSummaryLoading = !hasMounted || isCartHydrating;
   const hasPaymentProof = Boolean(transactionId.trim());
 
+  // Phase1.7: Hero carousel images
+  const heroImages = ["/images/product-1.svg", "/images/product-2.svg", "/images/product-3.svg"];
+
+  // Phase1.7: Auto-rotate hero
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % heroImages.length);
+    }, 4000);
+
+    return () => window.clearInterval(interval);
+  }, [heroImages.length]);
+
   // ------------------------------
   // UI
   // ------------------------------
@@ -735,47 +749,54 @@ export default function HomePage({
         </div>
       ) : null}
       <header className="bg-white">
-        {/* Phase1: Compress hero to enable early product exposure */}
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 pb-6 pt-6 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-xl">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-support">
-                WhatsApp-first shopping
+        {/* Phase1.7: Auto-Fade Hero Carousel */}
+        <div className="mx-auto max-w-6xl px-4 pb-6 pt-6">
+          <div className="relative h-[320px] w-full overflow-hidden rounded-xl sm:h-[420px]">
+            {heroImages.map((src, index) => (
+              <img
+                key={src}
+                src={src}
+                alt="Tacin Arabi Collection"
+                className={clsx(
+                  "absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out",
+                  index === currentIndex ? "opacity-100" : "opacity-0"
+                )}
+              />
+            ))}
+
+            <div className="absolute inset-0 bg-black/30" />
+
+            <div className="absolute inset-0 flex flex-col justify-center px-6 text-white sm:px-12">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-white/90">
+                  WhatsApp-first shopping
+                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLanguage((prev) => (prev === "en" ? "bn" : "en"))
+                  }
+                  className="rounded-full border border-white/70 bg-white/90 px-3 py-1 text-xs font-semibold text-ink"
+                >
+                  {language === "en" ? "বাংলা" : "EN"}
+                </button>
+              </div>
+
+              <h1 className="mt-4 max-w-xl text-2xl font-extrabold leading-tight text-white sm:text-4xl">
+                Premium Designer Kurtis in Bangladesh
+              </h1>
+
+              <p className="mt-2 text-sm text-white/90 sm:text-lg">
+                New Arrivals — Everyday Comfort — Fast WhatsApp Checkout
               </p>
-              <button
-                type="button"
-                onClick={() =>
-                  setLanguage((prev) => (prev === "en" ? "bn" : "en"))
-                }
-                className="rounded-full border border-[#e6d8ce] bg-white px-3 py-1 text-xs font-semibold text-ink"
-              >
-                {language === "en" ? "বাংলা" : "EN"}
-              </button>
-            </div>
-            {/* Phase1.5: Strong Retail Hero Text for Catalog Vibe */}
-            <h1 className="mt-2 text-2xl font-extrabold leading-tight text-primary-heading sm:text-4xl">
-              Premium Designer Kurtis in Bangladesh
-            </h1>
-            <p className="mt-2 text-base text-secondary sm:text-lg">
-              New Arrivals – Everyday Comfort – Fast WhatsApp Checkout
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {/* Phase1.5: Retail CTA Contrast Upgrade */}
+
               <a
                 href="#product-grid"
-                className="interactive-feedback inline-flex min-h-[44px] items-center rounded-lg bg-red-700 px-6 py-3 text-sm font-semibold text-white hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="interactive-feedback mt-4 inline-flex min-h-[44px] w-fit items-center rounded-lg bg-red-700 px-6 py-3 text-sm font-semibold text-white hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 Shop Kurtis
               </a>
             </div>
-          </div>
-          <div className="rounded-3xl bg-card p-4 shadow-soft opacity-0 animate-[fadeUp_0.3s_ease-out_forwards] md:max-w-sm">
-            <h2 className="text-xl font-semibold text-primary-heading">
-              Quick Order Promise
-            </h2>
-            <p className="mt-1 text-sm text-support">
-              Select size, tap buy now, and confirm instantly on WhatsApp.
-            </p>
           </div>
         </div>
       </header>
