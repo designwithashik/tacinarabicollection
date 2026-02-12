@@ -728,18 +728,18 @@ export default function HomePage({
   // UI
   // ------------------------------
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen bg-white pb-24">
       {!isOnline ? (
         <div className="sticky top-0 z-50 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900">
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="bg-base">
+      <header className="bg-white">
         {/* Phase1: Compress hero to enable early product exposure */}
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 pb-6 pt-6 md:flex-row md:items-center md:justify-between">
           <div className="max-w-xl">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-accent">
+              <p className="text-sm font-semibold text-support">
                 WhatsApp-first shopping
               </p>
               <button
@@ -752,27 +752,28 @@ export default function HomePage({
                 {language === "en" ? "বাংলা" : "EN"}
               </button>
             </div>
-            <h1 className="mt-2 font-heading text-2xl font-bold text-ink md:text-3xl">
-              WhatsApp checkout in minutes, shipped anywhere in Bangladesh.
+            {/* Phase1.5: Strong Retail Hero Text for Catalog Vibe */}
+            <h1 className="mt-2 text-2xl font-extrabold leading-tight text-primary-heading sm:text-4xl">
+              Premium Designer Kurtis in Bangladesh
             </h1>
-            <p className="mt-2 text-sm text-muted">
-              Shop fast with WhatsApp-first ordering, nationwide delivery, and
-              verified quality checks.
+            <p className="mt-2 text-base text-secondary sm:text-lg">
+              New Arrivals – Everyday Comfort – Fast WhatsApp Checkout
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
+              {/* Phase1.5: Retail CTA Contrast Upgrade */}
               <a
                 href="#product-grid"
-                className="interactive-feedback inline-flex min-h-[42px] items-center rounded-full bg-charcoal px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white"
+                className="interactive-feedback inline-flex min-h-[44px] items-center rounded-lg bg-red-700 px-6 py-3 text-sm font-semibold text-white hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                Shop now
+                Shop Kurtis
               </a>
             </div>
           </div>
           <div className="rounded-3xl bg-card p-4 shadow-soft opacity-0 animate-[fadeUp_0.3s_ease-out_forwards] md:max-w-sm">
-            <h2 className="font-heading text-xl font-semibold">
+            <h2 className="text-xl font-semibold text-primary-heading">
               Quick Order Promise
             </h2>
-            <p className="mt-1 text-sm text-muted">
+            <p className="mt-1 text-sm text-support">
               Select size, tap buy now, and confirm instantly on WhatsApp.
             </p>
           </div>
@@ -782,25 +783,24 @@ export default function HomePage({
       {/* Phase1: Compressed trust text for above-grid clarity */}
       <section className="mx-auto max-w-6xl px-4 pb-4">
         <div className="rounded-2xl bg-card px-4 py-3 shadow-soft">
-          <p className="text-sm font-medium text-ink">
+          <p className="text-sm font-semibold text-secondary">
             Authentic fabrics — Nationwide delivery — Fast WhatsApp checkout
           </p>
         </div>
       </section>
 
-      {/* Phase1: Retail intro before product grid */}
-      <section className="mx-auto max-w-6xl px-4 pb-3">
-        <h2 className="text-xl font-semibold text-ink">
-          Premium Kurtis for Every Occasion
+      {/* Phase1.5: Retail Intro Before Product Grid */}
+      <section className="mx-auto my-6 max-w-3xl px-4 text-center">
+        <h2 className="text-2xl font-bold text-primary-heading">
+          Shop the Latest Kurti Collection
         </h2>
-        <p className="mt-1 text-sm text-muted">
-          Shop latest kurti styles — breathable fabrics, modern designs,
-          nationwide WhatsApp checkout.
+        <p className="mt-2 text-base text-secondary">
+          Explore breathable cotton kurtis, stylish embroidered designs, and modern everyday looks. Order instantly via WhatsApp with secure confirmation and fast nationwide delivery.
         </p>
       </section>
 
       {/* Phase1: Place categories above product grid for faster discovery */}
-      <section className="sticky top-0 z-20 bg-base/95">
+      <section className="sticky top-0 z-20 bg-white/95">
         <AnimatedWrapper className="retail-section-enter" variant="section">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
             <div className="flex flex-1 items-center gap-2 overflow-x-auto">
@@ -823,7 +823,7 @@ export default function HomePage({
             <button
               type="button"
               onClick={() => openSheet("size")}
-              className="interactive-feedback flex min-h-[44px] items-center gap-2 rounded-full bg-charcoal px-4 py-2 text-sm font-semibold text-white shadow-soft"
+              className="interactive-feedback flex min-h-[44px] items-center gap-2 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white shadow-soft hover:bg-red-800"
             >
               Filters
               {(filters.size.length || filters.colors.length || filters.price) ? (
@@ -835,6 +835,9 @@ export default function HomePage({
           </div>
         </AnimatedWrapper>
       </section>
+
+      {/* Phase1.5: Retail Divider */}
+      <hr className="my-6 border-gray-200" />
 
       <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-12 pt-4">
         {activeChips.length > 0 ? (

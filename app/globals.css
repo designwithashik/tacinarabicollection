@@ -7,7 +7,23 @@
 }
 
 body {
-  @apply bg-base text-ink font-body;
+  @apply bg-white text-ink font-body;
+}
+
+/* Phase1.5: Stronger Text Hierarchy */
+.text-primary-heading {
+  color: #111827;
+  font-weight: 700;
+}
+
+/* Phase1.5: Stronger Text Hierarchy */
+.text-secondary {
+  color: #374151;
+}
+
+/* Phase1.5: Stronger Text Hierarchy */
+.text-support {
+  color: #6b7280;
 }
 
 *,
@@ -153,8 +169,22 @@ a:focus-visible {
   animation: subtle-shimmer 1.2s ease-in-out infinite;
 }
 
+/* Phase1.5: Image Hover Motion */
+.product-image {
+  transition: transform 250ms ease-in-out;
+}
+
+/* Phase1.5: Image Hover Motion */
+.product-image:hover {
+  transform: scale(1.02);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .interactive-feedback:active {
+    transform: none;
+  }
+
+  .product-image:hover {
     transform: none;
   }
 
