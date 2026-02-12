@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
@@ -610,6 +611,10 @@ export default function HomePage({
   }, [filters, productSource, selectedCategory]);
 
   const visibleProducts = hasMounted && Array.isArray(filteredProducts) ? filteredProducts : [];
+  const productBatchKey = useMemo(
+    () => visibleProducts.map((product) => product.id).join("|"),
+    [visibleProducts]
+  );
 
   const activeChips = [
     ...filters.size.map((size) => ({ type: "size", value: size })),
@@ -795,38 +800,40 @@ export default function HomePage({
       </section>
 
       {/* Phase1: Place categories above product grid for faster discovery */}
-      <section className="sticky top-0 z-20 bg-base/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
-          <div className="flex flex-1 items-center gap-2 overflow-x-auto">
-            {categories.map((category) => (
-              <button
-                key={category}
-                type="button"
-                onClick={() => setSelectedCategory(category)}
-                className={clsx(
-                  "interactive-feedback min-h-[42px] whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold",
-                  selectedCategory === category
-                    ? "border-accent bg-accent text-white"
-                    : "border-[#e6d8ce] bg-white text-ink"
-                )}
-              >
-                {category}
-              </button>
-            ))}
+      <section className="sticky top-0 z-20 bg-base/95">
+        <AnimatedWrapper className="retail-section-enter" variant="section">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
+            <div className="flex flex-1 items-center gap-2 overflow-x-auto">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setSelectedCategory(category)}
+                  className={clsx(
+                    "interactive-feedback min-h-[42px] whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold",
+                    selectedCategory === category
+                      ? "border-accent bg-accent text-white"
+                      : "border-[#e6d8ce] bg-white text-ink"
+                  )}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => openSheet("size")}
+              className="interactive-feedback flex min-h-[44px] items-center gap-2 rounded-full bg-charcoal px-4 py-2 text-sm font-semibold text-white shadow-soft"
+            >
+              Filters
+              {(filters.size.length || filters.colors.length || filters.price) ? (
+                <span className="rounded-full bg-gold px-2 text-xs text-charcoal">
+                  {filters.size.length + filters.colors.length + (filters.price ? 1 : 0)}
+                </span>
+              ) : null}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => openSheet("size")}
-            className="interactive-feedback flex min-h-[44px] items-center gap-2 rounded-full bg-charcoal px-4 py-2 text-sm font-semibold text-white shadow-soft"
-          >
-            Filters
-            {(filters.size.length || filters.colors.length || filters.price) ? (
-              <span className="rounded-full bg-gold px-2 text-xs text-charcoal">
-                {filters.size.length + filters.colors.length + (filters.price ? 1 : 0)}
-              </span>
-            ) : null}
-          </button>
-        </div>
+        </AnimatedWrapper>
       </section>
 
       <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-12 pt-4">
@@ -869,14 +876,22 @@ export default function HomePage({
             </p>
           </div>
           ) : (
-          <div
+          <motion.div
+            key={productBatchKey}
             className={clsx(
               "grid gap-6 md:grid-cols-2 lg:grid-cols-3",
-              !prefersReducedMotion && "fade-enter"
+              !prefersReducedMotion && "retail-batch-enter"
             )}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
           >
             {visibleProducts.map((product, index) => (
-              <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.24)}>
+              <AnimatedWrapper
+                key={product.id}
+                variant="product-card"
+                delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.12)}
+              >
                 <ProductCard
                 product={product}
                 selectedSize={selectedSizes[product.id]}
@@ -903,7 +918,7 @@ export default function HomePage({
               />
               </AnimatedWrapper>
             ))}
-          </div>
+          </motion.div>
           )}
         </SectionLoader>
 
@@ -943,7 +958,7 @@ export default function HomePage({
             </div>
             <div className="grid gap-6 md:grid-cols-2">
               {recentlyViewed.map((product, index) => (
-                <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.16)}>
+                <AnimatedWrapper key={product.id} variant="product-card" delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.1)}>
                   <ProductCard
                   product={product}
                   selectedSize={selectedSizes[product.id]}

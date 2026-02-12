@@ -85,7 +85,7 @@ export default function ProductCard({
             alt={product.name}
             width={520}
             height={650}
-            className="aspect-[4/5] w-full object-cover transition-[transform] duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
+            className="aspect-[4/5] w-full object-cover transition-[transform] duration-[260ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.025]"
             onError={() => setImageFailed(true)}
           />
         ) : (
@@ -100,10 +100,10 @@ export default function ProductCard({
 
         <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/30 bg-white/35 p-3 text-left backdrop-blur-sm">
           <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/80">{product.category}</p>
-          <p className="mt-1 font-heading text-base font-semibold text-charcoal transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
+          <p className="mt-1 font-heading text-base font-semibold text-charcoal transition-transform duration-[240ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
             {product.name}
           </p>
-          <p className="mt-1 text-xs font-semibold text-charcoal/85 transition-all duration-500 delay-75 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
+          <p className="mt-1 text-xs font-semibold text-charcoal/85 transition-transform duration-[240ms] delay-75 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
             {stockLabel}
           </p>
         </div>
