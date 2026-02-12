@@ -85,7 +85,7 @@ export default function ProductCard({
             alt={product.name}
             width={520}
             height={650}
-            className="aspect-[4/5] w-full object-cover transition-[transform] duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.05]"
+            className="product-image aspect-[4/5] w-full object-cover"
             onError={() => setImageFailed(true)}
           />
         ) : (
@@ -100,10 +100,10 @@ export default function ProductCard({
 
         <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/30 bg-white/35 p-3 text-left backdrop-blur-sm">
           <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/80">{product.category}</p>
-          <p className="mt-1 font-heading text-base font-semibold text-charcoal transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
+          <p className="mt-1 font-heading text-base font-semibold text-charcoal transition-transform duration-[240ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
             {product.name}
           </p>
-          <p className="mt-1 text-xs font-semibold text-charcoal/85 transition-all duration-500 delay-75 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
+          <p className="mt-1 text-xs font-semibold text-charcoal/85 transition-transform duration-[240ms] delay-75 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
             {stockLabel}
           </p>
         </div>
@@ -120,13 +120,14 @@ export default function ProductCard({
 
       <div className="mt-4 flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-heading text-lg font-semibold text-ink">{product.name}</h3>
-          <p className="mt-1 text-sm text-muted">{product.category}</p>
+          <h3 className="font-heading text-lg font-semibold text-primary-heading">{product.name}</h3>
+          <p className="mt-1 text-sm text-support">{product.category}</p>
           <p className="mt-1 text-xs font-semibold text-accent">{stockLabel}</p>
         </div>
         <div className="text-right">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted">{priceLabel}</p>
-          <p className="text-lg font-semibold text-ink">৳{product.price}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-support">{priceLabel}</p>
+          {/* Phase1.5: Emphasize price for retail scanning */}
+          <p className="text-lg font-bold text-primary-heading">৳ {product.price.toLocaleString()}</p>
         </div>
       </div>
 

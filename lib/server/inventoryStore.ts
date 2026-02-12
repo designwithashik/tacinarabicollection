@@ -17,6 +17,7 @@ export type InventoryProduct = {
   sizes?: string[];
   description?: string;
   whatsappNumber?: string;
+  heroFeatured?: boolean;
 };
 
 const isRecord = (value: unknown): value is InventoryRecord =>
@@ -68,6 +69,7 @@ const toInventoryProduct = (source: unknown): InventoryProduct | null => {
     description: typeof source.description === "string" ? source.description : undefined,
     whatsappNumber:
       typeof source.whatsappNumber === "string" ? source.whatsappNumber : undefined,
+    heroFeatured: source.heroFeatured === true,
   };
 };
 
@@ -138,6 +140,7 @@ export type StorefrontProduct = {
   active: boolean;
   updatedAt: string;
   createdAt: string;
+  heroFeatured?: boolean;
 };
 
 export const toStorefrontProduct = (item: InventoryProduct): StorefrontProduct => ({
@@ -152,4 +155,5 @@ export const toStorefrontProduct = (item: InventoryProduct): StorefrontProduct =
   active: item.active,
   updatedAt: new Date(item.updatedAt ?? item.createdAt).toISOString(),
   createdAt: new Date(item.createdAt).toISOString(),
+  heroFeatured: item.heroFeatured === true,
 });

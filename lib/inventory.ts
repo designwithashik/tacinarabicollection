@@ -3,6 +3,7 @@ import type { Product } from "./products";
 export type AdminProduct = Product & {
   active: boolean;
   updatedAt: string;
+  heroFeatured?: boolean;
 };
 
 const INVENTORY_KEY = "tacin-admin-products";

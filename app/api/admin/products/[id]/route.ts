@@ -32,6 +32,7 @@ export async function PUT(
           : current.imageUrl,
       price: typeof body.price === "number" ? body.price : current.price,
       updatedAt: Date.now(),
+      heroFeatured: body.heroFeatured === true,
       id,
     };
 

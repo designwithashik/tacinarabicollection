@@ -8,10 +8,24 @@ import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryS
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const heroOnly = searchParams.get("hero") === "true";
+
     const products = await loadInventoryArray();
-    return NextResponse.json(products.filter((p) => p.active).map(toStorefrontProduct));
+    const activeProducts = products.filter((p) => p.active);
+
+    if (heroOnly) {
+      return NextResponse.json(
+        activeProducts
+          .filter((p) => p.heroFeatured)
+          .slice(0, 3)
+          .map(toStorefrontProduct)
+      );
+    }
+
+    return NextResponse.json(activeProducts.map(toStorefrontProduct));
   } catch {
     return NextResponse.json([]);
   }

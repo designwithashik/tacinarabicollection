@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
@@ -10,6 +11,7 @@ import SectionLoader from "../components/SectionLoader";
 import CartSkeleton from "../components/CartSkeleton";
 import SummaryPlaceholder from "../components/SummaryPlaceholder";
 import { AnimatedWrapper } from "../components/AnimatedWrapper";
+import HeroCarousel, { type HeroProduct } from "./components/HeroCarousel";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import { SlidersHorizontal } from "lucide-react";
 import type { Product } from "../lib/products";
@@ -610,6 +612,10 @@ export default function HomePage({
   }, [filters, productSource, selectedCategory]);
 
   const visibleProducts = hasMounted && Array.isArray(filteredProducts) ? filteredProducts : [];
+  const productBatchKey = useMemo(
+    () => visibleProducts.map((product) => product.id).join("|"),
+    [visibleProducts]
+  );
 
   const activeChips = [
     ...filters.size.map((size) => ({ type: "size", value: size })),
@@ -719,115 +725,99 @@ export default function HomePage({
   const isSummaryLoading = !hasMounted || isCartHydrating;
   const hasPaymentProof = Boolean(transactionId.trim());
 
+
+  // Phase1.8: Add-to-cart bridge from hero slides to existing product/cart flow.
+  const handleHeroAddToCart = (heroProduct: HeroProduct) => {
+    const matchedProduct = adminProducts.find((item) => item.id === heroProduct.id);
+
+    if (!matchedProduct) {
+      showToast({ type: "error", message: "Product is unavailable right now." });
+      return;
+    }
+
+    const defaultSize = selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
+    setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
+    handleAddToCart(matchedProduct);
+  };
+
   // ------------------------------
   // UI
   // ------------------------------
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen bg-white pb-24">
       {!isOnline ? (
         <div className="sticky top-0 z-50 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900">
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="bg-base">
-        {/* Phase1: Compress hero to enable early product exposure */}
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 pb-6 pt-6 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-xl">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-accent">
-                WhatsApp-first shopping
-              </p>
-              <button
-                type="button"
-                onClick={() =>
-                  setLanguage((prev) => (prev === "en" ? "bn" : "en"))
-                }
-                className="rounded-full border border-[#e6d8ce] bg-white px-3 py-1 text-xs font-semibold text-ink"
-              >
-                {language === "en" ? "বাংলা" : "EN"}
-              </button>
-            </div>
-            <h1 className="mt-2 font-heading text-2xl font-bold text-ink md:text-3xl">
-              WhatsApp checkout in minutes, shipped anywhere in Bangladesh.
-            </h1>
-            <p className="mt-2 text-sm text-muted">
-              Shop fast with WhatsApp-first ordering, nationwide delivery, and
-              verified quality checks.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <a
-                href="#product-grid"
-                className="interactive-feedback inline-flex min-h-[42px] items-center rounded-full bg-charcoal px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white"
-              >
-                Shop now
-              </a>
-            </div>
-          </div>
-          <div className="rounded-3xl bg-card p-4 shadow-soft opacity-0 animate-[fadeUp_0.3s_ease-out_forwards] md:max-w-sm">
-            <h2 className="font-heading text-xl font-semibold">
-              Quick Order Promise
-            </h2>
-            <p className="mt-1 text-sm text-muted">
-              Select size, tap buy now, and confirm instantly on WhatsApp.
-            </p>
-          </div>
+      <header className="bg-white">
+        <div className="mx-auto max-w-6xl px-4 pb-6 pt-6">
+          {/* Phase1.8: Componentized dynamic hero carousel with direct add-to-cart action. */}
+          <HeroCarousel
+            addToCart={handleHeroAddToCart}
+            initialProducts={initialAdminProducts.filter((item) => item.heroFeatured).slice(0, 3)}
+          />
         </div>
       </header>
 
       {/* Phase1: Compressed trust text for above-grid clarity */}
       <section className="mx-auto max-w-6xl px-4 pb-4">
         <div className="rounded-2xl bg-card px-4 py-3 shadow-soft">
-          <p className="text-sm font-medium text-ink">
+          <p className="text-sm font-semibold text-secondary">
             Authentic fabrics — Nationwide delivery — Fast WhatsApp checkout
           </p>
         </div>
       </section>
 
-      {/* Phase1: Retail intro before product grid */}
-      <section className="mx-auto max-w-6xl px-4 pb-3">
-        <h2 className="text-xl font-semibold text-ink">
-          Premium Kurtis for Every Occasion
+      {/* Phase1.5: Retail Intro Before Product Grid */}
+      <section className="mx-auto my-6 max-w-3xl px-4 text-center">
+        <h2 className="text-2xl font-bold text-primary-heading">
+          Shop the Latest Kurti Collection
         </h2>
-        <p className="mt-1 text-sm text-muted">
-          Shop latest kurti styles — breathable fabrics, modern designs,
-          nationwide WhatsApp checkout.
+        <p className="mt-2 text-base text-secondary">
+          Explore breathable cotton kurtis, stylish embroidered designs, and modern everyday looks. Order instantly via WhatsApp with secure confirmation and fast nationwide delivery.
         </p>
       </section>
 
       {/* Phase1: Place categories above product grid for faster discovery */}
-      <section className="sticky top-0 z-20 bg-base/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
-          <div className="flex flex-1 items-center gap-2 overflow-x-auto">
-            {categories.map((category) => (
-              <button
-                key={category}
-                type="button"
-                onClick={() => setSelectedCategory(category)}
-                className={clsx(
-                  "interactive-feedback min-h-[42px] whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold",
-                  selectedCategory === category
-                    ? "border-accent bg-accent text-white"
-                    : "border-[#e6d8ce] bg-white text-ink"
-                )}
-              >
-                {category}
-              </button>
-            ))}
+      <section className="sticky top-0 z-20 bg-white/95">
+        <AnimatedWrapper className="retail-section-enter" variant="section">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
+            <div className="flex flex-1 items-center gap-2 overflow-x-auto">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setSelectedCategory(category)}
+                  className={clsx(
+                    "interactive-feedback min-h-[42px] whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold",
+                    selectedCategory === category
+                      ? "border-accent bg-accent text-white"
+                      : "border-[#e6d8ce] bg-white text-ink"
+                  )}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => openSheet("size")}
+              className="interactive-feedback flex min-h-[44px] items-center gap-2 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white shadow-soft hover:bg-red-800"
+            >
+              Filters
+              {(filters.size.length || filters.colors.length || filters.price) ? (
+                <span className="rounded-full bg-gold px-2 text-xs text-charcoal">
+                  {filters.size.length + filters.colors.length + (filters.price ? 1 : 0)}
+                </span>
+              ) : null}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => openSheet("size")}
-            className="interactive-feedback flex min-h-[44px] items-center gap-2 rounded-full bg-charcoal px-4 py-2 text-sm font-semibold text-white shadow-soft"
-          >
-            Filters
-            {(filters.size.length || filters.colors.length || filters.price) ? (
-              <span className="rounded-full bg-gold px-2 text-xs text-charcoal">
-                {filters.size.length + filters.colors.length + (filters.price ? 1 : 0)}
-              </span>
-            ) : null}
-          </button>
-        </div>
+        </AnimatedWrapper>
       </section>
+
+      {/* Phase1.5: Retail Divider */}
+      <hr className="my-6 border-gray-200" />
 
       <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-12 pt-4">
         {activeChips.length > 0 ? (
@@ -869,14 +859,22 @@ export default function HomePage({
             </p>
           </div>
           ) : (
-          <div
+          <motion.div
+            key={productBatchKey}
             className={clsx(
               "grid gap-6 md:grid-cols-2 lg:grid-cols-3",
-              !prefersReducedMotion && "fade-enter"
+              !prefersReducedMotion && "retail-batch-enter"
             )}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
           >
             {visibleProducts.map((product, index) => (
-              <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.24)}>
+              <AnimatedWrapper
+                key={product.id}
+                variant="product-card"
+                delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.12)}
+              >
                 <ProductCard
                 product={product}
                 selectedSize={selectedSizes[product.id]}
@@ -903,7 +901,7 @@ export default function HomePage({
               />
               </AnimatedWrapper>
             ))}
-          </div>
+          </motion.div>
           )}
         </SectionLoader>
 
@@ -943,7 +941,7 @@ export default function HomePage({
             </div>
             <div className="grid gap-6 md:grid-cols-2">
               {recentlyViewed.map((product, index) => (
-                <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.16)}>
+                <AnimatedWrapper key={product.id} variant="product-card" delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.1)}>
                   <ProductCard
                   product={product}
                   selectedSize={selectedSizes[product.id]}

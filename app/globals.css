@@ -7,7 +7,23 @@
 }
 
 body {
-  @apply bg-base text-ink font-body;
+  @apply bg-white text-ink font-body;
+}
+
+/* Phase1.5: Stronger Text Hierarchy */
+.text-primary-heading {
+  color: #111827;
+  font-weight: 700;
+}
+
+/* Phase1.5: Stronger Text Hierarchy */
+.text-secondary {
+  color: #374151;
+}
+
+/* Phase1.5: Stronger Text Hierarchy */
+.text-support {
+  color: #6b7280;
 }
 
 *,
@@ -29,7 +45,18 @@ a:focus-visible {
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes retail-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -112,7 +139,15 @@ a:focus-visible {
 .fade-enter {
   opacity: 0;
   transform: translateY(8px);
-  animation: fadeUp 280ms ease-out forwards;
+  animation: fadeUp 260ms ease-out forwards;
+}
+
+.retail-section-enter {
+  animation: retail-enter 240ms ease-out both;
+}
+
+.retail-batch-enter {
+  animation: retail-enter 220ms ease-out both;
 }
 
 .floating-action {
@@ -134,8 +169,22 @@ a:focus-visible {
   animation: subtle-shimmer 1.2s ease-in-out infinite;
 }
 
+/* Phase1.5: Image Hover Motion */
+.product-image {
+  transition: transform 250ms ease-in-out;
+}
+
+/* Phase1.5: Image Hover Motion */
+.product-image:hover {
+  transform: scale(1.02);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .interactive-feedback:active {
+    transform: none;
+  }
+
+  .product-image:hover {
     transform: none;
   }
 
@@ -145,8 +194,12 @@ a:focus-visible {
   }
 
   .toast-enter,
-  .panel-enter {
+  .panel-enter,
+  .fade-enter,
+  .retail-section-enter,
+  .retail-batch-enter {
     animation: none;
+    transform: none;
   }
 }
 

@@ -20,7 +20,15 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, price, description, category, imageUrl, whatsappNumber } = body;
+    const {
+      name,
+      price,
+      description,
+      category,
+      imageUrl,
+      whatsappNumber,
+      heroFeatured,
+    } = body;
 
     const existing = await loadInventoryArray();
 
@@ -37,6 +45,7 @@ export async function POST(request: Request) {
       whatsappNumber: typeof whatsappNumber === "string" ? whatsappNumber : "",
       colors: ["Beige"],
       sizes: ["M", "L", "XL"],
+      heroFeatured: heroFeatured === true,
     };
 
     const updated = [...existing, newProduct];

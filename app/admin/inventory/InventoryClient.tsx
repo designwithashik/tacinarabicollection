@@ -19,6 +19,7 @@ const defaultDraft: AdminProduct = {
   colors: ["Beige"],
   sizes: ["M", "L", "XL"],
   active: true,
+  heroFeatured: false,
   updatedAt: new Date().toISOString(),
 };
 
@@ -155,6 +156,7 @@ export default function AdminInventory() {
         colors: draft.colors,
         sizes: draft.sizes,
         active: draft.active,
+        heroFeatured: draft.heroFeatured === true,
       };
 
       const endpoint = isEditing
@@ -294,6 +296,19 @@ export default function AdminInventory() {
               <option value="false">Hidden</option>
             </select>
           </label>
+          <label className="text-xs font-semibold">
+            Hero Featured
+            <select
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={draft.heroFeatured ? "true" : "false"}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, heroFeatured: event.target.value === "true" }))
+              }
+            >
+              <option value="false">No</option>
+              <option value="true">Yes</option>
+            </select>
+          </label>
         </div>
 
         <div className="mt-4 space-y-2">
@@ -373,7 +388,7 @@ export default function AdminInventory() {
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-semibold">৳{item.price}</span>
                   <span className="text-xs font-semibold text-muted">
-                    {item.active ? "Active" : "Hidden"}
+                    {item.active ? "Active" : "Hidden"} {item.heroFeatured ? "• Hero" : ""}
                   </span>
                   <button
                     type="button"
