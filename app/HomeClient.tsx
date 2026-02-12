@@ -610,6 +610,8 @@ export default function HomePage({
   }, [filters, productSource, selectedCategory]);
 
   const visibleProducts = hasMounted && Array.isArray(filteredProducts) ? filteredProducts : [];
+  const featuredProducts = useMemo(() => visibleProducts.slice(0, 3), [visibleProducts]);
+  const remainingProducts = useMemo(() => visibleProducts.slice(3), [visibleProducts]);
 
   const activeChips = [
     ...filters.size.map((size) => ({ type: "size", value: size })),
@@ -730,8 +732,7 @@ export default function HomePage({
         </div>
       ) : null}
       <header className="bg-base">
-        {/* Phase1: Compress hero to enable early product exposure */}
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 pb-6 pt-6 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto max-w-6xl px-4 pb-3 pt-5">
           <div className="max-w-xl">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-accent">
@@ -751,8 +752,7 @@ export default function HomePage({
               WhatsApp checkout in minutes, shipped anywhere in Bangladesh.
             </h1>
             <p className="mt-2 text-sm text-muted">
-              Shop fast with WhatsApp-first ordering, nationwide delivery, and
-              verified quality checks.
+              One-tap ordering, verified quality, and fast nationwide delivery.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <a
@@ -763,35 +763,17 @@ export default function HomePage({
               </a>
             </div>
           </div>
-          <div className="rounded-3xl bg-card p-4 shadow-soft opacity-0 animate-[fadeUp_0.3s_ease-out_forwards] md:max-w-sm">
-            <h2 className="font-heading text-xl font-semibold">
-              Quick Order Promise
-            </h2>
-            <p className="mt-1 text-sm text-muted">
-              Select size, tap buy now, and confirm instantly on WhatsApp.
-            </p>
-          </div>
         </div>
       </header>
 
-      {/* Phase1: Compressed trust text for above-grid clarity */}
-      <section className="mx-auto max-w-6xl px-4 pb-4">
-        <div className="rounded-2xl bg-card px-4 py-3 shadow-soft">
-          <p className="text-sm font-medium text-ink">
-            Authentic fabrics — Nationwide delivery — Fast WhatsApp checkout
-          </p>
+      <section className="mx-auto max-w-6xl px-4 pb-2">
+        <div className="rounded-xl bg-card px-4 py-2 shadow-soft">
+          <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-ink md:text-sm">
+            <li>• Authentic fabrics</li>
+            <li>• Fast WhatsApp checkout</li>
+            <li>• Delivery across Bangladesh</li>
+          </ul>
         </div>
-      </section>
-
-      {/* Phase1: Retail intro before product grid */}
-      <section className="mx-auto max-w-6xl px-4 pb-3">
-        <h2 className="text-xl font-semibold text-ink">
-          Premium Kurtis for Every Occasion
-        </h2>
-        <p className="mt-1 text-sm text-muted">
-          Shop latest kurti styles — breathable fabrics, modern designs,
-          nationwide WhatsApp checkout.
-        </p>
       </section>
 
       {/* Phase1: Place categories above product grid for faster discovery */}
@@ -829,7 +811,7 @@ export default function HomePage({
         </div>
       </section>
 
-      <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-12 pt-4">
+      <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-12 pt-2 md:pt-3">
         {activeChips.length > 0 ? (
           <div className="mb-4 flex flex-wrap gap-2">
             {activeChips.map((chip) => (
@@ -869,13 +851,14 @@ export default function HomePage({
             </p>
           </div>
           ) : (
+          <>
           <div
             className={clsx(
               "grid gap-6 md:grid-cols-2 lg:grid-cols-3",
               !prefersReducedMotion && "fade-enter"
             )}
           >
-            {visibleProducts.map((product, index) => (
+            {featuredProducts.map((product, index) => (
               <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.24)}>
                 <ProductCard
                 product={product}
@@ -904,32 +887,51 @@ export default function HomePage({
               </AnimatedWrapper>
             ))}
           </div>
+          <section className="mt-6">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-2xl bg-card px-4 py-3 shadow-soft">
+                <p className="text-sm text-muted">Pick size, tap Buy Now, and confirm instantly on WhatsApp.</p>
+              </div>
+              <div className="rounded-2xl bg-card px-4 py-3 shadow-soft">
+                <p className="text-sm text-muted">Clear pricing, quick support, and updates before dispatch.</p>
+              </div>
+            </div>
+          </section>
+          {remainingProducts.length > 0 ? (
+            <div className={clsx("mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3", !prefersReducedMotion && "fade-enter")}>
+              {remainingProducts.map((product, index) => (
+                <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.24)}>
+                  <ProductCard
+                    product={product}
+                    selectedSize={selectedSizes[product.id]}
+                    quantity={quantities[product.id] ?? 1}
+                    onSizeChange={(size) => updateSize(product.id, size)}
+                    onQuantityChange={(quantity) =>
+                      updateQuantity(product.id, quantity)
+                    }
+                    onBuyNow={() => handleBuyNow(product)}
+                    onAddToCart={() => handleAddToCart(product)}
+                    onOpenDetails={() => {
+                      markRecentlyViewed(product);
+                      setDetailsProduct(product);
+                    }}
+                    priceLabel={text.priceLabel}
+                    buyNowLabel={text.buyNow}
+                    addToCartLabel={text.addToCart}
+                    addingLabel={text.adding}
+                    addedLabel={text.added}
+                    addState={addStates[product.id] ?? "idle"}
+                    quantityFeedback={quantityFeedback[product.id]}
+                    statusLabel={getStatusLabel(index + featuredProducts.length)}
+                    stockLabel={getStockLabel(index + featuredProducts.length)}
+                  />
+                </AnimatedWrapper>
+              ))}
+            </div>
+          ) : null}
+          </>
           )}
         </SectionLoader>
-
-        {/* Phase1: Defer large info blocks below product grid */}
-        <section className="mt-8 hidden md:block">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-3xl bg-card p-5 shadow-soft">
-              <h3 className="font-heading text-xl font-semibold">
-                How ordering works
-              </h3>
-              <p className="mt-2 text-sm text-muted">
-                Select size and quantity, confirm on WhatsApp, then receive
-                delivery updates before dispatch.
-              </p>
-            </div>
-            <div className="rounded-3xl bg-card p-5 shadow-soft">
-              <h3 className="font-heading text-xl font-semibold">
-                Why customers choose us
-              </h3>
-              <p className="mt-2 text-sm text-muted">
-                Verified products, transparent pricing, and responsive support
-                for quick buying decisions.
-              </p>
-            </div>
-          </div>
-        </section>
 
         {recentlyViewed.length > 0 ? (
           <section className="mt-12">
