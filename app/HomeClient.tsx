@@ -204,6 +204,10 @@ export default function HomePage({
   const [hasMounted, setHasMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>(initialAdminProducts);
+  const [heroProducts, setHeroProducts] = useState<AdminProduct[]>(
+    initialAdminProducts.filter((item) => item.heroFeatured).slice(0, 3)
+  );
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
@@ -259,9 +263,28 @@ export default function HomePage({
     }
   }, []);
 
+  // Phase1.8: Fetch dynamic hero products from admin-controlled featured set.
+  const loadHeroProducts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/products?hero=true", {
+        cache: "no-store",
+        next: { revalidate: 0 },
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as unknown;
+      const shaped = Array.isArray(data) ? data.flat() : (data ? [data] : []);
+      const normalized = normalizeInventoryResponse(shaped).slice(0, 3);
+      setHeroProducts(normalized);
+    } catch {
+      // Gracefully keep existing hero selection when fetch fails.
+      setHeroProducts((current) => current);
+    }
+  }, []);
+
   useEffect(() => {
     void loadPublicInventory();
-  }, [loadPublicInventory]);
+    void loadHeroProducts();
+  }, [loadHeroProducts, loadPublicInventory]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -269,16 +292,19 @@ export default function HomePage({
     const onVisibilityOrFocus = () => {
       if (document.visibilityState === "visible") {
         void loadPublicInventory();
+        void loadHeroProducts();
       }
     };
 
     const onInventoryUpdated = () => {
       void loadPublicInventory();
+      void loadHeroProducts();
     };
 
     const onStorage = (event: StorageEvent) => {
       if (event.key === INVENTORY_UPDATED_STORAGE_KEY) {
         void loadPublicInventory();
+        void loadHeroProducts();
       }
     };
 
@@ -297,7 +323,7 @@ export default function HomePage({
       });
       window.removeEventListener("storage", onStorage);
     };
-  }, [loadPublicInventory]);
+  }, [loadHeroProducts, loadPublicInventory]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -724,19 +750,46 @@ export default function HomePage({
   const isSummaryLoading = !hasMounted || isCartHydrating;
   const hasPaymentProof = Boolean(transactionId.trim());
 
-  // Phase1.7: Hero carousel images
-  const heroImages = ["/images/product-1.svg", "/images/product-2.svg", "/images/product-3.svg"];
 
-  // Phase1.7: Auto-rotate hero
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // Phase1.8: Fallback if fewer than 3 hero-featured products are available.
+  const carouselProducts = useMemo(() => {
+    if (heroProducts.length > 0) return heroProducts;
 
+    const activeFallback = adminProducts.filter((item) => item.active).slice(0, 3);
+    if (activeFallback.length > 0) return activeFallback;
+
+    return [
+      {
+        id: "hero-fallback",
+        name: "Premium Designer Kurtis in Bangladesh",
+        price: 0,
+        image: "/images/product-1.svg",
+        category: "Clothing",
+        colors: ["Beige"],
+        sizes: ["M"],
+        active: true,
+        updatedAt: new Date().toISOString(),
+      } satisfies AdminProduct,
+    ];
+  }, [adminProducts, heroProducts]);
+
+  // Phase1.8: Auto-slide featured hero products every 4 seconds.
   useEffect(() => {
+    if (carouselProducts.length <= 1 || prefersReducedMotion) return;
+
     const interval = window.setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % heroImages.length);
+      setCurrentIndex((prev) => (prev + 1) % carouselProducts.length);
     }, 4000);
 
     return () => window.clearInterval(interval);
-  }, [heroImages.length]);
+  }, [carouselProducts.length, prefersReducedMotion]);
+
+  useEffect(() => {
+    setCurrentIndex((prev) => {
+      if (carouselProducts.length === 0) return 0;
+      return prev % carouselProducts.length;
+    });
+  }, [carouselProducts.length]);
 
   // ------------------------------
   // UI
@@ -749,53 +802,71 @@ export default function HomePage({
         </div>
       ) : null}
       <header className="bg-white">
-        {/* Phase1.7: Auto-Fade Hero Carousel */}
+        {/* Phase1.8: Dynamic hero carousel powered by admin heroFeatured products. */}
         <div className="mx-auto max-w-6xl px-4 pb-6 pt-6">
-          <div className="relative h-[320px] w-full overflow-hidden rounded-xl sm:h-[420px]">
-            {heroImages.map((src, index) => (
-              <img
-                key={src}
-                src={src}
-                alt="Tacin Arabi Collection"
-                className={clsx(
-                  "absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out",
-                  index === currentIndex ? "opacity-100" : "opacity-0"
-                )}
-              />
-            ))}
+          <div className="relative h-[350px] w-full overflow-hidden rounded-xl sm:h-[450px]">
+            {/* Phase1.8: Horizontal slide track for smooth transform-based transitions. */}
+            <div
+              className="flex h-full w-full transition-transform duration-1000 ease-in-out"
+              style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+            >
+              {carouselProducts.map((product) => (
+                <div key={product.id} className="relative min-w-full">
+                  <img
+                    src={product.image || "/images/product-1.svg"}
+                    alt={product.name}
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/35" />
 
-            <div className="absolute inset-0 bg-black/30" />
+                  {/* Phase1.8: Per-slide content anchored bottom-left for retail readability. */}
+                  <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-8">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
+                      Featured Pick
+                    </p>
+                    <h1 className="mt-2 max-w-xl text-2xl font-extrabold leading-tight text-white sm:text-4xl">
+                      {product.name}
+                    </h1>
+                    <p className="mt-2 text-sm text-white/90 sm:text-lg">
+                      New Arrivals — Everyday Comfort — Fast WhatsApp Checkout
+                    </p>
+                    <a
+                      href="#product-grid"
+                      className="interactive-feedback mt-4 inline-flex min-h-[44px] w-fit items-center rounded-lg bg-red-700 px-6 py-3 text-sm font-semibold text-white hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      Shop Kurtis
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-            <div className="absolute inset-0 flex flex-col justify-center px-6 text-white sm:px-12">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-white/90">
-                  WhatsApp-first shopping
-                </p>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setLanguage((prev) => (prev === "en" ? "bn" : "en"))
-                  }
-                  className="rounded-full border border-white/70 bg-white/90 px-3 py-1 text-xs font-semibold text-ink"
-                >
-                  {language === "en" ? "বাংলা" : "EN"}
-                </button>
-              </div>
-
-              <h1 className="mt-4 max-w-xl text-2xl font-extrabold leading-tight text-white sm:text-4xl">
-                Premium Designer Kurtis in Bangladesh
-              </h1>
-
-              <p className="mt-2 text-sm text-white/90 sm:text-lg">
-                New Arrivals — Everyday Comfort — Fast WhatsApp Checkout
-              </p>
-
-              <a
-                href="#product-grid"
-                className="interactive-feedback mt-4 inline-flex min-h-[44px] w-fit items-center rounded-lg bg-red-700 px-6 py-3 text-sm font-semibold text-white hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500"
+            <div className="absolute right-4 top-4">
+              <button
+                type="button"
+                onClick={() =>
+                  setLanguage((prev) => (prev === "en" ? "bn" : "en"))
+                }
+                className="rounded-full border border-white/70 bg-white/90 px-3 py-1 text-xs font-semibold text-ink"
               >
-                Shop Kurtis
-              </a>
+                {language === "en" ? "বাংলা" : "EN"}
+              </button>
+            </div>
+
+            {/* Phase1.8: Lightweight navigation dots for manual orientation. */}
+            <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+              {carouselProducts.map((product, index) => (
+                <button
+                  key={`hero-dot-${product.id}`}
+                  type="button"
+                  aria-label={`View featured slide ${index + 1}`}
+                  onClick={() => setCurrentIndex(index)}
+                  className={clsx(
+                    "h-2.5 w-2.5 rounded-full border border-white/60 transition",
+                    index === currentIndex ? "bg-white" : "bg-white/35"
+                  )}
+                />
+              ))}
             </div>
           </div>
         </div>
