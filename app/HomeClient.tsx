@@ -730,7 +730,8 @@ export default function HomePage({
         </div>
       ) : null}
       <header className="bg-base">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-10 pt-6 md:flex-row md:items-center md:justify-between">
+        {/* Phase1: Compress hero to enable early product exposure */}
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 pb-6 pt-6 md:flex-row md:items-center md:justify-between">
           <div className="max-w-xl">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-accent">
@@ -746,142 +747,56 @@ export default function HomePage({
                 {language === "en" ? "বাংলা" : "EN"}
               </button>
             </div>
-            <h1 className="mt-3 font-heading text-3xl font-bold text-ink md:text-4xl">
+            <h1 className="mt-2 font-heading text-2xl font-bold text-ink md:text-3xl">
               WhatsApp checkout in minutes, shipped anywhere in Bangladesh.
             </h1>
-            <p className="mt-3 text-sm text-muted md:text-base">
-              Tacin Arabi Collection curates fashion and ceramics with fast COD
-              fulfillment and real-time WhatsApp ordering for busy customers.
+            <p className="mt-2 text-sm text-muted">
+              Shop fast with WhatsApp-first ordering, nationwide delivery, and
+              verified quality checks.
             </p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft opacity-0 animate-[fadeUp_0.32s_ease-out_forwards]">
-                COD Nationwide
-              </span>
-              <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft opacity-0 animate-[fadeUp_0.32s_ease-out_forwards] [animation-delay:120ms]">
-                WhatsApp Ordering
-              </span>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a
+                href="#product-grid"
+                className="interactive-feedback inline-flex min-h-[42px] items-center rounded-full bg-charcoal px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white"
+              >
+                Shop now
+              </a>
             </div>
           </div>
-          <div className="rounded-3xl bg-card p-6 shadow-soft opacity-0 animate-[fadeUp_0.3s_ease-out_forwards]">
+          <div className="rounded-3xl bg-card p-4 shadow-soft opacity-0 animate-[fadeUp_0.3s_ease-out_forwards] md:max-w-sm">
             <h2 className="font-heading text-xl font-semibold">
               Quick Order Promise
             </h2>
-            <p className="mt-2 text-sm text-muted">
-              Select your size, tap buy now, and finish checkout in seconds. No
-              account needed.
+            <p className="mt-1 text-sm text-muted">
+              Select size, tap buy now, and confirm instantly on WhatsApp.
             </p>
-            <div className="mt-4 space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-accent" />
-                <span>Fast checkout popup</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-accent" />
-                <span>Cart saved in your device</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-accent" />
-                <span>Secure WhatsApp confirmation</span>
-              </div>
-            </div>
           </div>
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 pb-8">
-        <div className="rounded-3xl bg-card p-6 shadow-soft">
-          <div className="flex flex-col gap-1">
-            <h2 className="font-heading text-2xl font-semibold">
-              Trusted delivery, transparent payments
-            </h2>
-            <p className="text-sm text-muted">
-              We confirm every order on WhatsApp before dispatch, so you stay in
-              control of size, color, and delivery timing.
-            </p>
-          </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-[#f0e4da] bg-white p-4">
-              <p className="text-xs font-semibold text-muted">Delivery Zones</p>
-              <p className="mt-2 text-sm font-semibold text-ink">
-                Inside Dhaka · Outside Dhaka
-              </p>
-              <p className="mt-1 text-xs text-muted">
-                Clear pricing shown before checkout.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#f0e4da] bg-white p-4">
-              <p className="text-xs font-semibold text-muted">Payment Options</p>
-              <p className="mt-2 text-sm font-semibold text-ink">
-                Cash on Delivery, bKash, Nagad
-              </p>
-              <p className="mt-1 text-xs text-muted">
-                Pay in the way that feels safest.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#f0e4da] bg-white p-4">
-              <p className="text-xs font-semibold text-muted">Support</p>
-              <p className="mt-2 text-sm font-semibold text-ink">
-                Real people on WhatsApp
-              </p>
-              <p className="mt-1 text-xs text-muted">
-                Fast replies for urgent questions.
-              </p>
-            </div>
-          </div>
+      {/* Phase1: Compressed trust text for above-grid clarity */}
+      <section className="mx-auto max-w-6xl px-4 pb-4">
+        <div className="rounded-2xl bg-card px-4 py-3 shadow-soft">
+          <p className="text-sm font-medium text-ink">
+            Authentic fabrics — Nationwide delivery — Fast WhatsApp checkout
+          </p>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-8">
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-3xl bg-card p-6 shadow-soft">
-            <h3 className="font-heading text-xl font-semibold">
-              How ordering works
-            </h3>
-            <p className="mt-2 text-sm text-muted">
-              A smooth three-step flow built for busy shoppers.
-            </p>
-            <ol className="mt-4 space-y-3 text-sm text-ink">
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
-                <span>Select size, quantity, then tap Buy Now.</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
-                <span>Confirm delivery zone and payment method.</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
-                <span>We verify on WhatsApp and dispatch quickly.</span>
-              </li>
-            </ol>
-          </div>
-          <div className="rounded-3xl bg-card p-6 shadow-soft">
-            <h3 className="font-heading text-xl font-semibold">
-              Why customers choose us
-            </h3>
-            <p className="mt-2 text-sm text-muted">
-              Built for trust, clarity, and calm shopping.
-            </p>
-            <ul className="mt-4 space-y-3 text-sm text-ink">
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
-                <span>Every order verified by a real team member.</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
-                <span>Transparent pricing before WhatsApp checkout.</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
-                <span>Fast updates on delivery timeline.</span>
-              </li>
-            </ul>
-          </div>
-        </div>
+      {/* Phase1: Retail intro before product grid */}
+      <section className="mx-auto max-w-6xl px-4 pb-3">
+        <h2 className="text-xl font-semibold text-ink">
+          Premium Kurtis for Every Occasion
+        </h2>
+        <p className="mt-1 text-sm text-muted">
+          Shop latest kurti styles — breathable fabrics, modern designs,
+          nationwide WhatsApp checkout.
+        </p>
       </section>
 
+      {/* Phase1: Place categories above product grid for faster discovery */}
       <section className="sticky top-0 z-20 bg-base/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
           <div className="flex flex-1 items-center gap-2 overflow-x-auto">
             {categories.map((category) => (
               <button
@@ -914,7 +829,7 @@ export default function HomePage({
         </div>
       </section>
 
-      <main className="mx-auto max-w-6xl px-4 pb-12 pt-6">
+      <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-12 pt-4">
         {activeChips.length > 0 ? (
           <div className="mb-4 flex flex-wrap gap-2">
             {activeChips.map((chip) => (
@@ -991,6 +906,30 @@ export default function HomePage({
           </div>
           )}
         </SectionLoader>
+
+        {/* Phase1: Defer large info blocks below product grid */}
+        <section className="mt-8 hidden md:block">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-3xl bg-card p-5 shadow-soft">
+              <h3 className="font-heading text-xl font-semibold">
+                How ordering works
+              </h3>
+              <p className="mt-2 text-sm text-muted">
+                Select size and quantity, confirm on WhatsApp, then receive
+                delivery updates before dispatch.
+              </p>
+            </div>
+            <div className="rounded-3xl bg-card p-5 shadow-soft">
+              <h3 className="font-heading text-xl font-semibold">
+                Why customers choose us
+              </h3>
+              <p className="mt-2 text-sm text-muted">
+                Verified products, transparent pricing, and responsive support
+                for quick buying decisions.
+              </p>
+            </div>
+          </div>
+        </section>
 
         {recentlyViewed.length > 0 ? (
           <section className="mt-12">
