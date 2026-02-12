@@ -82,6 +82,7 @@ const storageKeys = {
 };
 
 const statusLabels = ["New", "Hot", "Limited"] as const;
+const PRODUCTS_PER_BATCH = 8;
 
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
 const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
@@ -204,6 +205,7 @@ export default function HomePage({
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>(initialAdminProducts);
   const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
+  const [visibleProductCount, setVisibleProductCount] = useState(PRODUCTS_PER_BATCH);
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
 
@@ -610,6 +612,12 @@ export default function HomePage({
   }, [filters, productSource, selectedCategory]);
 
   const visibleProducts = hasMounted && Array.isArray(filteredProducts) ? filteredProducts : [];
+  const paginatedProducts = visibleProducts.slice(0, visibleProductCount);
+  const hasMoreProducts = paginatedProducts.length < visibleProducts.length;
+
+  useEffect(() => {
+    setVisibleProductCount(PRODUCTS_PER_BATCH);
+  }, [filters, selectedCategory]);
 
   const activeChips = [
     ...filters.size.map((size) => ({ type: "size", value: size })),
@@ -796,7 +804,7 @@ export default function HomePage({
 
       {/* Phase1: Place categories above product grid for faster discovery */}
       <section className="sticky top-0 z-20 bg-base/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2">
           <div className="flex flex-1 items-center gap-2 overflow-x-auto">
             {categories.map((category) => (
               <button
@@ -829,9 +837,9 @@ export default function HomePage({
         </div>
       </section>
 
-      <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-12 pt-4">
+      <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-10 pt-2">
         {activeChips.length > 0 ? (
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-3 flex flex-wrap gap-2">
             {activeChips.map((chip) => (
               <button
                 key={`${chip.type}-${chip.value}`}
@@ -853,7 +861,7 @@ export default function HomePage({
         <SectionLoader
           loading={!hasMounted || isLoading}
           loader={
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
               {/* Product placeholders prevent blank state flashes during hydration. */}
               {Array.from({ length: 6 }).map((_, index) => (
                 <SkeletonCard key={`skeleton-${index}`} />
@@ -869,41 +877,58 @@ export default function HomePage({
             </p>
           </div>
           ) : (
-          <div
-            className={clsx(
-              "grid gap-6 md:grid-cols-2 lg:grid-cols-3",
-              !prefersReducedMotion && "fade-enter"
-            )}
-          >
-            {visibleProducts.map((product, index) => (
-              <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.24)}>
-                <ProductCard
-                product={product}
-                selectedSize={selectedSizes[product.id]}
-                quantity={quantities[product.id] ?? 1}
-                onSizeChange={(size) => updateSize(product.id, size)}
-                onQuantityChange={(quantity) =>
-                  updateQuantity(product.id, quantity)
-                }
-                onBuyNow={() => handleBuyNow(product)}
-                onAddToCart={() => handleAddToCart(product)}
-                onOpenDetails={() => {
-                  markRecentlyViewed(product);
-                  setDetailsProduct(product);
-                }}
-                priceLabel={text.priceLabel}
-                buyNowLabel={text.buyNow}
-                addToCartLabel={text.addToCart}
-                addingLabel={text.adding}
-                addedLabel={text.added}
-                addState={addStates[product.id] ?? "idle"}
-                quantityFeedback={quantityFeedback[product.id]}
-                statusLabel={getStatusLabel(index)}
-                stockLabel={getStockLabel(index)}
-              />
-              </AnimatedWrapper>
-            ))}
-          </div>
+            <>
+              <div
+                className={clsx(
+                  "grid grid-cols-2 auto-rows-fr gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4",
+                  !prefersReducedMotion && "fade-enter"
+                )}
+              >
+                {paginatedProducts.map((product, index) => (
+                  <AnimatedWrapper key={product.id} className="h-full" delay={Math.min(index * 0.04, 0.24)}>
+                    <ProductCard
+                    product={product}
+                    selectedSize={selectedSizes[product.id]}
+                    quantity={quantities[product.id] ?? 1}
+                    onSizeChange={(size) => updateSize(product.id, size)}
+                    onQuantityChange={(quantity) =>
+                      updateQuantity(product.id, quantity)
+                    }
+                    onBuyNow={() => handleBuyNow(product)}
+                    onAddToCart={() => handleAddToCart(product)}
+                    onOpenDetails={() => {
+                      markRecentlyViewed(product);
+                      setDetailsProduct(product);
+                    }}
+                    priceLabel={text.priceLabel}
+                    buyNowLabel={text.buyNow}
+                    addToCartLabel={text.addToCart}
+                    addingLabel={text.adding}
+                    addedLabel={text.added}
+                    addState={addStates[product.id] ?? "idle"}
+                    quantityFeedback={quantityFeedback[product.id]}
+                    statusLabel={getStatusLabel(index)}
+                    stockLabel={getStockLabel(index)}
+                  />
+                  </AnimatedWrapper>
+                ))}
+              </div>
+              {hasMoreProducts ? (
+                <div className="mt-5 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setVisibleProductCount((prev) =>
+                        Math.min(prev + PRODUCTS_PER_BATCH, visibleProducts.length)
+                      )
+                    }
+                    className="interactive-feedback min-h-[44px] rounded-full border border-accent bg-white px-6 py-2 text-sm font-semibold text-accent"
+                  >
+                    Load More
+                  </button>
+                </div>
+              ) : null}
+            </>
           )}
         </SectionLoader>
 
