@@ -879,25 +879,11 @@ export default function HomePage({
               <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.24)}>
                 <ProductCard
                 product={product}
-                selectedSize={selectedSizes[product.id]}
-                quantity={quantities[product.id] ?? 1}
-                onSizeChange={(size) => updateSize(product.id, size)}
-                onQuantityChange={(quantity) =>
-                  updateQuantity(product.id, quantity)
-                }
-                onBuyNow={() => handleBuyNow(product)}
-                onAddToCart={() => handleAddToCart(product)}
                 onOpenDetails={() => {
                   markRecentlyViewed(product);
                   setDetailsProduct(product);
                 }}
                 priceLabel={text.priceLabel}
-                buyNowLabel={text.buyNow}
-                addToCartLabel={text.addToCart}
-                addingLabel={text.adding}
-                addedLabel={text.added}
-                addState={addStates[product.id] ?? "idle"}
-                quantityFeedback={quantityFeedback[product.id]}
                 statusLabel={getStatusLabel(index)}
                 stockLabel={getStockLabel(index)}
               />
@@ -946,23 +932,9 @@ export default function HomePage({
                 <AnimatedWrapper key={product.id} delay={Math.min(index * 0.04, 0.16)}>
                   <ProductCard
                   product={product}
-                  selectedSize={selectedSizes[product.id]}
-                  quantity={quantities[product.id] ?? 1}
-                  onSizeChange={(size) => updateSize(product.id, size)}
-                  onQuantityChange={(quantity) =>
-                    updateQuantity(product.id, quantity)
-                  }
-                  onBuyNow={() => handleBuyNow(product)}
-                  onAddToCart={() => handleAddToCart(product)}
                   onOpenDetails={() => setDetailsProduct(product)}
                   showBadge="Recently Viewed"
                   priceLabel={text.priceLabel}
-                  buyNowLabel={text.buyNow}
-                  addToCartLabel={text.addToCart}
-                  addingLabel={text.adding}
-                  addedLabel={text.added}
-                  addState={addStates[product.id] ?? "idle"}
-                  quantityFeedback={quantityFeedback[product.id]}
                   statusLabel={getStatusLabel(index)}
                   stockLabel={getStockLabel(index)}
                 />
