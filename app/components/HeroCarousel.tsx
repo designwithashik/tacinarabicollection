@@ -64,7 +64,7 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
   }
 
   return (
-    <div className="relative w-full overflow-hidden rounded-[20px] min-h-[85vh] md:min-h-screen py-16 md:py-24">
+    <div className="relative w-full overflow-hidden rounded-[20px] min-h-[60vh] sm:min-h-[65vh] md:min-h-[75vh] py-12 md:py-16">
       {/* Phase1.8: Horizontal slide animation wrapper. */}
       <motion.div
         className="flex h-full"
@@ -74,7 +74,7 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
         {heroProducts.map((product) => (
           <div
             key={product.id}
-            className="relative min-h-[85vh] md:min-h-screen min-w-full overflow-hidden rounded-[20px]"
+            className="relative min-h-[60vh] sm:min-h-[65vh] md:min-h-[75vh] min-w-full overflow-hidden rounded-[20px]"
           >
             <img
               src={product.imageUrl || product.image || "/images/product-1.svg"}
@@ -84,7 +84,7 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
             <div className="absolute inset-0 bg-[var(--brand-bg)]/30 backdrop-blur-[1px]" />
 
             {/* Editorial text and composed CTA treatment. */}
-            <div className="absolute inset-0 flex items-end px-6 pb-12 md:px-14 md:pb-16">
+            <div className="absolute inset-0 flex items-center px-6 md:px-14">
               <div>
                 <h2 className="text-3xl md:text-5xl lg:text-6xl font-medium tracking-wide leading-tight text-[var(--brand-primary)]">
                   {product.name}
