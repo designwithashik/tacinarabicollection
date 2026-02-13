@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { getStoredOrders, type Order } from "../../../lib/orders";
 
 const formatMoney = (value: number) => `৳${value.toLocaleString("en-BD")}`;
@@ -12,10 +12,7 @@ export default function AdminDashboard() {
     setOrders(getStoredOrders());
   }, []);
 
-  const totalRevenue = useMemo(
-    () => orders.reduce((sum, order) => sum + order.total, 0),
-    [orders]
-  );
+  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
   const avgOrder = orders.length ? totalRevenue / orders.length : 0;
 
   return (
