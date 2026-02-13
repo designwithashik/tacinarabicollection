@@ -750,9 +750,14 @@ export default function HomePage({
       <header className="sticky top-0 z-50 bg-[var(--brand-surface)]/80 backdrop-blur-md border-b border-[var(--brand-secondary)]/20">
         <div className="mx-auto max-w-6xl px-4 md:px-10 py-5 md:py-6">
           <div className="flex items-center justify-between gap-6">
-            <p className="text-lg md:text-xl font-medium tracking-[0.15em] transition-opacity duration-300 hover:opacity-80">
-              TACIN ARABI
-            </p>
+            <Image
+              src="/brand/navbar-logo.svg"
+              alt="Tacin Arabi"
+              width={160}
+              height={40}
+              priority
+              className="h-auto w-[160px]"
+            />
             <div className="flex items-center gap-3">
               <LanguageToggle language={language} setLanguage={setLanguage} />
             </div>
