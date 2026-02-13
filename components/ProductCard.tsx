@@ -73,7 +73,7 @@ export default function ProductCard({
   const canQuickAdd = !sizeMissing && addState !== "loading";
 
   return (
-    <div className="group relative flex min-h-[620px] h-full flex-col rounded-[24px] border border-[#efe1d8] bg-card p-4 shadow-soft">
+    <div className="group relative flex min-h-[620px] h-full flex-col rounded-[24px] border border-[#efe1d8] bg-card p-4 shadow-soft transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-md">
       <button
         type="button"
         className="interactive-feedback relative w-full overflow-hidden rounded-2xl bg-base"
@@ -85,7 +85,7 @@ export default function ProductCard({
             alt={product.name}
             width={520}
             height={650}
-            className="product-image aspect-[4/5] w-full object-cover"
+            className="aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out hover:scale-[1.03]"
             onError={() => setImageFailed(true)}
           />
         ) : (
@@ -100,10 +100,10 @@ export default function ProductCard({
 
         <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/30 bg-white/35 p-3 text-left backdrop-blur-sm">
           <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/80">{product.category}</p>
-          <p className="mt-1 font-heading text-base font-semibold text-charcoal transition-transform duration-[240ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
+          <p className="mt-1 font-heading text-base font-semibold text-charcoal transition-transform duration-300 ease-out group-hover:-translate-y-px">
             {product.name}
           </p>
-          <p className="mt-1 text-xs font-semibold text-charcoal/85 transition-transform duration-[240ms] delay-75 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
+          <p className="mt-1 text-xs font-semibold text-charcoal/85 transition-transform delay-75 duration-300 ease-out group-hover:-translate-y-px">
             {stockLabel}
           </p>
         </div>
@@ -213,7 +213,7 @@ export default function ProductCard({
         onClick={onAddToCart}
         disabled={!canQuickAdd}
         className={clsx(
-          "interactive-feedback absolute bottom-6 right-6 z-20 hidden h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/95 text-lg text-charcoal shadow-soft transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] md:flex",
+          "interactive-feedback absolute bottom-6 right-6 z-20 hidden h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/95 text-lg text-charcoal shadow-soft transition-all duration-500 ease-out md:flex",
           canQuickAdd
             ? "opacity-0 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100"
             : "cursor-not-allowed opacity-60"
