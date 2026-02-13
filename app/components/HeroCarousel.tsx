@@ -53,7 +53,7 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
     }, 6000);
 
     return () => window.clearInterval(interval);
-  }, [heroProducts, prefersReducedMotion]);
+  }, [heroProducts.length, prefersReducedMotion]);
 
   useEffect(() => {
     setCurrentIndex((prev) => {
@@ -79,16 +79,16 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
             key={product.id}
             className="relative min-w-full overflow-hidden"
           >
-            <div className="aspect-[16/7] md:aspect-[21/8]">
+            <div className="aspect-[16/7] md:aspect-[21/8] pointer-events-none">
               <img
                 src={product.imageUrl || product.image || "/images/product-1.svg"}
                 alt={product.name}
                 className="w-full h-auto md:h-full object-cover"
               />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent pointer-events-none" />
 
-            <div className="absolute inset-0 flex items-end md:items-center justify-center px-6 pb-10 md:pb-0">
+            <div className="absolute inset-0 z-20 flex items-end md:items-center justify-center px-6 pb-10 md:pb-0">
               <div className="text-center text-white max-w-xl">
                 <h2 className="text-2xl md:text-4xl font-medium tracking-wide">
                   {product.name}
@@ -101,7 +101,7 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
                 <div className="mt-5 flex justify-center">
                   <button
                     type="button"
-                    className="btn-primary"
+                    className="btn-primary relative z-30"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAddToCart(product);
