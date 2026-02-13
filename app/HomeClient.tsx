@@ -768,12 +768,29 @@ export default function HomePage({
           />
       </section>
 
-      {/* Phase1: Compressed trust text for above-grid clarity */}
-      <section className="mx-auto max-w-6xl px-4 pb-4">
-        <div className="rounded-2xl bg-card px-4 py-3 shadow-soft">
-          <p className="text-sm font-semibold text-secondary">
-            Premium fashion deals in Bangladesh — Nationwide delivery — Fast WhatsApp shopping checkout
-          </p>
+      <section className="px-6 py-8 md:px-12 md:py-10">
+        <div className="mx-auto max-w-6xl border-y border-[var(--brand-secondary)]/20 py-6">
+          <div className="grid grid-cols-1 gap-6 text-center md:grid-cols-4 md:text-left">
+            <div>
+              <p className="text-sm font-medium tracking-wide">Cash on Delivery</p>
+              <p className="mt-1 text-xs text-[var(--brand-muted)]">Available nationwide</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium tracking-wide">Free Pick-Up</p>
+              <p className="mt-1 text-xs text-[var(--brand-muted)]">DU • Shahbag • Mirpur 10</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium tracking-wide">Thoughtfully Selected</p>
+              <p className="mt-1 text-xs text-[var(--brand-muted)]">Quality over quantity</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium tracking-wide">7-Day Exchange</p>
+              <p className="mt-1 text-xs text-[var(--brand-muted)]">Easy &amp; hassle-free</p>
+            </div>
+          </div>
         </div>
       </section>
 
