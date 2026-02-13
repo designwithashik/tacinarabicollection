@@ -12,6 +12,7 @@ import CartSkeleton from "../components/CartSkeleton";
 import SummaryPlaceholder from "../components/SummaryPlaceholder";
 import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import HeroCarousel, { type HeroProduct } from "./components/HeroCarousel";
+import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import { SlidersHorizontal } from "lucide-react";
 import type { Product } from "../lib/products";
@@ -752,6 +753,9 @@ export default function HomePage({
       ) : null}
       <header className="bg-white">
         <div className="mx-auto max-w-6xl px-4 pb-6 pt-6">
+          <div className="mb-3 flex justify-end">
+            <LanguageToggle language={language} setLanguage={setLanguage} />
+          </div>
           {/* Phase1.8: Componentized dynamic hero carousel with direct add-to-cart action. */}
           <HeroCarousel
             addToCart={handleHeroAddToCart}
