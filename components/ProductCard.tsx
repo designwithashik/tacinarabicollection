@@ -5,6 +5,7 @@ import Image from "next/image";
 import clsx from "clsx";
 import { useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/products";
+import QuickView from "./QuickView";
 
 const sizes = ["M", "L", "XL"] as const;
 
@@ -52,6 +53,7 @@ export default function ProductCard({
   stockLabel,
 }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     setImageFailed(false);
@@ -119,6 +121,14 @@ export default function ProductCard({
         <span className="absolute right-3 top-3 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink">
           {statusLabel}
         </span>
+
+        <button
+          type="button"
+          onClick={() => setQuickViewProduct(product)}
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/90 px-4 py-2 text-sm opacity-0 backdrop-blur-sm transition duration-300 group-hover:opacity-100"
+        >
+          Quick View
+        </button>
       </button>
 
       <div className="mt-4 flex items-start justify-between gap-3">
@@ -229,6 +239,17 @@ export default function ProductCard({
       >
         +
       </button>
+
+      {quickViewProduct ? (
+        <QuickView
+          product={quickViewProduct}
+          selectedSize={selectedSize}
+          onSizeChange={onSizeChange}
+          onClose={() => setQuickViewProduct(null)}
+          onAddToCart={onAddToCart}
+          addToCartLabel={addToCartLabel}
+        />
+      ) : null}
     </div>
   );
 }
