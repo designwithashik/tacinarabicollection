@@ -78,11 +78,11 @@ export default function ProductCard({
     ?? (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group relative flex min-h-[620px] h-full flex-col rounded-[24px] border border-[#efe1d8] bg-card p-4 shadow-soft transition-all duration-500 hover:-translate-y-1 hover:shadow-lg">
+    <div className="group relative flex h-full min-h-[620px] flex-col overflow-hidden rounded-2xl border border-[var(--brand-secondary)]/10 bg-[var(--brand-surface)] transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
       <div
         role="button"
         tabIndex={0}
-        className="interactive-feedback relative w-full overflow-hidden rounded-2xl bg-base"
+        className="interactive-feedback relative overflow-hidden"
         onClick={onOpenDetails}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -97,7 +97,7 @@ export default function ProductCard({
             alt={product.name}
             width={520}
             height={650}
-            className="aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+            className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
             onError={() => setImageFailed(true)}
           />
         ) : (
@@ -109,6 +109,8 @@ export default function ProductCard({
             </div>
           </div>
         )}
+
+        <div className="absolute inset-0 bg-black/0 transition-all duration-500 group-hover:bg-black/5" />
 
         <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/30 bg-white/35 p-3 text-left backdrop-blur-sm">
           <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/80">{product.category}</p>
@@ -135,33 +137,38 @@ export default function ProductCard({
             event.stopPropagation();
             setQuickViewProduct(product);
           }}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/90 px-4 py-2 text-sm opacity-0 backdrop-blur-sm transition duration-300 group-hover:opacity-100"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition duration-300 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full text-sm"
         >
           Quick View
         </button>
       </div>
 
-      <div className="mt-4 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-heading text-lg font-semibold text-primary-heading">{product.name}</h3>
-          <p className="mt-1 text-sm text-support">{product.category}</p>
-          <p className="mt-1 text-xs font-semibold text-accent">{stockLabel}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs uppercase tracking-[0.2em] text-support">{priceLabel}</p>
-          {typeof stockCount === "number" && stockCount <= 5 ? (
-            <p className="mt-1 text-xs tracking-wide text-[var(--brand-secondary)]">Limited availability</p>
-          ) : null}
-          {typeof originalPrice === "number" && originalPrice > product.price ? (
-            <p className="text-sm line-through text-[var(--brand-muted)]">৳ {originalPrice.toLocaleString()}</p>
-          ) : null}
-          <p className="mt-2 text-base font-semibold tracking-wide text-[var(--brand-primary)]">৳ {product.price.toLocaleString()}</p>
-        </div>
-      </div>
+      <div className="p-5 space-y-3">
+        <h3 className="text-base font-medium tracking-wide leading-snug text-[var(--brand-primary)] group-hover:opacity-90 transition">
+          {product.name}
+        </h3>
 
-      <div className="mt-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-support">{priceLabel}</p>
+            <p className="text-lg font-semibold text-[var(--brand-primary)]">৳ {product.price.toLocaleString()}</p>
+            {typeof originalPrice === "number" && originalPrice > product.price ? (
+              <p className="text-sm text-[var(--brand-muted)] line-through">৳ {originalPrice.toLocaleString()}</p>
+            ) : null}
+          </div>
+
+          {typeof stockCount === "number" && stockCount <= 5 ? (
+            <span className="text-xs px-3 py-1 rounded-full bg-[var(--brand-secondary)]/15 text-[var(--brand-secondary)] tracking-wide">
+              Limited
+            </span>
+          ) : null}
+        </div>
+
+        <p className="text-sm text-support">{product.category}</p>
+        <p className="text-xs font-semibold text-accent">{stockLabel}</p>
+
         <p className="text-sm font-medium text-ink">Select Size</p>
-        <div className="mt-2 flex gap-2">
+        <div className="flex gap-2">
           {sizes.map((size) => (
             <button
               key={size}
@@ -179,50 +186,53 @@ export default function ProductCard({
           ))}
         </div>
         {sizeMissing ? (
-          <p className="mt-2 text-xs text-accent">Select a size to continue.</p>
+          <p className="text-xs text-accent">Select a size to continue.</p>
         ) : null}
-      </div>
 
-      <div className="mt-4 flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-ink">Qty</p>
-          <div className="mt-2 flex items-center gap-2 rounded-full border border-[#e5d7cc] bg-white px-3 py-1">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-ink">Qty</p>
+            <div className="mt-2 flex items-center gap-2 rounded-full border border-[#e5d7cc] bg-white px-3 py-1">
+              <button
+                type="button"
+                className="interactive-feedback min-h-[28px] min-w-[28px] text-base font-semibold text-ink"
+                onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+              >
+                -
+              </button>
+              <span className="min-w-[1.5rem] text-center text-sm font-semibold">{quantity}</span>
+              <button
+                type="button"
+                className="interactive-feedback min-h-[28px] min-w-[28px] text-base font-semibold text-ink"
+                onClick={() => onQuantityChange(quantity + 1)}
+              >
+                +
+              </button>
+            </div>
+            {quantityFeedback ? (
+              <p className="mt-2 text-xs font-semibold text-accent">{quantityFeedback}</p>
+            ) : null}
+          </div>
+          <div className="mt-2 flex flex-col gap-2">
             <button
               type="button"
-              className="interactive-feedback min-h-[28px] min-w-[28px] text-base font-semibold text-ink"
-              onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+              className={clsx(
+                "interactive-feedback btn-secondary min-h-[44px] w-full text-[10px] font-semibold uppercase tracking-[0.2em]",
+                sizeMissing && "cursor-not-allowed border-[#d9cdc0] text-muted"
+              )}
+              onClick={onBuyNow}
+              disabled={sizeMissing}
             >
-              -
-            </button>
-            <span className="min-w-[1.5rem] text-center text-sm font-semibold">{quantity}</span>
-            <button
-              type="button"
-              className="interactive-feedback min-h-[28px] min-w-[28px] text-base font-semibold text-ink"
-              onClick={() => onQuantityChange(quantity + 1)}
-            >
-              +
+              {buyNowLabel}
             </button>
           </div>
-          {quantityFeedback ? (
-            <p className="mt-2 text-xs font-semibold text-accent">{quantityFeedback}</p>
-          ) : null}
         </div>
-        <div className="mt-2 flex flex-col gap-2">
+
+        <div className="pt-2">
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-secondary min-h-[44px] w-full text-[10px] font-semibold uppercase tracking-[0.2em]",
-              sizeMissing && "cursor-not-allowed border-[#d9cdc0] text-muted"
-            )}
-            onClick={onBuyNow}
-            disabled={sizeMissing}
-          >
-            {buyNowLabel}
-          </button>
-          <button
-            type="button"
-            className={clsx(
-              "interactive-feedback btn-primary w-full mt-4 min-h-[44px] text-[10px] font-semibold uppercase tracking-[0.2em]",
+              "interactive-feedback btn-primary w-full min-h-[44px] text-[10px] font-semibold uppercase tracking-[0.2em]",
               sizeMissing || addState === "loading"
                 ? "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
                 : "",
@@ -235,6 +245,7 @@ export default function ProductCard({
           </button>
         </div>
       </div>
+
       <button
         type="button"
         aria-label="Quick add to cart"
