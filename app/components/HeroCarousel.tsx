@@ -84,15 +84,15 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
               alt={product.name}
               className="w-full h-auto object-cover"
             />
-            <div className="absolute inset-0 bg-[var(--brand-bg)]/30 backdrop-blur-[1px]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
 
-            <div className="absolute inset-0 flex items-center justify-center px-6">
-              <div className="max-w-xl w-full bg-[var(--brand-surface)]/95 backdrop-blur-md rounded-xl p-6 md:p-8 shadow-lg text-center">
-                <h2 className="text-2xl md:text-4xl font-medium tracking-wide leading-tight text-[var(--brand-primary)]">
+            <div className="absolute inset-0 flex items-end md:items-center justify-center px-6 pb-10 md:pb-0">
+              <div className="text-center text-white max-w-xl">
+                <h2 className="text-2xl md:text-4xl font-medium tracking-wide">
                   {product.name}
                 </h2>
 
-                <p className="mt-3 text-sm md:text-base text-[var(--brand-muted)]">
+                <p className="mt-3 text-sm md:text-base text-white/80">
                   A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living.
                 </p>
 
