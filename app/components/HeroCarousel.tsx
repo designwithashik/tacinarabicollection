@@ -18,6 +18,9 @@ type HeroCarouselProps = {
 };
 
 export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCarouselProps) {
+  const handleAddToCart = (product: HeroProduct) => {
+    addToCart(product);
+  };
   // Phase1.8: State for dynamic hero products and active slide index.
   const [heroProducts, setHeroProducts] = useState<HeroProduct[]>(initialProducts.slice(0, 3));
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -83,36 +86,28 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
             />
             <div className="absolute inset-0 bg-[var(--brand-bg)]/30 backdrop-blur-[1px]" />
 
-            {/* Editorial text and composed CTA treatment. */}
-            <div className="absolute inset-0 flex items-center justify-center text-center px-6">
-              <div>
-                <div className="inline-block bg-[var(--brand-surface)]/85 backdrop-blur-sm px-6 py-4 rounded-xl shadow-sm">
-                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-medium tracking-wide leading-tight text-[var(--brand-primary)]">
-                    {product.name}
-                  </h1>
+            <div className="absolute inset-0 flex items-center justify-center px-6">
+              <div className="max-w-xl w-full bg-[var(--brand-surface)]/95 backdrop-blur-md rounded-xl p-6 md:p-8 shadow-lg text-center">
+                <h2 className="text-2xl md:text-4xl font-medium tracking-wide leading-tight text-[var(--brand-primary)]">
+                  {product.name}
+                </h2>
+
+                <p className="mt-3 text-sm md:text-base text-[var(--brand-muted)]">
+                  A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living.
+                </p>
+
+                <div className="mt-5 flex justify-center">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddToCart(product);
+                    }}
+                  >
+                    Add to Cart
+                  </button>
                 </div>
-                <div className="mt-4 inline-block bg-[var(--brand-surface)]/75 px-5 py-3 rounded-lg">
-                  <p className="text-base md:text-lg text-[var(--brand-muted)]">
-                    A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="interactive-feedback btn-primary mt-8"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    addToCart(product);
-                  }}
-                >
-                  Add to Cart
-                </button>
-                <a
-                  href="#product-grid"
-                  className="mt-4 inline-block text-sm tracking-wide transition-opacity duration-300 hover:opacity-80 text-[var(--brand-primary)]"
-                >
-                  Explore the Collection
-                </a>
               </div>
             </div>
           </div>
