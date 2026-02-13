@@ -33,6 +33,37 @@ p {
   line-height: 1.7;
 }
 
+.btn-primary {
+  background-color: var(--brand-primary);
+  color: var(--brand-surface);
+  padding: 12px 22px;
+  border-radius: var(--radius-soft);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  transition: var(--transition-smooth);
+  border: 1px solid var(--brand-primary);
+}
+
+.btn-primary:hover {
+  background-color: var(--brand-accent);
+  border-color: var(--brand-accent);
+  color: #1f1f1f;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border: 1px solid var(--brand-secondary);
+  color: var(--brand-primary);
+  padding: 12px 22px;
+  border-radius: var(--radius-soft);
+  transition: var(--transition-smooth);
+}
+
+.btn-secondary:hover {
+  background-color: var(--brand-secondary);
+  color: white;
+}
+
 /* Phase1.5: Stronger Text Hierarchy */
 .text-primary-heading {
   color: #111827;
@@ -92,10 +123,10 @@ a:focus-visible {
     transform: scale(1);
   }
   30% {
-    transform: scale(1.15);
+    transform: scale(1.02);
   }
   60% {
-    transform: scale(0.95);
+    transform: scale(0.98);
   }
   100% {
     transform: scale(1);

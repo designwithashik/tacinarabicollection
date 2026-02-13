@@ -88,7 +88,7 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
               <h2 className="text-lg font-bold sm:text-2xl">{product.name}</h2>
               <button
                 type="button"
-                className="mt-2 rounded-lg bg-green-600 px-4 py-2 text-white transition hover:bg-green-700"
+                className="interactive-feedback btn-primary mt-3 text-xs uppercase tracking-[0.16em]"
                 onClick={() => addToCart(product)}
               >
                 Add to Cart

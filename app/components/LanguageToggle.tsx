@@ -20,10 +20,10 @@ export default function LanguageToggle({ language, setLanguage }: Props) {
     <div className="flex items-center gap-2 text-sm font-medium">
       <button
         onClick={() => setLanguage("en")}
-        className={`px-3 py-1 rounded-full transition ${
+        className={`px-4 py-2 rounded-full transition text-sm tracking-wide ${
           language === "en"
-            ? "bg-black text-white"
-            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            ? "bg-[var(--brand-primary)] text-white shadow-sm"
+            : "bg-[var(--brand-surface)] border border-[var(--brand-secondary)] text-[var(--brand-primary)]"
         }`}
       >
         EN
@@ -31,10 +31,10 @@ export default function LanguageToggle({ language, setLanguage }: Props) {
 
       <button
         onClick={() => setLanguage("bn")}
-        className={`px-3 py-1 rounded-full transition ${
+        className={`px-4 py-2 rounded-full transition text-sm tracking-wide ${
           language === "bn"
-            ? "bg-black text-white"
-            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            ? "bg-[var(--brand-primary)] text-white shadow-sm"
+            : "bg-[var(--brand-surface)] border border-[var(--brand-secondary)] text-[var(--brand-primary)]"
         }`}
       >
         বাংলা
