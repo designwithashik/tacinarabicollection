@@ -99,7 +99,11 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
                 <button
                   type="button"
                   className="interactive-feedback btn-primary mt-8"
-                  onClick={() => addToCart(product)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    addToCart(product);
+                  }}
                 >
                   Add to Cart
                 </button>
