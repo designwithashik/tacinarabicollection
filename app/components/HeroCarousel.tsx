@@ -67,7 +67,7 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
   }
 
   return (
-    <div className="relative w-full overflow-hidden">
+    <div className="relative w-full overflow-hidden rounded-2xl md:rounded-3xl">
       {/* Phase1.8: Horizontal slide animation wrapper. */}
       <motion.div
         className="flex"
@@ -79,11 +79,13 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
             key={product.id}
             className="relative min-w-full overflow-hidden"
           >
-            <img
-              src={product.imageUrl || product.image || "/images/product-1.svg"}
-              alt={product.name}
-              className="w-full h-auto object-cover"
-            />
+            <div className="aspect-[16/7] md:aspect-[21/8]">
+              <img
+                src={product.imageUrl || product.image || "/images/product-1.svg"}
+                alt={product.name}
+                className="w-full h-auto md:h-full object-cover"
+              />
+            </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
 
             <div className="absolute inset-0 flex items-end md:items-center justify-center px-6 pb-10 md:pb-0">
