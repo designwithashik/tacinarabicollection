@@ -196,6 +196,10 @@ a:focus-visible {
   animation: fadeUp 260ms ease-out forwards;
 }
 
+.animate-fadeUp {
+  animation: fadeUp 0.8s ease forwards;
+}
+
 .retail-section-enter {
   animation: retail-enter 240ms ease-out both;
 }
