@@ -768,53 +768,53 @@ export default function HomePage({
           />
       </section>
 
-      <section className="px-6 py-8 md:px-12 md:py-10">
-        <div className="mx-auto max-w-6xl rounded-2xl border-y border-[var(--brand-secondary)]/30 bg-[var(--brand-surface)] py-8 shadow-sm">
-          <div className="grid grid-cols-1 gap-8 text-center md:grid-cols-4 md:text-left">
-            <div className="group flex translate-y-3 flex-col items-center gap-4 opacity-0 transition-all duration-700 animate-fadeUp md:flex-row">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-secondary)]/15 text-[var(--brand-primary)] transition-all duration-300 group-hover:bg-[var(--brand-secondary)]/30">
+      <section className="px-6 py-12 md:px-12">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-[var(--brand-secondary)]/20 bg-[var(--brand-surface)] shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-4">
+            <div className="flex items-center gap-4 border-b border-[var(--brand-secondary)]/15 px-8 py-8 md:border-b-0 md:border-r md:py-10">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)]">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a5 5 0 10-10 0v2m-2 0h14v10H5V9z" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium tracking-wide text-[var(--brand-primary)]">Cash on Delivery</p>
+                <p className="text-sm font-semibold tracking-wide">Cash on Delivery</p>
                 <p className="mt-1 text-xs text-[var(--brand-muted)]">Available nationwide</p>
               </div>
             </div>
 
-            <div className="group flex translate-y-3 flex-col items-center gap-4 opacity-0 transition-all duration-700 animate-fadeUp md:flex-row">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-secondary)]/15 text-[var(--brand-primary)] transition-all duration-300 group-hover:bg-[var(--brand-secondary)]/30">
+            <div className="flex items-center gap-4 border-b border-[var(--brand-secondary)]/15 px-8 py-8 md:border-b-0 md:border-r md:py-10">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)]">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m4 0h1" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium tracking-wide text-[var(--brand-primary)]">Free Pick-Up</p>
+                <p className="text-sm font-semibold tracking-wide">Free Pick-Up</p>
                 <p className="mt-1 text-xs text-[var(--brand-muted)]">DU • Shahbag • Mirpur 10</p>
               </div>
             </div>
 
-            <div className="group flex translate-y-3 flex-col items-center gap-4 opacity-0 transition-all duration-700 animate-fadeUp md:flex-row">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-secondary)]/15 text-[var(--brand-primary)] transition-all duration-300 group-hover:bg-[var(--brand-secondary)]/30">
+            <div className="flex items-center gap-4 border-b border-[var(--brand-secondary)]/15 px-8 py-8 md:border-b-0 md:border-r md:py-10">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)]">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium tracking-wide text-[var(--brand-primary)]">Thoughtfully Selected</p>
+                <p className="text-sm font-semibold tracking-wide">Thoughtfully Selected</p>
                 <p className="mt-1 text-xs text-[var(--brand-muted)]">Quality over quantity</p>
               </div>
             </div>
 
-            <div className="group flex translate-y-3 flex-col items-center gap-4 opacity-0 transition-all duration-700 animate-fadeUp md:flex-row">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-secondary)]/15 text-[var(--brand-primary)] transition-all duration-300 group-hover:bg-[var(--brand-secondary)]/30">
+            <div className="flex items-center gap-4 border-[var(--brand-secondary)]/15 px-8 py-8 md:py-10">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)]">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v6h6M20 20v-6h-6" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium tracking-wide text-[var(--brand-primary)]">7-Day Exchange</p>
+                <p className="text-sm font-semibold tracking-wide">7-Day Exchange</p>
                 <p className="mt-1 text-xs text-[var(--brand-muted)]">Easy &amp; hassle-free</p>
               </div>
             </div>
