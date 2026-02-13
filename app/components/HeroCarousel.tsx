@@ -41,13 +41,13 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
     void loadHeroProducts();
   }, []);
 
-  // Phase1.8: Auto-scroll slides every 4 seconds.
+  // Phase1.8: Auto-scroll slides every 6 seconds for calmer pacing.
   useEffect(() => {
     if (heroProducts.length < 2 || prefersReducedMotion) return;
 
     const interval = window.setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % heroProducts.length);
-    }, 4000);
+    }, 6000);
 
     return () => window.clearInterval(interval);
   }, [heroProducts, prefersReducedMotion]);
@@ -64,50 +64,65 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
   }
 
   return (
-    <div className="relative w-full overflow-hidden rounded-xl">
+    <div className="relative w-full overflow-hidden rounded-[20px] min-h-[85vh] md:min-h-screen py-16 md:py-24">
       {/* Phase1.8: Horizontal slide animation wrapper. */}
       <motion.div
-        className="flex"
+        className="flex h-full"
         animate={{ x: `-${currentIndex * 100}%` }}
-        transition={{ type: "tween", duration: prefersReducedMotion ? 0 : 1, ease: "easeInOut" }}
+        transition={{ type: "tween", duration: prefersReducedMotion ? 0 : 0.7, ease: "easeInOut" }}
       >
         {heroProducts.map((product) => (
           <div
             key={product.id}
-            className="relative h-[350px] min-w-full overflow-hidden rounded-xl sm:h-[450px]"
+            className="relative min-h-[85vh] md:min-h-screen min-w-full overflow-hidden rounded-[20px]"
           >
             <img
               src={product.imageUrl || product.image || "/images/product-1.svg"}
               alt={product.name}
               className="h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-black/25" />
+            <div className="absolute inset-0 bg-[var(--brand-bg)]/30 backdrop-blur-[1px]" />
 
-            {/* Phase1.8: Slide text and direct add-to-cart action. */}
-            <div className="absolute bottom-4 left-4 text-white sm:bottom-6 sm:left-6">
-              <h2 className="text-lg font-bold sm:text-2xl">{product.name}</h2>
-              <button
-                type="button"
-                className="interactive-feedback btn-primary mt-3 text-xs uppercase tracking-[0.16em]"
-                onClick={() => addToCart(product)}
-              >
-                Add to Cart
-              </button>
+            {/* Editorial text and composed CTA treatment. */}
+            <div className="absolute inset-0 flex items-end px-6 pb-12 md:px-14 md:pb-16">
+              <div>
+                <h2 className="text-3xl md:text-5xl lg:text-6xl font-medium tracking-wide leading-tight text-[var(--brand-primary)]">
+                  {product.name}
+                </h2>
+                <p className="mt-6 text-base md:text-lg text-[var(--brand-muted)] max-w-xl">
+                  A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living.
+                </p>
+                <button
+                  type="button"
+                  className="interactive-feedback btn-primary mt-8"
+                  onClick={() => addToCart(product)}
+                >
+                  Add to Cart
+                </button>
+                <a
+                  href="#product-grid"
+                  className="mt-4 inline-block text-sm tracking-wide transition-opacity duration-300 hover:opacity-80 text-[var(--brand-primary)]"
+                >
+                  Explore the Collection
+                </a>
+              </div>
             </div>
           </div>
         ))}
       </motion.div>
 
-      {/* Phase1.8: Navigation dots. */}
-      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+      {/* Phase1.8: Subtle navigation dots. */}
+      <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
         {heroProducts.map((product, index) => (
           <button
             key={`dot-${product.id}`}
             type="button"
             aria-label={`Go to slide ${index + 1}`}
             className={clsx(
-              "h-3 w-3 rounded-full transition-colors",
-              index === currentIndex ? "bg-white" : "bg-white/50"
+              "h-2.5 w-2.5 rounded-full transition-opacity duration-300",
+              index === currentIndex
+                ? "bg-[var(--brand-primary)]/70"
+                : "bg-[var(--brand-secondary)]/35 hover:opacity-100 opacity-60"
             )}
             onClick={() => setCurrentIndex(index)}
           />
