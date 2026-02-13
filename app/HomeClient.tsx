@@ -154,8 +154,6 @@ const copy = {
 };
 
 const qtyUpdatedMessage = "Qty updated";
-const addedToCartNotice = "Added to cart";
-
 const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
 
 const getStatusLabel = (index: number) =>
@@ -178,7 +176,6 @@ export default function HomePage({
   const { cartItems, setCartItems, isCartHydrating, clearCart } = useCart();
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
   const [toast, setToast] = useState<ToastState | null>(null);
-  const [cartNotice, setCartNotice] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [draftFilters, setDraftFilters] = useState<Filters>(defaultFilters);
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("All");
@@ -355,7 +352,7 @@ export default function HomePage({
   // Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 2500);
+    const timer = setTimeout(() => setToast(null), 2000);
     return () => clearTimeout(timer);
   }, [toast]);
 
@@ -464,7 +461,6 @@ export default function HomePage({
     });
 
     showToast({ type: "success", message: "Added to cart!" });
-    setCartNotice(`${product.name} ${addedToCartNotice}`);
     logEvent("add_to_cart", {
       productId: product.id,
       quantity: normalized.quantity,
@@ -1021,19 +1017,6 @@ export default function HomePage({
           onRetry={toast.onRetry}
           onClose={() => setToast(null)}
         />
-      ) : null}
-
-      {cartNotice ? (
-        <div className="fixed bottom-32 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft">
-          <span>{cartNotice}</span>
-          <button
-            type="button"
-            onClick={() => setCartNotice(null)}
-            className="text-accent"
-          >
-            ✕
-          </button>
-        </div>
       ) : null}
 
       <button
