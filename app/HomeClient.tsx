@@ -751,18 +751,26 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="bg-white">
-        <div className="mx-auto max-w-6xl px-4 pb-6 pt-6">
-          <div className="mb-3 flex justify-end">
-            <LanguageToggle language={language} setLanguage={setLanguage} />
+      <header className="sticky top-0 z-50 bg-[var(--brand-surface)]/80 backdrop-blur-md border-b border-[var(--brand-secondary)]/20">
+        <div className="mx-auto max-w-6xl px-4 md:px-10 py-5 md:py-6">
+          <div className="flex items-center justify-between gap-6">
+            <p className="text-lg md:text-xl font-medium tracking-[0.15em] transition-opacity duration-300 hover:opacity-80">
+              TACIN ARABI
+            </p>
+            <div className="flex items-center gap-3">
+              <LanguageToggle language={language} setLanguage={setLanguage} />
+            </div>
           </div>
+        </div>
+      </header>
+
+      <section className="mx-auto max-w-6xl px-4 md:px-10 pb-6 pt-4">
           {/* Phase1.8: Componentized dynamic hero carousel with direct add-to-cart action. */}
           <HeroCarousel
             addToCart={handleHeroAddToCart}
             initialProducts={initialAdminProducts.filter((item) => item.heroFeatured).slice(0, 3)}
           />
-        </div>
-      </header>
+      </section>
 
       {/* Phase1: Compressed trust text for above-grid clarity */}
       <section className="mx-auto max-w-6xl px-4 pb-4">
