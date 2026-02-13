@@ -78,11 +78,12 @@ export default function ProductCard({
     ?? (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group relative flex min-h-[620px] h-full flex-col rounded-[24px] border border-[#efe1d8] bg-card p-4 shadow-soft transition-all duration-500 hover:-translate-y-1 hover:shadow-lg">
-      <div
+    <div className="group relative flex min-h-[620px] h-full flex-col overflow-hidden rounded-2xl border border-[var(--brand-secondary)]/10 bg-[var(--brand-surface)] transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
+      <div className="relative overflow-hidden">
+        <div
         role="button"
         tabIndex={0}
-        className="interactive-feedback relative w-full overflow-hidden rounded-2xl bg-base"
+        className="interactive-feedback relative w-full overflow-hidden bg-base"
         onClick={onOpenDetails}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -90,25 +91,25 @@ export default function ProductCard({
             onOpenDetails();
           }
         }}
-      >
-        {imageSrc && !imageFailed ? (
-          <Image
-            src={imageSrc}
-            alt={product.name}
-            width={520}
-            height={650}
-            className="aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-            onError={() => setImageFailed(true)}
-          />
-        ) : (
-          <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-b from-[#f6efe3] via-[#f2e6d3] to-[#e8dcc6]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.65),transparent_45%),radial-gradient(circle_at_70%_75%,rgba(200,169,107,0.3),transparent_42%)]" />
-            <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-white/40 bg-white/45 p-3 text-left backdrop-blur-sm">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/70">Tacin Arabi</p>
-              <p className="mt-1 font-heading text-sm font-semibold text-charcoal/85">Luxury Placeholder</p>
+        >
+          {imageSrc && !imageFailed ? (
+            <Image
+              src={imageSrc}
+              alt={product.name}
+              width={520}
+              height={650}
+              className="aspect-[4/5] w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-b from-[#f6efe3] via-[#f2e6d3] to-[#e8dcc6]">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.65),transparent_45%),radial-gradient(circle_at_70%_75%,rgba(200,169,107,0.3),transparent_42%)]" />
+              <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-white/40 bg-white/45 p-3 text-left backdrop-blur-sm">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/70">Tacin Arabi</p>
+                <p className="mt-1 font-heading text-sm font-semibold text-charcoal/85">Luxury Placeholder</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/30 bg-white/35 p-3 text-left backdrop-blur-sm">
           <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/80">{product.category}</p>
@@ -135,31 +136,38 @@ export default function ProductCard({
             event.stopPropagation();
             setQuickViewProduct(product);
           }}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/90 px-4 py-2 text-sm opacity-0 backdrop-blur-sm transition duration-300 group-hover:opacity-100"
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition duration-300 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full text-sm"
         >
           Quick View
         </button>
-      </div>
-
-      <div className="mt-4 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-heading text-lg font-semibold text-primary-heading">{product.name}</h3>
-          <p className="mt-1 text-sm text-support">{product.category}</p>
-          <p className="mt-1 text-xs font-semibold text-accent">{stockLabel}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs uppercase tracking-[0.2em] text-support">{priceLabel}</p>
-          {typeof stockCount === "number" && stockCount <= 5 ? (
-            <p className="mt-1 text-xs tracking-wide text-[var(--brand-secondary)]">Limited availability</p>
-          ) : null}
-          {typeof originalPrice === "number" && originalPrice > product.price ? (
-            <p className="text-sm line-through text-[var(--brand-muted)]">৳ {originalPrice.toLocaleString()}</p>
-          ) : null}
-          <p className="mt-2 text-base font-semibold tracking-wide text-[var(--brand-primary)]">৳ {product.price.toLocaleString()}</p>
+          <div className="pointer-events-none absolute inset-0 bg-black/0 transition-all duration-500 group-hover:bg-black/5" />
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="p-5 space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-base font-medium leading-snug tracking-wide text-[var(--brand-primary)] transition group-hover:opacity-90">
+              {product.name}
+            </h3>
+            <p className="mt-1 text-sm text-support">{product.category}</p>
+            <p className="mt-1 text-xs font-semibold text-accent">{stockLabel}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-[0.2em] text-support">{priceLabel}</p>
+            {typeof stockCount === "number" && stockCount <= 5 ? (
+              <span className="mt-1 inline-flex rounded-full bg-[var(--brand-secondary)]/15 px-3 py-1 text-xs tracking-wide text-[var(--brand-secondary)]">
+                Limited
+              </span>
+            ) : null}
+            {typeof originalPrice === "number" && originalPrice > product.price ? (
+              <p className="text-sm line-through text-[var(--brand-muted)]">৳ {originalPrice.toLocaleString()}</p>
+            ) : null}
+            <p className="mt-2 text-base font-semibold tracking-wide text-[var(--brand-primary)]">৳ {product.price.toLocaleString()}</p>
+          </div>
+        </div>
+
+      <div>
         <p className="text-sm font-medium text-ink">Select Size</p>
         <div className="mt-2 flex gap-2">
           {sizes.map((size) => (
@@ -183,7 +191,7 @@ export default function ProductCard({
         ) : null}
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-ink">Qty</p>
           <div className="mt-2 flex items-center gap-2 rounded-full border border-[#e5d7cc] bg-white px-3 py-1">
@@ -207,7 +215,7 @@ export default function ProductCard({
             <p className="mt-2 text-xs font-semibold text-accent">{quantityFeedback}</p>
           ) : null}
         </div>
-        <div className="mt-2 flex flex-col gap-2">
+        <div className="mt-2 flex flex-col gap-2 pt-2">
           <button
             type="button"
             className={clsx(
@@ -222,7 +230,7 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-primary w-full mt-4 min-h-[44px] text-[10px] font-semibold uppercase tracking-[0.2em]",
+              "interactive-feedback btn-primary w-full min-h-[44px]",
               sizeMissing || addState === "loading"
                 ? "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
                 : "",
@@ -234,6 +242,7 @@ export default function ProductCard({
             {addLabel}
           </button>
         </div>
+      </div>
       </div>
       <button
         type="button"
