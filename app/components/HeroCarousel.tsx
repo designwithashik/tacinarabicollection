@@ -53,7 +53,7 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
     }, 6000);
 
     return () => window.clearInterval(interval);
-  }, [heroProducts, prefersReducedMotion]);
+  }, [heroProducts.length, prefersReducedMotion]);
 
   useEffect(() => {
     setCurrentIndex((prev) => {
