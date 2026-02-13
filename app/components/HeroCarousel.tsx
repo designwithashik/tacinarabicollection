@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import clsx from "clsx";
 
@@ -18,9 +18,9 @@ type HeroCarouselProps = {
 };
 
 export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCarouselProps) {
-  const handleAddToCart = (product: HeroProduct) => {
+  const handleAddToCart = useCallback((product: HeroProduct) => {
     addToCart(product);
-  };
+  }, [addToCart]);
   // Phase1.8: State for dynamic hero products and active slide index.
   const [heroProducts, setHeroProducts] = useState<HeroProduct[]>(initialProducts.slice(0, 3));
   const [currentIndex, setCurrentIndex] = useState(0);
