@@ -79,10 +79,17 @@ export default function ProductCard({
 
   return (
     <div className="group relative flex min-h-[620px] h-full flex-col rounded-[24px] border border-[#efe1d8] bg-card p-4 shadow-soft transition-all duration-500 hover:-translate-y-1 hover:shadow-lg">
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         className="interactive-feedback relative w-full overflow-hidden rounded-2xl bg-base"
         onClick={onOpenDetails}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onOpenDetails();
+          }
+        }}
       >
         {imageSrc && !imageFailed ? (
           <Image
@@ -124,12 +131,15 @@ export default function ProductCard({
 
         <button
           type="button"
-          onClick={() => setQuickViewProduct(product)}
+          onClick={(event) => {
+            event.stopPropagation();
+            setQuickViewProduct(product);
+          }}
           className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/90 px-4 py-2 text-sm opacity-0 backdrop-blur-sm transition duration-300 group-hover:opacity-100"
         >
           Quick View
         </button>
-      </button>
+      </div>
 
       <div className="mt-4 flex items-start justify-between gap-3">
         <div>
@@ -246,7 +256,10 @@ export default function ProductCard({
           selectedSize={selectedSize}
           onSizeChange={onSizeChange}
           onClose={() => setQuickViewProduct(null)}
-          onAddToCart={onAddToCart}
+          onAddToCart={(size) => {
+            onSizeChange(size);
+            onAddToCart();
+          }}
           addToCartLabel={addToCartLabel}
         />
       ) : null}

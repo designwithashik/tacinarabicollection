@@ -10,7 +10,7 @@ type QuickViewProps = {
   selectedSize?: string;
   onSizeChange: (size: string) => void;
   onClose: () => void;
-  onAddToCart: () => void;
+  onAddToCart: (size: string) => void;
   addToCartLabel: string;
 };
 
@@ -100,10 +100,9 @@ export default function QuickView({
                 type="button"
                 className="btn-primary w-full"
                 onClick={() => {
-                  if (localSize) {
-                    onSizeChange(localSize);
-                  }
-                  onAddToCart();
+                  if (!localSize) return;
+                  onSizeChange(localSize);
+                  onAddToCart(localSize);
                   onClose();
                 }}
               >
