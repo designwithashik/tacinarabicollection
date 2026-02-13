@@ -183,10 +183,8 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "interactive-feedback min-h-[44px] rounded-full px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] transition",
-              sizeMissing
-                ? "cursor-not-allowed bg-[#e6d8ce] text-muted"
-                : "bg-accent text-white"
+              "interactive-feedback btn-primary min-h-[44px] text-[10px] font-semibold uppercase tracking-[0.2em]",
+              sizeMissing && "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
             )}
             onClick={onBuyNow}
             disabled={sizeMissing}
@@ -196,11 +194,11 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "interactive-feedback min-h-[44px] rounded-full border px-5 py-2 text-[10px] font-semibold uppercase tracking-[0.3em] transition",
+              "interactive-feedback btn-secondary min-h-[44px] text-[10px] font-semibold uppercase tracking-[0.2em]",
               sizeMissing || addState === "loading"
-                ? "cursor-not-allowed border-[#e6d8ce] text-muted"
-                : "border-accent text-accent",
-              addState === "success" && "bg-accent text-white border-accent scale-[1.02]"
+                ? "cursor-not-allowed border-[#d9cdc0] text-muted"
+                : "",
+              addState === "success" && "border-[var(--brand-accent)] bg-[var(--brand-accent)] text-[#1f1f1f]"
             )}
             onClick={onAddToCart}
             disabled={sizeMissing || addState === "loading"}

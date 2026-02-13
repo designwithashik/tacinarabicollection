@@ -12,6 +12,7 @@ import CartSkeleton from "../components/CartSkeleton";
 import SummaryPlaceholder from "../components/SummaryPlaceholder";
 import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import HeroCarousel, { type HeroProduct } from "./components/HeroCarousel";
+import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import { SlidersHorizontal } from "lucide-react";
 import type { Product } from "../lib/products";
@@ -153,8 +154,6 @@ const copy = {
 };
 
 const qtyUpdatedMessage = "Qty updated";
-const addedToCartNotice = "Added to cart";
-
 const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
 
 const getStatusLabel = (index: number) =>
@@ -177,7 +176,6 @@ export default function HomePage({
   const { cartItems, setCartItems, isCartHydrating, clearCart } = useCart();
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
   const [toast, setToast] = useState<ToastState | null>(null);
-  const [cartNotice, setCartNotice] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [draftFilters, setDraftFilters] = useState<Filters>(defaultFilters);
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("All");
@@ -354,7 +352,7 @@ export default function HomePage({
   // Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 2500);
+    const timer = setTimeout(() => setToast(null), 2000);
     return () => clearTimeout(timer);
   }, [toast]);
 
@@ -463,7 +461,6 @@ export default function HomePage({
     });
 
     showToast({ type: "success", message: "Added to cart!" });
-    setCartNotice(`${product.name} ${addedToCartNotice}`);
     logEvent("add_to_cart", {
       productId: product.id,
       quantity: normalized.quantity,
@@ -750,21 +747,32 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="bg-white">
-        <div className="mx-auto max-w-6xl px-4 pb-6 pt-6">
+      <header className="sticky top-0 z-50 bg-[var(--brand-surface)]/80 backdrop-blur-md border-b border-[var(--brand-secondary)]/20">
+        <div className="mx-auto max-w-6xl px-4 md:px-10 py-5 md:py-6">
+          <div className="flex items-center justify-between gap-6">
+            <p className="text-lg md:text-xl font-medium tracking-[0.15em] transition-opacity duration-300 hover:opacity-80">
+              TACIN ARABI
+            </p>
+            <div className="flex items-center gap-3">
+              <LanguageToggle language={language} setLanguage={setLanguage} />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section className="mx-auto max-w-6xl px-4 md:px-10 pb-6 pt-4">
           {/* Phase1.8: Componentized dynamic hero carousel with direct add-to-cart action. */}
           <HeroCarousel
             addToCart={handleHeroAddToCart}
             initialProducts={initialAdminProducts.filter((item) => item.heroFeatured).slice(0, 3)}
           />
-        </div>
-      </header>
+      </section>
 
       {/* Phase1: Compressed trust text for above-grid clarity */}
       <section className="mx-auto max-w-6xl px-4 pb-4">
         <div className="rounded-2xl bg-card px-4 py-3 shadow-soft">
           <p className="text-sm font-semibold text-secondary">
-            Authentic fabrics — Nationwide delivery — Fast WhatsApp checkout
+            Premium fashion deals in Bangladesh — Nationwide delivery — Fast WhatsApp shopping checkout
           </p>
         </div>
       </section>
@@ -772,10 +780,10 @@ export default function HomePage({
       {/* Phase1.5: Retail Intro Before Product Grid */}
       <section className="mx-auto my-6 max-w-3xl px-4 text-center">
         <h2 className="text-2xl font-bold text-primary-heading">
-          Shop the Latest Kurti Collection
+          Shop Trendy Kurti & Women's Fashion Online in Bangladesh
         </h2>
         <p className="mt-2 text-base text-secondary">
-          Explore breathable cotton kurtis, stylish embroidered designs, and modern everyday looks. Order instantly via WhatsApp with secure confirmation and fast nationwide delivery.
+          Discover bestselling cotton kurtis, elegant embroidered designs, and everyday modest fashion at competitive online prices. Buy now via WhatsApp with quick order confirmation and fast nationwide delivery across Bangladesh.
         </p>
       </section>
 
@@ -913,8 +921,7 @@ export default function HomePage({
                 How ordering works
               </h3>
               <p className="mt-2 text-sm text-muted">
-                Select size and quantity, confirm on WhatsApp, then receive
-                delivery updates before dispatch.
+                Choose your size, add to cart, and place your fashion order on WhatsApp in minutes. Get instant confirmation and delivery updates before dispatch.
               </p>
             </div>
             <div className="rounded-3xl bg-card p-5 shadow-soft">
@@ -922,8 +929,7 @@ export default function HomePage({
                 Why customers choose us
               </h3>
               <p className="mt-2 text-sm text-muted">
-                Verified products, transparent pricing, and responsive support
-                for quick buying decisions.
+                Trusted quality, transparent Bangladesh pricing, and responsive support to help you buy fashion essentials with confidence.
               </p>
             </div>
           </div>
@@ -978,8 +984,7 @@ export default function HomePage({
               Tacin Arabi Collection
             </h3>
             <p className="mt-2 text-sm text-muted">
-              WhatsApp-first shopping for fashion and ceramics across
-              Bangladesh.
+              Your trusted online fashion shop in Bangladesh for kurti, modest wear, and ceramic lifestyle picks—powered by WhatsApp-first ordering.
             </p>
             <p className="mt-3 text-sm font-semibold text-ink">
               WhatsApp: +8801522119189
@@ -996,8 +1001,7 @@ export default function HomePage({
           <div>
             <h4 className="text-sm font-semibold text-ink">Social Proof</h4>
             <p className="mt-3 text-sm text-muted">
-              Thousands of shoppers trust our WhatsApp checkout for quick
-              confirmations and clear delivery updates.
+              Thousands of Bangladesh fashion shoppers trust our WhatsApp checkout for fast confirmation, secure payment guidance, and reliable delivery updates.
             </p>
             <p className="mt-3 text-sm font-semibold text-ink">
               “Fast replies, quality products, safe delivery.”
@@ -1013,19 +1017,6 @@ export default function HomePage({
           onRetry={toast.onRetry}
           onClose={() => setToast(null)}
         />
-      ) : null}
-
-      {cartNotice ? (
-        <div className="fixed bottom-32 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink shadow-soft">
-          <span>{cartNotice}</span>
-          <button
-            type="button"
-            onClick={() => setCartNotice(null)}
-            className="text-accent"
-          >
-            ✕
-          </button>
-        </div>
       ) : null}
 
       <button
