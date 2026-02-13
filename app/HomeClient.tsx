@@ -425,9 +425,9 @@ export default function HomePage({
       image: product.image,
     });
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: Product, sizeOverride?: string) => {
     markRecentlyViewed(product);
-    const selectedSize = selectedSizes[product.id];
+    const selectedSize = sizeOverride ?? selectedSizes[product.id];
     if (!selectedSize) return;
 
     setAddStates((prev) => ({ ...prev, [product.id]: "loading" }));
@@ -734,7 +734,7 @@ export default function HomePage({
 
     const defaultSize = selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
     setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
-    handleAddToCart(matchedProduct);
+    handleAddToCart(matchedProduct, defaultSize);
   };
 
   // ------------------------------
