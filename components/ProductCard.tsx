@@ -5,6 +5,7 @@ import Image from "next/image";
 import clsx from "clsx";
 import { useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/products";
+import QuickView from "./QuickView";
 
 const sizes = ["M", "L", "XL"] as const;
 
@@ -52,6 +53,7 @@ export default function ProductCard({
   stockLabel,
 }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     setImageFailed(false);
@@ -71,13 +73,23 @@ export default function ProductCard({
         : addToCartLabel;
 
   const canQuickAdd = !sizeMissing && addState !== "loading";
+  const stockCount = (product as Product & { stock?: number }).stock;
+  const originalPrice = (product as Product & { originalPrice?: number; compareAtPrice?: number }).originalPrice
+    ?? (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group relative flex min-h-[620px] h-full flex-col rounded-[24px] border border-[#efe1d8] bg-card p-4 shadow-soft">
-      <button
-        type="button"
+    <div className="group relative flex min-h-[620px] h-full flex-col rounded-[24px] border border-[#efe1d8] bg-card p-4 shadow-soft transition-all duration-500 hover:-translate-y-1 hover:shadow-lg">
+      <div
+        role="button"
+        tabIndex={0}
         className="interactive-feedback relative w-full overflow-hidden rounded-2xl bg-base"
         onClick={onOpenDetails}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onOpenDetails();
+          }
+        }}
       >
         {imageSrc && !imageFailed ? (
           <Image
@@ -85,7 +97,7 @@ export default function ProductCard({
             alt={product.name}
             width={520}
             height={650}
-            className="product-image aspect-[4/5] w-full object-cover"
+            className="aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
             onError={() => setImageFailed(true)}
           />
         ) : (
@@ -116,7 +128,18 @@ export default function ProductCard({
         <span className="absolute right-3 top-3 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink">
           {statusLabel}
         </span>
-      </button>
+
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            setQuickViewProduct(product);
+          }}
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/90 px-4 py-2 text-sm opacity-0 backdrop-blur-sm transition duration-300 group-hover:opacity-100"
+        >
+          Quick View
+        </button>
+      </div>
 
       <div className="mt-4 flex items-start justify-between gap-3">
         <div>
@@ -126,8 +149,13 @@ export default function ProductCard({
         </div>
         <div className="text-right">
           <p className="text-xs uppercase tracking-[0.2em] text-support">{priceLabel}</p>
-          {/* Phase1.5: Emphasize price for retail scanning */}
-          <p className="text-lg font-bold text-primary-heading">৳ {product.price.toLocaleString()}</p>
+          {typeof stockCount === "number" && stockCount <= 5 ? (
+            <p className="mt-1 text-xs tracking-wide text-[var(--brand-secondary)]">Limited availability</p>
+          ) : null}
+          {typeof originalPrice === "number" && originalPrice > product.price ? (
+            <p className="text-sm line-through text-[var(--brand-muted)]">৳ {originalPrice.toLocaleString()}</p>
+          ) : null}
+          <p className="mt-2 text-base font-semibold tracking-wide text-[var(--brand-primary)]">৳ {product.price.toLocaleString()}</p>
         </div>
       </div>
 
@@ -183,8 +211,8 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-primary min-h-[44px] text-[10px] font-semibold uppercase tracking-[0.2em]",
-              sizeMissing && "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
+              "interactive-feedback btn-secondary min-h-[44px] w-full text-[10px] font-semibold uppercase tracking-[0.2em]",
+              sizeMissing && "cursor-not-allowed border-[#d9cdc0] text-muted"
             )}
             onClick={onBuyNow}
             disabled={sizeMissing}
@@ -194,9 +222,9 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-secondary min-h-[44px] text-[10px] font-semibold uppercase tracking-[0.2em]",
+              "interactive-feedback btn-primary w-full mt-4 min-h-[44px] text-[10px] font-semibold uppercase tracking-[0.2em]",
               sizeMissing || addState === "loading"
-                ? "cursor-not-allowed border-[#d9cdc0] text-muted"
+                ? "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
                 : "",
               addState === "success" && "border-[var(--brand-accent)] bg-[var(--brand-accent)] text-[#1f1f1f]"
             )}
@@ -221,6 +249,20 @@ export default function ProductCard({
       >
         +
       </button>
+
+      {quickViewProduct ? (
+        <QuickView
+          product={quickViewProduct}
+          selectedSize={selectedSize}
+          onSizeChange={onSizeChange}
+          onClose={() => setQuickViewProduct(null)}
+          onAddToCart={(size) => {
+            onSizeChange(size);
+            onAddToCart();
+          }}
+          addToCartLabel={addToCartLabel}
+        />
+      ) : null}
     </div>
   );
 }
