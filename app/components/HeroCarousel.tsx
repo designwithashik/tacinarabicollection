@@ -86,12 +86,16 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
             {/* Editorial text and composed CTA treatment. */}
             <div className="absolute inset-0 flex items-center justify-center text-center px-6">
               <div>
-                <h2 className="text-3xl md:text-5xl lg:text-6xl font-medium tracking-wide leading-tight text-[var(--brand-primary)]">
-                  {product.name}
-                </h2>
-                <p className="mt-6 text-base md:text-lg text-[var(--brand-muted)] max-w-xl">
-                  A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living.
-                </p>
+                <div className="inline-block bg-[var(--brand-surface)]/85 backdrop-blur-sm px-6 py-4 rounded-xl shadow-sm">
+                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-medium tracking-wide leading-tight text-[var(--brand-primary)]">
+                    {product.name}
+                  </h1>
+                </div>
+                <div className="mt-4 inline-block bg-[var(--brand-surface)]/75 px-5 py-3 rounded-lg">
+                  <p className="text-base md:text-lg text-[var(--brand-muted)]">
+                    A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living.
+                  </p>
+                </div>
                 <button
                   type="button"
                   className="interactive-feedback btn-primary mt-8"
