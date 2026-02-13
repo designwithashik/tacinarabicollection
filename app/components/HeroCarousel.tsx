@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 import clsx from "clsx";
 
 export type HeroProduct = {
@@ -68,16 +68,16 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl md:rounded-3xl">
-      {/* Phase1.8: Horizontal slide animation wrapper. */}
-      <motion.div
-        className="flex"
-        animate={{ x: `-${currentIndex * 100}%` }}
-        transition={{ type: "tween", duration: prefersReducedMotion ? 0 : 0.7, ease: "easeInOut" }}
-      >
-        {heroProducts.map((product) => (
+      {/* Phase1.8: Gentle cross-fade transition for composed hero motion. */}
+      <div className="relative min-h-[220px] md:min-h-[360px]">
+        {heroProducts.map((product, index) => (
           <div
             key={product.id}
-            className="relative min-w-full overflow-hidden"
+            className={clsx(
+              "absolute inset-0 transition-opacity duration-700 ease-in-out",
+              index === currentIndex ? "opacity-100" : "pointer-events-none opacity-0"
+            )}
+            aria-hidden={index !== currentIndex}
           >
             <div className="aspect-[16/7] md:aspect-[21/8] pointer-events-none">
               <img
@@ -114,7 +114,7 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
             </div>
           </div>
         ))}
-      </motion.div>
+      </div>
 
       {/* Phase1.8: Subtle navigation dots. */}
       <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
