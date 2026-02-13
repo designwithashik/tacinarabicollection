@@ -17,27 +17,31 @@ export default function LanguageToggle({ language, setLanguage }: Props) {
   if (!mounted) return null;
 
   return (
-    <div className="flex items-center gap-2 text-sm font-medium">
-      <button
-        onClick={() => setLanguage("en")}
-        className={`px-4 py-2 rounded-full transition text-sm tracking-wide ${
-          language === "en"
-            ? "bg-[var(--brand-primary)] text-white shadow-sm"
-            : "bg-[var(--brand-surface)] border border-[var(--brand-secondary)] text-[var(--brand-primary)]"
+    <div className="relative inline-flex items-center rounded-full bg-[var(--brand-secondary)]/15 p-1">
+      <div
+        className={`absolute bottom-1 top-1 w-1/2 rounded-full bg-[var(--brand-primary)] transition-all duration-300 ease-in-out ${
+          language === "en" ? "left-1" : "left-1/2"
         }`}
+      />
+
+      <button
+        type="button"
+        onClick={() => setLanguage("en")}
+        className="relative z-10 px-4 py-1 text-sm transition-colors duration-300"
       >
-        EN
+        <span className={language === "en" ? "text-white" : "text-[var(--brand-primary)]"}>
+          EN
+        </span>
       </button>
 
       <button
+        type="button"
         onClick={() => setLanguage("bn")}
-        className={`px-4 py-2 rounded-full transition text-sm tracking-wide ${
-          language === "bn"
-            ? "bg-[var(--brand-primary)] text-white shadow-sm"
-            : "bg-[var(--brand-surface)] border border-[var(--brand-secondary)] text-[var(--brand-primary)]"
-        }`}
+        className="relative z-10 px-4 py-1 text-sm transition-colors duration-300"
       >
-        বাংলা
+        <span className={language === "bn" ? "text-white" : "text-[var(--brand-primary)]"}>
+          বাংলা
+        </span>
       </button>
     </div>
   );
