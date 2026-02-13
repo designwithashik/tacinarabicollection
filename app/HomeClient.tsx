@@ -13,6 +13,7 @@ import SummaryPlaceholder from "../components/SummaryPlaceholder";
 import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import HeroCarousel, { type HeroProduct } from "./components/HeroCarousel";
 import LanguageToggle from "./components/LanguageToggle";
+import ThemeToggle from "./components/ThemeToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import { SlidersHorizontal } from "lucide-react";
 import type { Product } from "../lib/products";
@@ -70,6 +71,7 @@ type ToastState = {
 };
 
 type Language = "en" | "bn";
+type Theme = "light" | "dark";
 
 const defaultFilters: Filters = {
   size: [],
@@ -82,6 +84,7 @@ const defaultFilters: Filters = {
 const storageKeys = {
   viewed: "tacin-recently-viewed",
   language: "tacin-lang",
+  theme: "tacin-theme",
 };
 
 const statusLabels = ["New", "Hot", "Limited"] as const;
@@ -196,6 +199,7 @@ export default function HomePage({
   const [quantityFeedback, setQuantityFeedback] = useState<Record<string, string>>({});
   const [cartQuantityFeedback, setCartQuantityFeedback] = useState<Record<number, string>>({});
   const [language, setLanguage] = useState<Language>("en");
+  const [theme, setTheme] = useState<Theme>("light");
   const [cartBump, setCartBump] = useState(false);
   const prevCartCount = useRef(cartItems.length);
   const [isOnline, setIsOnline] = useState(true);
@@ -228,6 +232,7 @@ export default function HomePage({
 
     const storedViewed = localStorage.getItem(storageKeys.viewed);
     const storedLanguage = localStorage.getItem(storageKeys.language) as Language | null;
+    const storedTheme = localStorage.getItem(storageKeys.theme) as Theme | null;
 
     if (storedViewed) {
       try {
@@ -239,6 +244,15 @@ export default function HomePage({
 
     if (storedLanguage === "en" || storedLanguage === "bn") {
       setLanguage(storedLanguage);
+    }
+
+    if (storedTheme === "dark" || storedTheme === "light") {
+      setTheme(storedTheme);
+      return;
+    }
+
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setTheme("dark");
     }
   }, []);
 
@@ -348,6 +362,12 @@ export default function HomePage({
   useEffect(() => {
     localStorage.setItem(storageKeys.language, language);
   }, [language]);
+
+  useEffect(() => {
+    if (!hasMounted) return;
+    localStorage.setItem(storageKeys.theme, theme);
+    document.documentElement.dataset.theme = theme;
+  }, [hasMounted, theme]);
 
   // Toast auto-dismiss
   useEffect(() => {
@@ -741,7 +761,7 @@ export default function HomePage({
   // UI
   // ------------------------------
   return (
-    <div className="min-h-screen bg-white pb-24">
+    <div className="min-h-screen bg-[var(--brand-bg)] pb-24 transition-colors duration-300">
       {!isOnline ? (
         <div className="sticky top-0 z-50 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900">
           ⚠️ You are offline — checkout is disabled.
@@ -750,11 +770,17 @@ export default function HomePage({
       <header className="sticky top-0 z-50 bg-[var(--brand-surface)]/80 backdrop-blur-md border-b border-[var(--brand-secondary)]/20">
         <div className="mx-auto max-w-6xl px-4 md:px-10 py-5 md:py-6">
           <div className="flex items-center justify-between gap-6">
-            <p className="text-lg md:text-xl font-medium tracking-[0.15em] transition-opacity duration-300 hover:opacity-80">
-              TACIN ARABI
-            </p>
+            <Image
+              src="/icons/icon-192.svg"
+              alt="Tacin Arabi logo"
+              width={46}
+              height={46}
+              className="h-11 w-11 rounded-full border border-[var(--brand-secondary)]/30 bg-[var(--brand-surface)] p-1 transition-transform duration-300 hover:scale-105"
+              priority
+            />
             <div className="flex items-center gap-3">
               <LanguageToggle language={language} setLanguage={setLanguage} />
+              <ThemeToggle theme={theme} setTheme={setTheme} />
             </div>
           </div>
         </div>
@@ -788,7 +814,7 @@ export default function HomePage({
       </section>
 
       {/* Phase1: Place categories above product grid for faster discovery */}
-      <section className="sticky top-0 z-20 bg-white/95">
+      <section className="sticky top-0 z-20 bg-[var(--brand-surface)]/95 transition-colors duration-300">
         <AnimatedWrapper className="retail-section-enter" variant="section">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
             <div className="flex flex-1 items-center gap-2 overflow-x-auto">
@@ -977,7 +1003,7 @@ export default function HomePage({
         ) : null}
       </main>
 
-      <footer className="border-t border-[#e6d8ce] bg-white">
+      <footer className="border-t border-[#e6d8ce] bg-[var(--brand-surface)] transition-colors duration-300">
         <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 md:grid-cols-3">
           <div>
             <h3 className="font-heading text-lg font-semibold">
