@@ -763,9 +763,43 @@ export default function HomePage({
       {/* Phase1: Compressed trust text for above-grid clarity */}
       <section className="mx-auto max-w-6xl px-4 pb-4">
         <div className="rounded-2xl bg-card px-4 py-3 shadow-soft">
-          <p className="text-sm font-semibold text-secondary">
-            Authentic fabrics — Nationwide delivery — Fast WhatsApp checkout
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-secondary">
+              Authentic fabrics — Nationwide delivery — Fast WhatsApp checkout
+            </p>
+            <div
+              className="inline-flex rounded-full border border-[#d7c5b7] bg-white p-1"
+              role="group"
+              aria-label="Language switcher"
+            >
+              <button
+                type="button"
+                onClick={() => setLanguage("en")}
+                aria-pressed={language === "en"}
+                className={clsx(
+                  "interactive-feedback rounded-full px-3 py-1.5 text-xs font-semibold transition",
+                  language === "en"
+                    ? "bg-accent text-white shadow-soft"
+                    : "text-ink hover:bg-[#f6ebe4]"
+                )}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage("bn")}
+                aria-pressed={language === "bn"}
+                className={clsx(
+                  "interactive-feedback rounded-full px-3 py-1.5 text-xs font-semibold transition",
+                  language === "bn"
+                    ? "bg-accent text-white shadow-soft"
+                    : "text-ink hover:bg-[#f6ebe4]"
+                )}
+              >
+                বাংলা
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
