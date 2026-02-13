@@ -71,9 +71,12 @@ export default function ProductCard({
         : addToCartLabel;
 
   const canQuickAdd = !sizeMissing && addState !== "loading";
+  const stockCount = (product as Product & { stock?: number }).stock;
+  const originalPrice = (product as Product & { originalPrice?: number; compareAtPrice?: number }).originalPrice
+    ?? (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group relative flex min-h-[620px] h-full flex-col rounded-[24px] border border-[#efe1d8] bg-card p-4 shadow-soft">
+    <div className="group relative flex min-h-[620px] h-full flex-col rounded-[24px] border border-[#efe1d8] bg-card p-4 shadow-soft transition-all duration-500 hover:-translate-y-1 hover:shadow-lg">
       <button
         type="button"
         className="interactive-feedback relative w-full overflow-hidden rounded-2xl bg-base"
@@ -85,7 +88,7 @@ export default function ProductCard({
             alt={product.name}
             width={520}
             height={650}
-            className="product-image aspect-[4/5] w-full object-cover"
+            className="aspect-[4/5] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
             onError={() => setImageFailed(true)}
           />
         ) : (
@@ -126,8 +129,13 @@ export default function ProductCard({
         </div>
         <div className="text-right">
           <p className="text-xs uppercase tracking-[0.2em] text-support">{priceLabel}</p>
-          {/* Phase1.5: Emphasize price for retail scanning */}
-          <p className="text-lg font-bold text-primary-heading">৳ {product.price.toLocaleString()}</p>
+          {typeof stockCount === "number" && stockCount <= 5 ? (
+            <p className="mt-1 text-xs tracking-wide text-[var(--brand-secondary)]">Limited availability</p>
+          ) : null}
+          {typeof originalPrice === "number" && originalPrice > product.price ? (
+            <p className="text-sm line-through text-[var(--brand-muted)]">৳ {originalPrice.toLocaleString()}</p>
+          ) : null}
+          <p className="mt-2 text-base font-semibold tracking-wide text-[var(--brand-primary)]">৳ {product.price.toLocaleString()}</p>
         </div>
       </div>
 
@@ -183,8 +191,8 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-primary min-h-[44px] text-[10px] font-semibold uppercase tracking-[0.2em]",
-              sizeMissing && "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
+              "interactive-feedback btn-secondary min-h-[44px] w-full text-[10px] font-semibold uppercase tracking-[0.2em]",
+              sizeMissing && "cursor-not-allowed border-[#d9cdc0] text-muted"
             )}
             onClick={onBuyNow}
             disabled={sizeMissing}
@@ -194,9 +202,9 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-secondary min-h-[44px] text-[10px] font-semibold uppercase tracking-[0.2em]",
+              "interactive-feedback btn-primary w-full mt-4 min-h-[44px] text-[10px] font-semibold uppercase tracking-[0.2em]",
               sizeMissing || addState === "loading"
-                ? "cursor-not-allowed border-[#d9cdc0] text-muted"
+                ? "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
                 : "",
               addState === "success" && "border-[var(--brand-accent)] bg-[var(--brand-accent)] text-[#1f1f1f]"
             )}
