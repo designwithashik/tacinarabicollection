@@ -772,9 +772,10 @@ export default function HomePage({
         <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-[var(--brand-secondary)]/20 bg-[var(--brand-surface)] shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-4">
             <div className="flex items-center gap-4 border-b border-[var(--brand-secondary)]/15 px-8 py-8 md:border-b-0 md:border-r md:py-10">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)]">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a5 5 0 10-10 0v2m-2 0h14v10H5V9z" />
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand-secondary)]/20 to-[var(--brand-secondary)]/5 animate-floatSoft">
+                <div className="absolute inset-0 rounded-xl bg-[var(--brand-secondary)]/10 opacity-40 blur-md"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" className="relative h-6 w-6 text-[var(--brand-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a5 5 0 10-10 0v2m-2 0h14v10H5V9z" />
                 </svg>
               </div>
               <div>
@@ -784,9 +785,10 @@ export default function HomePage({
             </div>
 
             <div className="flex items-center gap-4 border-b border-[var(--brand-secondary)]/15 px-8 py-8 md:border-b-0 md:border-r md:py-10">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)]">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m4 0h1" />
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand-secondary)]/20 to-[var(--brand-secondary)]/5 animate-floatSoft">
+                <div className="absolute inset-0 rounded-xl bg-[var(--brand-secondary)]/10 opacity-40 blur-md"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" className="relative h-6 w-6 text-[var(--brand-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m4 0h1" />
                 </svg>
               </div>
               <div>
@@ -796,9 +798,10 @@ export default function HomePage({
             </div>
 
             <div className="flex items-center gap-4 border-b border-[var(--brand-secondary)]/15 px-8 py-8 md:border-b-0 md:border-r md:py-10">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)]">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand-secondary)]/20 to-[var(--brand-secondary)]/5 animate-floatSoft">
+                <div className="absolute inset-0 rounded-xl bg-[var(--brand-secondary)]/10 opacity-40 blur-md"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" className="relative h-6 w-6 text-[var(--brand-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <div>
@@ -808,9 +811,10 @@ export default function HomePage({
             </div>
 
             <div className="flex items-center gap-4 border-[var(--brand-secondary)]/15 px-8 py-8 md:py-10">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--brand-secondary)]/10 text-[var(--brand-primary)]">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v6h6M20 20v-6h-6" />
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand-secondary)]/20 to-[var(--brand-secondary)]/5 animate-floatSoft">
+                <div className="absolute inset-0 rounded-xl bg-[var(--brand-secondary)]/10 opacity-40 blur-md"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" className="relative h-6 w-6 text-[var(--brand-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6" />
                 </svg>
               </div>
               <div>
