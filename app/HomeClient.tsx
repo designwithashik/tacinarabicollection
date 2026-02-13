@@ -764,7 +764,7 @@ export default function HomePage({
       <section className="mx-auto max-w-6xl px-4 pb-4">
         <div className="rounded-2xl bg-card px-4 py-3 shadow-soft">
           <p className="text-sm font-semibold text-secondary">
-            Authentic fabrics — Nationwide delivery — Fast WhatsApp checkout
+            Premium fashion deals in Bangladesh — Nationwide delivery — Fast WhatsApp shopping checkout
           </p>
         </div>
       </section>
@@ -772,10 +772,10 @@ export default function HomePage({
       {/* Phase1.5: Retail Intro Before Product Grid */}
       <section className="mx-auto my-6 max-w-3xl px-4 text-center">
         <h2 className="text-2xl font-bold text-primary-heading">
-          Shop the Latest Kurti Collection
+          Shop Trendy Kurti & Women's Fashion Online in Bangladesh
         </h2>
         <p className="mt-2 text-base text-secondary">
-          Explore breathable cotton kurtis, stylish embroidered designs, and modern everyday looks. Order instantly via WhatsApp with secure confirmation and fast nationwide delivery.
+          Discover bestselling cotton kurtis, elegant embroidered designs, and everyday modest fashion at competitive online prices. Buy now via WhatsApp with quick order confirmation and fast nationwide delivery across Bangladesh.
         </p>
       </section>
 
@@ -913,8 +913,7 @@ export default function HomePage({
                 How ordering works
               </h3>
               <p className="mt-2 text-sm text-muted">
-                Select size and quantity, confirm on WhatsApp, then receive
-                delivery updates before dispatch.
+                Choose your size, add to cart, and place your fashion order on WhatsApp in minutes. Get instant confirmation and delivery updates before dispatch.
               </p>
             </div>
             <div className="rounded-3xl bg-card p-5 shadow-soft">
@@ -922,8 +921,7 @@ export default function HomePage({
                 Why customers choose us
               </h3>
               <p className="mt-2 text-sm text-muted">
-                Verified products, transparent pricing, and responsive support
-                for quick buying decisions.
+                Trusted quality, transparent Bangladesh pricing, and responsive support to help you buy fashion essentials with confidence.
               </p>
             </div>
           </div>
@@ -978,8 +976,7 @@ export default function HomePage({
               Tacin Arabi Collection
             </h3>
             <p className="mt-2 text-sm text-muted">
-              WhatsApp-first shopping for fashion and ceramics across
-              Bangladesh.
+              Your trusted online fashion shop in Bangladesh for kurti, modest wear, and ceramic lifestyle picks—powered by WhatsApp-first ordering.
             </p>
             <p className="mt-3 text-sm font-semibold text-ink">
               WhatsApp: +8801522119189
@@ -996,8 +993,7 @@ export default function HomePage({
           <div>
             <h4 className="text-sm font-semibold text-ink">Social Proof</h4>
             <p className="mt-3 text-sm text-muted">
-              Thousands of shoppers trust our WhatsApp checkout for quick
-              confirmations and clear delivery updates.
+              Thousands of Bangladesh fashion shoppers trust our WhatsApp checkout for fast confirmation, secure payment guidance, and reliable delivery updates.
             </p>
             <p className="mt-3 text-sm font-semibold text-ink">
               “Fast replies, quality products, safe delivery.”
