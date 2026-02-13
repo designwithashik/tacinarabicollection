@@ -8,28 +8,60 @@ html {
 
 * {
   transition:
-    background-color 0.3s ease,
-    color 0.3s ease,
-    border-color 0.3s ease;
+    background-color 0.35s ease,
+    color 0.35s ease,
+    border-color 0.35s ease,
+    transform 0.2s ease;
 }
 
 :root {
   color-scheme: light;
-  --brand-primary: #2e2a27;
+  --background: #ffffff;
+  --background-elevated: #f7f7f7;
+  --text-primary: #111111;
+  --text-muted: #666666;
+  --border: #e8e8e8;
+  --accent: #bfa46f;
+
+  --brand-primary: var(--text-primary);
   --brand-secondary: #8c7a5b;
-  --brand-accent: #c6a96b;
-  --brand-bg: #f6f2eb;
+  --brand-accent: var(--accent);
+  --brand-bg: var(--background);
   --brand-surface: #ffffff;
-  --brand-muted: #6e6a64;
+  --brand-muted: var(--text-muted);
 
   --radius-soft: 12px;
   --transition-smooth: all 0.3s ease;
 }
 
+:root[data-theme="dark"] {
+  --background: #0e0e0f;
+  --background-elevated: #161618;
+  --text-primary: #f5f5f5;
+  --text-muted: #a1a1a6;
+  --border: #2a2a2e;
+  --accent: #c8a96a;
+
+  --brand-secondary: #9a8b73;
+  --brand-surface: #161618;
+}
+
 body {
   @apply font-body;
-  background-color: var(--brand-bg);
-  color: var(--brand-primary);
+  background-color: var(--background);
+  color: var(--text-primary);
+}
+
+.border-border {
+  border-color: var(--border);
+}
+
+.bg-background {
+  background-color: var(--background);
+}
+
+.bg-elevated {
+  background-color: var(--background-elevated);
 }
 
 h1,

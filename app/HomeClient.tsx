@@ -13,6 +13,7 @@ import SummaryPlaceholder from "../components/SummaryPlaceholder";
 import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import HeroCarousel, { type HeroProduct } from "./components/HeroCarousel";
 import LanguageToggle from "./components/LanguageToggle";
+import ThemeToggle from "./components/ThemeToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import { SlidersHorizontal } from "lucide-react";
 import type { Product } from "../lib/products";
@@ -741,7 +742,7 @@ export default function HomePage({
   // UI
   // ------------------------------
   return (
-    <div className="min-h-screen bg-white pb-24">
+    <div className="min-h-screen bg-background pb-24">
       {!isOnline ? (
         <div className="sticky top-0 z-50 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900">
           ⚠️ You are offline — checkout is disabled.
@@ -749,18 +750,22 @@ export default function HomePage({
       ) : null}
       <header className="w-full border-b border-border bg-background">
         <div className="mx-auto max-w-7xl px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center justify-between w-full">
+          {/* LEFT — Logo */}
+          <div className="flex items-center">
             <Image
               src="/brand/navbar-logo.svg"
               alt="Tacin Arabi"
               width={160}
               height={40}
               priority
-              className="h-auto w-[160px] transition-opacity duration-300 hover:opacity-80"
+              className="h-auto w-[160px]"
             />
-            <div className="flex items-center gap-4">
-              <LanguageToggle language={language} setLanguage={setLanguage} />
-            </div>
+          </div>
+
+          {/* RIGHT — Controls */}
+          <div className="flex items-center gap-4">
+            <LanguageToggle language={language} setLanguage={setLanguage} />
+            <ThemeToggle />
           </div>
         </div>
       </header>
