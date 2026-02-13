@@ -26,6 +26,7 @@ import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
 import type { AdminProduct } from "../lib/inventory";
 import useCart from "../hooks/useCart";
+import { trackEvent, type EcommerceItem } from "../lib/tracking";
 
 // Contact numbers
 const whatsappNumber = "+8801522119189";
@@ -213,14 +214,16 @@ export default function HomePage({
 
   const text = copy[language];
 
-  // Lightweight analytics hook (optional dataLayer)
-  const logEvent = (eventName: string, payload: Record<string, unknown>) => {
-    if (typeof window === "undefined") return;
-    const dataLayer = (window as Window & { dataLayer?: unknown[] }).dataLayer;
-    if (Array.isArray(dataLayer)) {
-      dataLayer.push({ event: eventName, ...payload });
-    }
-  };
+
+  const toEcommerceItem = (product: Product, quantity: number, variant?: string): EcommerceItem => ({
+    item_id: product.id,
+    item_name: product.name,
+    item_category: product.category,
+    item_variant: variant,
+    quantity: Math.max(1, Math.floor(quantity)),
+    price: product.price,
+  });
+
 
   // Initial hydration: storage, language, inventory
   useEffect(() => {
@@ -461,10 +464,10 @@ export default function HomePage({
     });
 
     showToast({ type: "success", message: "Added to cart!" });
-    logEvent("add_to_cart", {
-      productId: product.id,
-      quantity: normalized.quantity,
-      price: normalized.price,
+    trackEvent("add_to_cart", {
+      currency: "BDT",
+      value: normalized.price * normalized.quantity,
+      items: [toEcommerceItem(product, normalized.quantity, normalized.size)],
     });
     window.setTimeout(() => {
       setAddStates((prev) => ({ ...prev, [product.id]: "success" }));
@@ -491,7 +494,11 @@ export default function HomePage({
     }
 
     setCheckoutItems([normalized]);
-    logEvent("begin_checkout", { productId: product.id, quantity: normalized.quantity });
+    trackEvent("begin_checkout", {
+      currency: "BDT",
+      value: normalized.price * normalized.quantity,
+      items: [toEcommerceItem(product, normalized.quantity, normalized.size)],
+    });
     setShowCheckout(true);
   };
 
@@ -508,7 +515,18 @@ export default function HomePage({
     setCheckoutItems(cartItems);
     setShowCheckout(true);
     setShowCart(false);
-    logEvent("begin_checkout", { items: cartItems.length });
+    trackEvent("begin_checkout", {
+      currency: "BDT",
+      value: safeSubtotal,
+      items: cartItems.map((item) => ({
+        item_id: String(item.id),
+        item_name: item.name,
+        item_category: "fashion",
+        item_variant: item.size,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    });
   };
 
   const handleWhatsappRedirect = (paymentMethod: string) => {
@@ -552,10 +570,18 @@ export default function HomePage({
       customer,
       status: "pending",
     });
-    logEvent("purchase", {
-      total,
-      paymentMethod,
-      items: checkoutItems.length,
+    trackEvent("purchase", {
+      currency: "BDT",
+      value: total,
+      payment_type: paymentMethod,
+      items: checkoutItems.map((item) => ({
+        item_id: String(item.id),
+        item_name: item.name,
+        item_category: "fashion",
+        item_variant: item.size,
+        quantity: item.quantity,
+        price: item.price,
+      })),
     });
     clearCart();
     setCheckoutItems([]);
@@ -895,6 +921,11 @@ export default function HomePage({
                 onAddToCart={() => handleAddToCart(product)}
                 onOpenDetails={() => {
                   markRecentlyViewed(product);
+                  trackEvent("view_item", {
+                    currency: "BDT",
+                    value: product.price,
+                    items: [toEcommerceItem(product, 1, selectedSizes[product.id])],
+                  });
                   setDetailsProduct(product);
                 }}
                 priceLabel={text.priceLabel}
@@ -958,7 +989,14 @@ export default function HomePage({
                   }
                   onBuyNow={() => handleBuyNow(product)}
                   onAddToCart={() => handleAddToCart(product)}
-                  onOpenDetails={() => setDetailsProduct(product)}
+                  onOpenDetails={() => {
+                    trackEvent("view_item", {
+                      currency: "BDT",
+                      value: product.price,
+                      items: [toEcommerceItem(product, 1, selectedSizes[product.id])],
+                    });
+                    setDetailsProduct(product);
+                  }}
                   showBadge="Recently Viewed"
                   priceLabel={text.priceLabel}
                   buyNowLabel={text.buyNow}

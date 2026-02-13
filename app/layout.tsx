@@ -2,6 +2,9 @@ import "./globals.css";
 import { Playfair_Display, Inter } from "next/font/google";
 import type { Metadata } from "next";
 import GlobalAnimatedWrapper from "../components/AnimatedWrapper";
+import AnalyticsScripts from "./components/AnalyticsScripts";
+import ConsentBanner from "./components/ConsentBanner";
+import RouteChangeTracker from "./components/RouteChangeTracker";
 
 const headingFont = Playfair_Display({
   subsets: ["latin"],
@@ -76,7 +79,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en-BD" className={`${headingFont.variable} ${bodyFont.variable}`}>
-      <body><GlobalAnimatedWrapper>{children}</GlobalAnimatedWrapper></body>
+      <body>
+        <AnalyticsScripts />
+        <RouteChangeTracker />
+        <GlobalAnimatedWrapper>{children}</GlobalAnimatedWrapper>
+        <ConsentBanner />
+      </body>
     </html>
   );
 }
