@@ -15,10 +15,21 @@
   --transition-smooth: all 0.3s ease;
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --brand-primary: #f5efe7;
+  --brand-secondary: #a69377;
+  --brand-accent: #ddbf81;
+  --brand-bg: #171412;
+  --brand-surface: #221d19;
+  --brand-muted: #c9b9a6;
+}
+
 body {
   @apply font-body;
   background-color: var(--brand-bg);
   color: var(--brand-primary);
+  transition: background-color 300ms ease, color 300ms ease;
 }
 
 h1,
@@ -31,6 +42,15 @@ h3 {
 p {
   color: var(--brand-muted);
   line-height: 1.7;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  transition: background-color 220ms ease, color 220ms ease, border-color 220ms ease,
+    box-shadow 220ms ease, transform 220ms ease;
 }
 
 .btn-primary {
