@@ -26,6 +26,12 @@ import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
 import type { AdminProduct } from "../lib/inventory";
 import useCart from "../hooks/useCart";
+import {
+  captureAttribution,
+  getStoredAttribution,
+  recordAnalyticsEvent,
+  type AttributionState,
+} from "../lib/attribution";
 
 // Contact numbers
 const whatsappNumber = "+8801522119189";
@@ -204,6 +210,10 @@ export default function HomePage({
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>(initialAdminProducts);
   const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
+  const [attributionState, setAttributionState] = useState<AttributionState>({
+    firstTouch: null,
+    latestTouch: null,
+  });
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
 
@@ -216,15 +226,32 @@ export default function HomePage({
   // Lightweight analytics hook (optional dataLayer)
   const logEvent = (eventName: string, payload: Record<string, unknown>) => {
     if (typeof window === "undefined") return;
+    const eventPayload = {
+      ...payload,
+      attribution: attributionState,
+    };
     const dataLayer = (window as Window & { dataLayer?: unknown[] }).dataLayer;
     if (Array.isArray(dataLayer)) {
-      dataLayer.push({ event: eventName, ...payload });
+      dataLayer.push({ event: eventName, ...eventPayload });
     }
+    recordAnalyticsEvent({
+      event: eventName,
+      timestamp: new Date().toISOString(),
+      attribution: attributionState,
+      payload,
+    });
   };
 
   // Initial hydration: storage, language, inventory
   useEffect(() => {
     setHasMounted(true);
+
+    const capturedAttribution = captureAttribution();
+    setAttributionState(
+      capturedAttribution.firstTouch || capturedAttribution.latestTouch
+        ? capturedAttribution
+        : getStoredAttribution()
+    );
 
     const storedViewed = localStorage.getItem(storageKeys.viewed);
     const storedLanguage = localStorage.getItem(storageKeys.language) as Language | null;
@@ -466,6 +493,11 @@ export default function HomePage({
       quantity: normalized.quantity,
       price: normalized.price,
     });
+    logEvent("cta_add_to_cart", {
+      productId: product.id,
+      quantity: normalized.quantity,
+      placement: "product_card",
+    });
     window.setTimeout(() => {
       setAddStates((prev) => ({ ...prev, [product.id]: "success" }));
       window.setTimeout(() => {
@@ -492,6 +524,7 @@ export default function HomePage({
 
     setCheckoutItems([normalized]);
     logEvent("begin_checkout", { productId: product.id, quantity: normalized.quantity });
+    logEvent("cta_checkout_start", { source: "buy_now", items: 1 });
     setShowCheckout(true);
   };
 
@@ -509,6 +542,7 @@ export default function HomePage({
     setShowCheckout(true);
     setShowCart(false);
     logEvent("begin_checkout", { items: cartItems.length });
+    logEvent("cta_checkout_start", { source: "cart", items: cartItems.length });
   };
 
   const handleWhatsappRedirect = (paymentMethod: string) => {
@@ -536,6 +570,7 @@ export default function HomePage({
       deliveryFee,
       transactionId: transactionId.trim() || undefined,
       total,
+      attribution: attributionState,
     });
     const url = `https://wa.me/${whatsappNumber.replace(
       /\D/g,
@@ -556,6 +591,11 @@ export default function HomePage({
       total,
       paymentMethod,
       items: checkoutItems.length,
+    });
+    logEvent("cta_whatsapp_redirect", {
+      paymentMethod,
+      items: checkoutItems.length,
+      total,
     });
     clearCart();
     setCheckoutItems([]);
@@ -894,6 +934,10 @@ export default function HomePage({
                 onBuyNow={() => handleBuyNow(product)}
                 onAddToCart={() => handleAddToCart(product)}
                 onOpenDetails={() => {
+                  logEvent("cta_product_tap", {
+                    productId: product.id,
+                    placement: "product_image",
+                  });
                   markRecentlyViewed(product);
                   setDetailsProduct(product);
                 }}
@@ -958,7 +1002,13 @@ export default function HomePage({
                   }
                   onBuyNow={() => handleBuyNow(product)}
                   onAddToCart={() => handleAddToCart(product)}
-                  onOpenDetails={() => setDetailsProduct(product)}
+                  onOpenDetails={() => {
+                    logEvent("cta_product_tap", {
+                      productId: product.id,
+                      placement: "recently_viewed",
+                    });
+                    setDetailsProduct(product);
+                  }}
                   showBadge="Recently Viewed"
                   priceLabel={text.priceLabel}
                   buyNowLabel={text.buyNow}
@@ -1006,6 +1056,20 @@ export default function HomePage({
             <p className="mt-3 text-sm font-semibold text-ink">
               “Fast replies, quality products, safe delivery.”
             </p>
+            <a
+              href="https://www.instagram.com/"
+              target="_blank"
+              rel="noreferrer"
+              onClick={() =>
+                logEvent("cta_profile_link_click", {
+                  profile: "instagram",
+                  placement: "footer",
+                })
+              }
+              className="mt-3 inline-block text-sm font-semibold text-accent underline"
+            >
+              Visit our Instagram profile
+            </a>
           </div>
         </div>
       </footer>
@@ -1056,6 +1120,7 @@ export default function HomePage({
         href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
         target="_blank"
         rel="noreferrer"
+        onClick={() => logEvent("cta_whatsapp_redirect", { source: "floating_button" })}
         aria-disabled={!isOnline}
         className={clsx(
           "floating-action interactive-feedback group fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] shadow-soft",
