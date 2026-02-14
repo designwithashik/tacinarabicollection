@@ -185,6 +185,8 @@ export default function HomePage({
   const [checkoutItems, setCheckoutItems] = useState<CartItem[]>([]);
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPaymentInfo, setShowPaymentInfo] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOrderConfirmed, setIsOrderConfirmed] = useState(false);
   const [transactionId, setTransactionId] = useState("");
   const [deliveryZone, setDeliveryZone] = useState<"inside" | "outside">("inside");
   const [customer, setCustomer] = useState<CustomerInfo>({
@@ -491,6 +493,8 @@ export default function HomePage({
     }
 
     setCheckoutItems([normalized]);
+    setIsOrderConfirmed(false);
+    setIsSubmitting(false);
     logEvent("begin_checkout", { productId: product.id, quantity: normalized.quantity });
     setShowCheckout(true);
   };
@@ -506,15 +510,21 @@ export default function HomePage({
       return;
     }
     setCheckoutItems(cartItems);
+    setIsOrderConfirmed(false);
+    setIsSubmitting(false);
     setShowCheckout(true);
     setShowCart(false);
     logEvent("begin_checkout", { items: cartItems.length });
   };
 
   const handleWhatsappRedirect = (paymentMethod: string) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     // Fail-safe guard: never attempt checkout with empty or invalid totals.
     if (checkoutItems.length === 0) {
       showToast({ type: "info", message: "Your cart is empty." });
+      setIsSubmitting(false);
       return;
     }
 
@@ -523,6 +533,7 @@ export default function HomePage({
     const total = safeSubtotal + deliveryFee;
     if (!Number.isFinite(total) || total <= 0) {
       showToast({ type: "error", message: "Unable to complete checkout. Please try again." });
+      setIsSubmitting(false);
       return;
     }
 
@@ -541,7 +552,7 @@ export default function HomePage({
       /\D/g,
       ""
     )}?text=${message}`;
-    window.location.href = url;
+    window.open(url, "_blank", "noopener,noreferrer");
     addOrder({
       id: `ORD-${Date.now()}`,
       createdAt: new Date().toISOString(),
@@ -559,8 +570,9 @@ export default function HomePage({
     });
     clearCart();
     setCheckoutItems([]);
-    setShowCheckout(false);
+    setIsOrderConfirmed(true);
     setShowPaymentInfo(false);
+    setIsSubmitting(false);
   };
 
   // ------------------------------
@@ -1431,7 +1443,11 @@ export default function HomePage({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowCheckout(false)}
+                  onClick={() => {
+                    setShowCheckout(false);
+                    setIsOrderConfirmed(false);
+                    setIsSubmitting(false);
+                  }}
                   className="interactive-feedback text-sm font-semibold text-accent"
                 >
                   Close
@@ -1440,178 +1456,199 @@ export default function HomePage({
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
-              <div className="max-w-4xl mx-auto">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <div className="rounded-2xl border border-[#f0e4da] p-4">
-                      <p className="text-sm font-semibold text-ink">Order summary</p>
-                      <div className="mt-3 space-y-3 text-sm">
-                        {checkoutItems.map((item, index) => (
-                          <div
-                            key={`${item.id}-${item.size}-${index}`}
-                            className="flex items-center justify-between gap-3 rounded-2xl border border-[#f0e4da] p-3"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <Image
-                                src={item.imageUrl || item.image || "/images/product-1.svg"}
-                                alt={item.name}
-                                width={80}
-                                height={100}
-                                className="rounded-lg object-cover w-20 h-24 shrink-0"
-                                unoptimized={false}
-                              />
-                              <div className="min-w-0">
-                                <p className="font-semibold text-ink break-words">{item.name}</p>
-                                <p className="text-xs text-muted">
-                                  Size: {item.size} · Qty: {item.quantity}
-                                </p>
-                              </div>
-                            </div>
-                            <p className="font-semibold text-ink whitespace-nowrap">
-                              {formatPrice(item.price * item.quantity)}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-[#f0e4da] p-4">
-                      <p className="text-sm font-semibold text-ink">
-                        {text.deliveryZone}
-                      </p>
-                      <div className="mt-2 flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setDeliveryZone("inside")}
-                          className={clsx(
-                            "interactive-feedback min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
-                            deliveryZone === "inside"
-                              ? "border-accent bg-accent text-white"
-                              : "border-[#e6d8ce]"
-                          )}
-                        >
-                          {text.insideDhaka}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeliveryZone("outside")}
-                          className={clsx(
-                            "interactive-feedback min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
-                            deliveryZone === "outside"
-                              ? "border-accent bg-accent text-white"
-                              : "border-[#e6d8ce]"
-                          )}
-                        >
-                          {text.outsideDhaka}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 rounded-2xl border border-[#f0e4da] p-4 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span>{text.subtotal}</span>
-                        <span className="font-semibold">
-                          {isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutSubtotal)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>{text.deliveryCharge}</span>
-                        <span className="font-semibold">
-                          {isSummaryLoading ? <SummaryPlaceholder widthClass="w-12" /> : formatPrice(deliveryFee)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-base font-semibold">
-                        <span>{text.totalPayable}</span>
-                        <span>{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
-                      </div>
-                    </div>
+              {isOrderConfirmed ? (
+                <div className="max-w-4xl mx-auto px-4 py-8">
+                  <div className="text-center py-16">
+                    <h2 className="text-2xl font-semibold mb-4">
+                      Order Confirmed
+                    </h2>
+                    <p className="text-neutral-600">
+                      We will contact you shortly via phone or WhatsApp.
+                    </p>
                   </div>
+                </div>
+              ) : (
+                <div className="max-w-4xl mx-auto px-4 py-8">
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-semibold mb-4">
+                        Order Summary
+                      </h2>
+                      <div className="rounded-2xl border border-[#f0e4da] p-4">
+                        <div className="space-y-3 text-sm">
+                          {checkoutItems.map((item, index) => (
+                            <div
+                              key={`${item.id}-${item.size}-${index}`}
+                              className="flex items-center justify-between gap-3 rounded-2xl border border-[#f0e4da] p-3"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <Image
+                                  src={item.imageUrl || item.image || "/images/product-1.svg"}
+                                  alt={item.name}
+                                  width={80}
+                                  height={100}
+                                  className="rounded-lg object-cover w-20 h-24 shrink-0"
+                                  unoptimized={false}
+                                />
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-ink break-words">{item.name}</p>
+                                  <p className="text-xs text-muted">
+                                    Size: {item.size} · Qty: {item.quantity}
+                                  </p>
+                                </div>
+                              </div>
+                              <p className="font-semibold text-ink whitespace-nowrap">
+                                {formatPrice(item.price * item.quantity)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
-                  <div>
-                    <div className="space-y-3">
-                      <label htmlFor="checkout-name" className="sr-only">
-                        Name
-                      </label>
-                      <input
-                        id="checkout-name"
-                        type="text"
-                        placeholder="Name"
-                        value={customer.name}
-                        onChange={(event) =>
-                          setCustomer((prev) => ({
-                            ...prev,
-                            name: event.target.value,
-                          }))
-                        }
-                        className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
-                      />
-                      <label htmlFor="checkout-phone" className="sr-only">
-                        Phone
-                      </label>
-                      <input
-                        id="checkout-phone"
-                        type="tel"
-                        placeholder="Phone"
-                        value={customer.phone}
-                        onChange={(event) =>
-                          setCustomer((prev) => ({
-                            ...prev,
-                            phone: event.target.value,
-                          }))
-                        }
-                        className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
-                      />
-                      <label htmlFor="checkout-address" className="sr-only">
-                        Address
-                      </label>
-                      <textarea
-                        id="checkout-address"
-                        placeholder="Address"
-                        rows={3}
-                        value={customer.address}
-                        onChange={(event) =>
-                          setCustomer((prev) => ({
-                            ...prev,
-                            address: event.target.value,
-                          }))
-                        }
-                        className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
-                      />
+                      <div className="rounded-2xl border border-[#f0e4da] p-4">
+                        <p className="text-sm font-semibold text-ink">{text.deliveryZone}</p>
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setDeliveryZone("inside")}
+                            className={clsx(
+                              "interactive-feedback min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
+                              deliveryZone === "inside"
+                                ? "border-accent bg-accent text-white"
+                                : "border-[#e6d8ce]"
+                            )}
+                          >
+                            {text.insideDhaka}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeliveryZone("outside")}
+                            className={clsx(
+                              "interactive-feedback min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
+                              deliveryZone === "outside"
+                                ? "border-accent bg-accent text-white"
+                                : "border-[#e6d8ce]"
+                            )}
+                          >
+                            {text.outsideDhaka}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 rounded-2xl border border-[#f0e4da] p-4 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span>{text.subtotal}</span>
+                          <span className="font-semibold">
+                            {isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutSubtotal)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>{text.deliveryCharge}</span>
+                          <span className="font-semibold">
+                            {isSummaryLoading ? <SummaryPlaceholder widthClass="w-12" /> : formatPrice(deliveryFee)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-base font-semibold">
+                          <span>{text.totalPayable}</span>
+                          <span>{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-neutral-600 mt-4 space-y-1">
+                        <p>✓ Cash on Delivery Available</p>
+                        <p>✓ Nationwide Delivery</p>
+                        <p>✓ WhatsApp Confirmation</p>
+                      </div>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--brand-muted)]">
-                      <span className="flex items-center gap-1">✓ Cash on Delivery</span>
-                      <span className="flex items-center gap-1">✓ Nationwide Delivery</span>
-                      <span className="flex items-center gap-1">✓ WhatsApp Support</span>
-                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold mb-4">
+                        Shipping Information
+                      </h2>
+                      <div className="space-y-4">
+                        <label htmlFor="checkout-name" className="sr-only">Name</label>
+                        <input
+                          id="checkout-name"
+                          type="text"
+                          placeholder="Name"
+                          value={customer.name}
+                          onChange={(event) =>
+                            setCustomer((prev) => ({ ...prev, name: event.target.value }))
+                          }
+                          className="w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
+                        />
+                        <label htmlFor="checkout-phone" className="sr-only">Phone</label>
+                        <input
+                          id="checkout-phone"
+                          type="tel"
+                          placeholder="Phone"
+                          value={customer.phone}
+                          onChange={(event) =>
+                            setCustomer((prev) => ({ ...prev, phone: event.target.value }))
+                          }
+                          className="w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
+                        />
+                        <label htmlFor="checkout-address" className="sr-only">Address</label>
+                        <textarea
+                          id="checkout-address"
+                          placeholder="Address"
+                          rows={3}
+                          value={customer.address}
+                          onChange={(event) =>
+                            setCustomer((prev) => ({ ...prev, address: event.target.value }))
+                          }
+                          className="w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
+                        />
+                      </div>
 
-                    <div className="mt-6">
-                      <button
-                        type="button"
-                        onClick={() => setShowPaymentInfo(true)}
-                        disabled={!isCustomerInfoValid || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
-                        className={clsx(
-                          "interactive-feedback btn-primary w-full py-3 text-base font-semibold",
-                          !(isCustomerInfoValid && isOnline) && "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
-                        )}
-                      >
-                        {text.payNow}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleWhatsappRedirect("COD")}
-                        disabled={!isCustomerInfoValid || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
-                        className={clsx(
-                          "w-full border border-[var(--brand-primary)] text-[var(--brand-primary)] py-3 rounded-lg mt-3 transition hover:bg-[var(--brand-primary)] hover:text-white",
-                          !(isCustomerInfoValid && isOnline) && "cursor-not-allowed border-[#e6d8ce] text-muted hover:bg-transparent"
-                        )}
-                      >
-                        {text.orderCod}
-                      </button>
+                      <div className="text-xs text-neutral-500 mt-4">
+                        🔒 Your information is secure and will not be shared.
+                      </div>
+
+                      <div className="mt-6">
+                        <button
+                          type="button"
+                          onClick={() => setShowPaymentInfo(true)}
+                          disabled={
+                            isSubmitting ||
+                            !isCustomerInfoValid ||
+                            !isOnline ||
+                            checkoutItems.length === 0 ||
+                            checkoutTotal <= 0 ||
+                            !Number.isFinite(checkoutTotal)
+                          }
+                          className={clsx(
+                            "interactive-feedback btn-primary w-full py-3 text-base font-semibold mt-6",
+                            (isSubmitting || !(isCustomerInfoValid && isOnline)) &&
+                              "opacity-60 cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
+                          )}
+                        >
+                          {isSubmitting ? "Processing..." : "Pay Now"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleWhatsappRedirect("COD")}
+                          disabled={
+                            isSubmitting ||
+                            !isCustomerInfoValid ||
+                            !isOnline ||
+                            checkoutItems.length === 0 ||
+                            checkoutTotal <= 0 ||
+                            !Number.isFinite(checkoutTotal)
+                          }
+                          className={clsx(
+                            "w-full border border-neutral-900 text-neutral-900 py-3 rounded-lg mt-3 hover:bg-neutral-900 hover:text-white transition",
+                            (isSubmitting || !(isCustomerInfoValid && isOnline)) &&
+                              "opacity-60 cursor-not-allowed border-[#e6d8ce] text-muted hover:bg-transparent"
+                          )}
+                        >
+                          {isSubmitting ? "Processing..." : text.orderCod}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -1629,7 +1666,10 @@ export default function HomePage({
               </div>
               <button
                 type="button"
-                onClick={() => setShowPaymentInfo(false)}
+                onClick={() => {
+                    setShowPaymentInfo(false);
+                    setIsSubmitting(false);
+                  }}
                 className="interactive-feedback text-sm font-semibold text-accent"
               >
                 Close
@@ -1659,16 +1699,16 @@ export default function HomePage({
             </div>
             <button
               type="button"
-              disabled={!hasPaymentProof || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
+              disabled={isSubmitting || !hasPaymentProof || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
               onClick={() => handleWhatsappRedirect("bKash/Nagad")}
               className={clsx(
                 "interactive-feedback mt-6 min-h-[48px] w-full rounded-full px-4 py-3 text-sm font-semibold",
-                hasPaymentProof && isOnline
+                hasPaymentProof && isOnline && !isSubmitting
                   ? "bg-accent text-white"
-                  : "cursor-not-allowed bg-[#e6d8ce] text-muted"
+                  : "opacity-60 cursor-not-allowed bg-[#e6d8ce] text-muted"
               )}
             >
-              {text.confirmWhatsapp}
+              {isSubmitting ? "Processing..." : text.confirmWhatsapp}
             </button>
           </div>
         </div>
