@@ -119,7 +119,7 @@ const copy = {
     adding: "Adding...",
     added: "Added",
     checkout: "Checkout",
-    orderCod: "Order via WhatsApp (COD)",
+    orderCod: "Order via WhatsApp (Cash on Delivery)",
     payNow: "Pay Now (bKash / Nagad)",
     confirmWhatsapp: "Confirm & Send on WhatsApp",
     applyFilters: "Apply Filters",
@@ -139,7 +139,7 @@ const copy = {
     adding: "যোগ হচ্ছে...",
     added: "যোগ হয়েছে",
     checkout: "চেকআউট",
-    orderCod: "হোয়াটসঅ্যাপে অর্ডার (COD)",
+    orderCod: "হোয়াটসঅ্যাপে অর্ডার (ক্যাশ অন ডেলিভারি)",
     payNow: "পে নাও (বিকাশ / নগদ)",
     confirmWhatsapp: "নিশ্চিত করে হোয়াটসঅ্যাপে পাঠান",
     applyFilters: "ফিল্টার প্রয়োগ করুন",
@@ -211,12 +211,24 @@ export default function HomePage({
   const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const checkoutRef = useRef<HTMLDivElement | null>(null);
 
   const showToast = (nextToast: ToastState) => {
     setToast(nextToast);
   };
 
   const text = copy[language];
+
+  const scrollToCheckout = () => {
+    if (typeof window === "undefined") return;
+
+    window.requestAnimationFrame(() => {
+      checkoutRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
 
   // Lightweight analytics hook (optional dataLayer)
   const logEvent = (eventName: string, payload: Record<string, unknown>) => {
@@ -504,6 +516,7 @@ export default function HomePage({
       setIsSubmitting(false);
       logEvent("begin_checkout", { productId: product.id, quantity: normalized.quantity });
       setShowCheckout(true);
+      scrollToCheckout();
       setIsRouting(false);
     }, 180);
   };
@@ -526,6 +539,7 @@ export default function HomePage({
       setIsSubmitting(false);
       setShowCheckout(true);
       setShowCart(false);
+      scrollToCheckout();
       logEvent("begin_checkout", { items: cartItems.length });
       setIsRouting(false);
     }, 180);
@@ -793,7 +807,7 @@ export default function HomePage({
   return (
     <div
       className={clsx(
-        "min-h-screen bg-white pb-24 transition-opacity duration-300 ease-in-out",
+        "min-h-[100dvh] bg-[#F7F6F4] pb-24 transition-opacity duration-300 ease-in-out",
         isRouting && "opacity-80"
       )}
     >
@@ -802,53 +816,70 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 bg-[var(--brand-surface)]/80 backdrop-blur-md border-b border-[var(--brand-secondary)]/20">
-        <div className="mx-auto max-w-6xl px-4 md:px-10 py-5 md:py-5">
-          <div className="flex items-center justify-between gap-6">
-            <p className="text-lg md:text-xl font-medium tracking-[0.15em] transition-opacity duration-300 hover:opacity-80">
-              TACIN ARABI
-            </p>
-            <div className="flex items-center gap-3">
-              <LanguageToggle language={language} setLanguage={setLanguage} />
-            </div>
-          </div>
+      <header className="sticky top-0 z-40 bg-white">
+        <div className="mx-auto max-w-6xl">
+          <nav className="flex items-center justify-between px-4 py-3 bg-white border-b border-neutral-200">
+            <LanguageToggle language={language} setLanguage={setLanguage} />
+
+            <h1 className="text-[18px] font-semibold tracking-tight">
+              Tacin Arabi
+            </h1>
+
+            <button
+              type="button"
+              onClick={() => setShowCart(true)}
+              className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
+              aria-label="Open cart"
+            >
+              <span className={clsx(cartBump && "animate-cart-bounce")}>🛍️</span>
+              {hasMounted && cartItems.length > 0 ? (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
+                  {cartItems.length}
+                </span>
+              ) : !hasMounted ? (
+                <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[#eadad0]" />
+              ) : null}
+            </button>
+          </nav>
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 md:px-10 pb-5 pt-4">
+      <section className="relative">
+        <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
           {/* Phase1.8: Componentized dynamic hero carousel with direct add-to-cart action. */}
           <HeroCarousel
             addToCart={handleHeroAddToCart}
             buyNow={handleHeroBuyNow}
             initialProducts={initialAdminProducts.filter((item) => item.heroFeatured).slice(0, 3)}
           />
+        </div>
+        <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-4 md:px-10">
-        <div className="overflow-hidden rounded-xl border border-[var(--brand-secondary)]/15 bg-[var(--brand-surface)] py-2">
-          <div className="flex w-max animate-marquee whitespace-nowrap text-[12px] sm:text-[13px] text-neutral-700">
-            <span className="mx-6">{announcementText}</span>
-            <span className="mx-6">{announcementText}</span>
-            <span className="mx-6">{announcementText}</span>
-            <span className="mx-6">{announcementText}</span>
+      <section className="bg-black py-2 text-white">
+        <div className="mx-auto max-w-6xl overflow-hidden px-4">
+          <div className="whitespace-nowrap text-[13px] font-medium tracking-wide animate-[marquee_20s_linear_infinite]">
+            <span className="mx-6 inline-block">{announcementText}</span>
+            <span className="mx-6 inline-block">{announcementText}</span>
+            <span className="mx-6 inline-block">{announcementText}</span>
+            <span className="mx-6 inline-block">{announcementText}</span>
           </div>
         </div>
       </section>
 
-      {/* Phase1: Place categories above product grid for faster discovery */}
-      <section className="sticky top-0 z-30 border-b border-neutral-200 bg-white">
+      <section className="bg-[#F7F6F4]">
         <AnimatedWrapper className="retail-section-enter" variant="section">
-          <div className="max-w-6xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide">
-            <div className="flex flex-1 items-center gap-2 overflow-x-auto">
+          <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
+            <div className="flex gap-2 overflow-x-auto pb-1">
               {categories.map((category) => (
                 <button
                   key={category}
                   type="button"
                   onClick={() => setSelectedCategory(category)}
                   className={clsx(
-                    "px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white",
+                    "whitespace-nowrap rounded-full border border-neutral-300 px-3 py-1.5 text-[12px] transition hover:bg-neutral-900 hover:text-white",
                     selectedCategory === category
-                      ? "bg-neutral-900 text-white border-neutral-900"
+                      ? "border-neutral-900 bg-neutral-900 text-white"
                       : "text-ink"
                   )}
                 >
@@ -856,26 +887,39 @@ export default function HomePage({
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={() => openSheet("size")}
-              className="px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white flex items-center gap-2"
-            >
-              Filters
-              {(filters.size.length || filters.colors.length || filters.price) ? (
-                <span className="rounded-full bg-gold px-2 text-xs text-charcoal">
-                  {filters.size.length + filters.colors.length + (filters.price ? 1 : 0)}
-                </span>
-              ) : null}
-            </button>
+
+            <div className="flex items-center justify-between">
+              <p className="text-[13px] text-neutral-600">
+                {sortOptions.find((option) => option.id === (filters.sort ?? "newest"))?.label ?? "Newest"}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openSheet("sort")}
+                  className="rounded-full border border-neutral-300 px-3 py-1 text-[13px]"
+                >
+                  Sort
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openSheet("size")}
+                  className="flex items-center gap-2 rounded-full border border-neutral-300 px-3 py-1 text-[13px]"
+                >
+                  Filter
+                  {(filters.size.length || filters.colors.length || filters.price) ? (
+                    <span className="rounded-full bg-gold px-2 text-xs text-charcoal">
+                      {filters.size.length + filters.colors.length + (filters.price ? 1 : 0)}
+                    </span>
+                  ) : null}
+                </button>
+              </div>
+            </div>
           </div>
         </AnimatedWrapper>
       </section>
 
-      {/* Phase1.5: Retail Divider */}
-      <hr className="my-5 border-gray-200" />
-
-      <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-10 pt-4">
+      <section id="product-grid" className="mx-auto mt-6 max-w-6xl px-4 pb-24">
+        <h2 className="mb-3 text-[18px] font-semibold">Our Collection</h2>
         {activeChips.length > 0 ? (
           <div className="mb-4 flex flex-wrap gap-2">
             {activeChips.map((chip) => (
@@ -910,7 +954,7 @@ export default function HomePage({
           {visibleProducts.length === 0 ? (
           <div className="rounded-3xl bg-card p-6 text-center shadow-soft">
             <p className="text-base font-semibold text-ink">No products found.</p>
-            <p className="mt-2 text-[12px] text-muted">
+            <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
               Adjust filters or check back soon.
             </p>
           </div>
@@ -1011,35 +1055,35 @@ export default function HomePage({
             </div>
           </section>
         ) : null}
-      </main>
+      </section>
 
-      <footer className="border-t border-[#e6d8ce] bg-white">
-        <div className="mx-auto grid max-w-6xl gap-5 px-4 py-5 md:grid-cols-3">
+      <footer className="mt-16 border-t border-neutral-200 bg-[#F3F2F0]">
+        <div className="mx-auto grid max-w-6xl gap-8 space-y-0 px-4 pb-20 pt-14 md:grid-cols-3">
           <div>
-            <h3 className="font-heading text-lg font-semibold">
+            <h3 className="font-heading text-[20px] font-semibold">
               Tacin Arabi Collection
             </h3>
-            <p className="mt-2 text-[12px] text-muted">
+            <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
               Your trusted online fashion shop in Bangladesh for kurti, modest wear, and ceramic lifestyle picks—powered by WhatsApp-first ordering.
             </p>
-            <p className="mt-3 text-[12px] font-semibold text-ink">
+            <p className="mt-3 text-[13px] font-semibold text-ink">
               WhatsApp: +8801522119189
             </p>
           </div>
           <div>
-            <h4 className="text-[12px] font-semibold text-ink">Store Policies</h4>
-            <ul className="mt-3 space-y-1 text-[12px] text-muted">
+            <h4 className="text-[13px] font-semibold text-ink">Store Policies</h4>
+            <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-neutral-600">
               <li>Cash on Delivery available nationwide</li>
               <li>Delivery confirmation before dispatch</li>
               <li>Support available 10am–10pm daily</li>
             </ul>
           </div>
           <div>
-            <h4 className="text-[12px] font-semibold text-ink">Social Proof</h4>
-            <p className="mt-3 text-[12px] text-muted">
+            <h4 className="text-[13px] font-semibold text-ink">Social Proof</h4>
+            <p className="mt-3 text-[13px] leading-relaxed text-neutral-600">
               Thousands of Bangladesh fashion shoppers trust our WhatsApp checkout for fast confirmation, secure payment guidance, and reliable delivery updates.
             </p>
-            <p className="mt-3 text-[12px] font-semibold text-ink">
+            <p className="mt-3 text-[13px] font-semibold text-ink">
               “Fast replies, quality products, safe delivery.”
             </p>
           </div>
@@ -1064,37 +1108,13 @@ export default function HomePage({
         <SlidersHorizontal className="h-5 w-5" />
       </button>
 
-      <button
-        type="button"
-        onClick={() => setShowCart(true)}
-        className="floating-action interactive-feedback group fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-soft"
-        aria-label="Open cart"
-      >
-        <span
-          className={clsx(
-            "relative flex h-14 w-14 items-center justify-center text-xl text-ink",
-            cartBump && "animate-cart-bounce"
-          )}
-        >
-          🛍️
-          {hasMounted && cartItems.length > 0 ? (
-            <span className="absolute -top-1 -right-1 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">
-              {cartItems.length}
-            </span>
-          ) : !hasMounted ? (
-            // Keeps button badge area visually stable before client cart hydration completes.
-            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#eadad0]" />
-          ) : null}
-        </span>
-      </button>
-
       <a
         href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
         target="_blank"
         rel="noreferrer"
         aria-disabled={!isOnline}
         className={clsx(
-          "floating-action interactive-feedback group fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] shadow-soft",
+          "floating-action interactive-feedback group fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] shadow-xl ring-2 ring-white",
           !isOnline && "pointer-events-none opacity-60"
         )}
       >
@@ -1388,8 +1408,8 @@ export default function HomePage({
       ) : null}
 
       {showCheckout ? (
-        <div className="z-40 bg-black/40">
-          <div className="animate-fadeIn min-h-screen flex flex-col bg-white">
+        <div ref={checkoutRef} className="z-40 bg-black/40">
+          <div className="animate-fadeIn min-h-[100dvh] flex flex-col bg-white">
             <div className="border-b border-[#f0e4da] px-4 sm:px-6 py-4">
               <div className="mx-auto max-w-4xl flex items-center justify-between">
                 <div>
@@ -1496,22 +1516,22 @@ export default function HomePage({
                         </div>
                       </div>
 
-                      <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs">
+                      <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs text-neutral-800">
                         <div className="flex items-center justify-between">
                           <span>{text.subtotal}</span>
-                          <span className="font-semibold">
+                          <span className="text-neutral-900 font-medium">
                             {isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutSubtotal)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span>{text.deliveryCharge}</span>
-                          <span className="font-semibold">
+                          <span className="text-neutral-900 font-medium">
                             {isSummaryLoading ? <SummaryPlaceholder widthClass="w-12" /> : formatPrice(deliveryFee)}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between text-base font-semibold">
+                        <div className="mt-3 flex justify-between border-t pt-3 text-[16px] font-semibold">
                           <span>{text.totalPayable}</span>
-                          <span>{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
+                          <span className="text-black">{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
                         </div>
                       </div>
 
@@ -1598,13 +1618,16 @@ export default function HomePage({
                             !Number.isFinite(checkoutTotal)
                           }
                           className={clsx(
-                            "w-full border border-neutral-900 text-neutral-900 py-2.5 rounded-lg mt-3 hover:bg-neutral-900 hover:text-white transition",
+                            "mt-3 w-full rounded-lg bg-green-600 py-2.5 text-[14px] text-white transition hover:bg-green-700",
                             (isSubmitting || !(isCustomerInfoValid && isOnline)) &&
-                              "opacity-60 cursor-not-allowed border-[#e6d8ce] text-muted hover:bg-transparent"
+                              "cursor-not-allowed opacity-60 hover:bg-green-600"
                           )}
                         >
                           {isSubmitting ? "Processing..." : text.orderCod}
                         </button>
+                        <p className="mt-3 text-[12px] text-neutral-600">
+                          Cash on Delivery available nationwide. You will receive confirmation before dispatch.
+                        </p>
                       </div>
                     </div>
                   </div>
