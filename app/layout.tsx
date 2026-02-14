@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import "./globals.css";
 import { Playfair_Display, Inter } from "next/font/google";
 import type { Metadata } from "next";

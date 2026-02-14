@@ -6,7 +6,7 @@ import {
   toStorefrontProduct,
 } from "@/lib/server/inventoryStore";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET() {
   try {
@@ -28,6 +28,8 @@ export async function POST(request: Request) {
       imageUrl,
       whatsappNumber,
       heroFeatured,
+      title,
+      subtitle,
     } = body;
 
     const existing = await loadInventoryArray();
@@ -46,6 +48,8 @@ export async function POST(request: Request) {
       colors: ["Beige"],
       sizes: ["M", "L", "XL"],
       heroFeatured: heroFeatured === true,
+      title: typeof title === "string" ? title.trim() : String(name ?? "").trim(),
+      subtitle: typeof subtitle === "string" ? subtitle.trim() : "",
     };
 
     const updated = [...existing, newProduct];

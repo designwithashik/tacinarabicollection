@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { loadInventoryArray, saveInventoryArray } from "@/lib/server/inventoryStore";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function PUT(
   req: Request,
@@ -33,6 +33,11 @@ export async function PUT(
       price: typeof body.price === "number" ? body.price : current.price,
       updatedAt: Date.now(),
       heroFeatured: body.heroFeatured === true,
+      title:
+        typeof body.title === "string" && body.title.trim().length > 0
+          ? body.title.trim()
+          : current.name,
+      subtitle: typeof body.subtitle === "string" ? body.subtitle.trim() : "",
       id,
     };
 

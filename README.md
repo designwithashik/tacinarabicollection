@@ -19,14 +19,14 @@ Use these phases to evaluate and improve changes without losing UX features:
 
 ## Environment setup for persistent admin inventory
 
-Create `.env.local` (and mirror these in Vercel project settings):
+Create `.env.local` (and mirror these in your host provider settings):
 
 ```bash
 NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/your_imagekit_id
 NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
 IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
-KV_REST_API_URL=your_kv_rest_url
-KV_REST_API_TOKEN=your_kv_rest_token
+UPSTASH_REDIS_REST_URL=your_upstash_redis_rest_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_rest_token
 ```
 
 Notes:
@@ -62,3 +62,16 @@ git checkout --ours path/to/file     # current branch changes
 
 Then reopen the file to confirm the final output includes your animations and
 UX enhancements.
+
+
+## Deploy on Cloudflare Pages (free tier friendly)
+
+1. Push this repo to GitHub/GitLab.
+2. In Cloudflare Pages, create a new project and connect the repo.
+3. Use build command: `npm run build:pages`
+4. Use build output directory: `.vercel/output/static`
+5. Set environment variables in Pages settings (same as `.env.local`).
+6. (Optional) Run local preview: `npm run preview:pages`
+
+This repo is configured with `wrangler.toml` and `@cloudflare/next-on-pages`
+for Pages deployments.

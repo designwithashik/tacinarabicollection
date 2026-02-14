@@ -1,7 +1,27 @@
-import ImageKit from "imagekit";
+export const runtime = 'edge';
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+
+const toHex = (buffer: ArrayBuffer) =>
+  Array.from(new Uint8Array(buffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+
+const signAuthPayload = async (privateKey: string, token: string, expire: number) => {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(privateKey),
+    { name: "HMAC", hash: "SHA-1" },
+    false,
+    ["sign"]
+  );
+
+  const payload = `${token}${expire}`;
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
+  return toHex(signature);
+};
 
 export async function GET() {
   try {
@@ -12,20 +32,18 @@ export async function GET() {
     if (!publicKey || !privateKey || !urlEndpoint) {
       return NextResponse.json(
         {
-          error: "Environment variables missing in Vercel.",
+          error: "Environment variables missing.",
         },
         { status: 500 }
       );
     }
 
-    const imagekit = new ImageKit({
-      publicKey,
-      privateKey,
-      urlEndpoint,
-    });
+    const token = crypto.randomUUID().replace(/-/g, "");
+    const expire = Math.floor(Date.now() / 1000) + 30 * 60;
+    const signature = await signAuthPayload(privateKey, token, expire);
 
-    return NextResponse.json(imagekit.getAuthenticationParameters());
-  } catch (error) {
+    return NextResponse.json({ token, expire, signature });
+  } catch {
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

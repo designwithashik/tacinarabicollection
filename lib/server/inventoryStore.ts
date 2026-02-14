@@ -1,4 +1,4 @@
-import { kv } from "@vercel/kv";
+type RedisScalar = string | number | boolean | null;
 
 export const INVENTORY_PRODUCTS_KEY = "inventory:products";
 
@@ -18,7 +18,33 @@ export type InventoryProduct = {
   description?: string;
   whatsappNumber?: string;
   heroFeatured?: boolean;
+  title?: string;
+  subtitle?: string;
 };
+
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+const callRedis = async <T>(command: string, ...args: RedisScalar[]): Promise<T | null> => {
+  if (!redisUrl || !redisToken) return null;
+
+  const response = await fetch(`${redisUrl}/${command}/${args.map((arg) => encodeURIComponent(String(arg ?? ""))).join("/")}`, {
+    headers: {
+      Authorization: `Bearer ${redisToken}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) return null;
+  const payload = (await response.json()) as { result?: T };
+  return payload.result ?? null;
+};
+
+const redisGet = <T>(key: string) => callRedis<T>("get", key);
+const redisSet = async (key: string, value: unknown) => {
+  await callRedis("set", key, JSON.stringify(value));
+};
+const redisHGetAll = <T>(key: string) => callRedis<T>("hgetall", key);
 
 const isRecord = (value: unknown): value is InventoryRecord =>
   Boolean(value && typeof value === "object");
@@ -70,6 +96,8 @@ const toInventoryProduct = (source: unknown): InventoryProduct | null => {
     whatsappNumber:
       typeof source.whatsappNumber === "string" ? source.whatsappNumber : undefined,
     heroFeatured: source.heroFeatured === true,
+    title: typeof source.title === "string" ? source.title : undefined,
+    subtitle: typeof source.subtitle === "string" ? source.subtitle : undefined,
   };
 };
 
@@ -94,30 +122,48 @@ const normalizeInventoryCollection = (payload: unknown): InventoryProduct[] => {
 
 async function tryLegacyMigration(): Promise<InventoryProduct[] | null> {
   try {
-    const legacy = await kv.hgetall<Record<string, unknown>>("tacin_collection_final");
+    const legacy = await redisHGetAll<Record<string, unknown>>("tacin_collection_final");
     if (!legacy || Object.keys(legacy).length === 0) return null;
 
     const normalized = Object.values(legacy)
+      .map((value) => {
+        if (typeof value === "string") {
+          try {
+            return JSON.parse(value) as unknown;
+          } catch {
+            return value as unknown;
+          }
+        }
+        return value;
+      })
       .map(toInventoryProduct)
       .filter((item): item is InventoryProduct => Boolean(item));
 
     return normalized.length ? normalized : null;
   } catch {
-    // WRONGTYPE / missing / inaccessible legacy key should never crash runtime.
     return null;
   }
 }
 
 export async function loadInventoryArray(): Promise<InventoryProduct[]> {
-  const canonical = await kv.get<InventoryProduct[] | unknown>(INVENTORY_PRODUCTS_KEY);
+  const canonicalRaw = await redisGet<InventoryProduct[] | string | unknown>(INVENTORY_PRODUCTS_KEY);
 
-  if (Array.isArray(canonical)) {
-    return normalizeInventoryCollection(canonical);
+  if (typeof canonicalRaw === "string") {
+    try {
+      const parsed = JSON.parse(canonicalRaw) as unknown;
+      return normalizeInventoryCollection(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  if (Array.isArray(canonicalRaw)) {
+    return normalizeInventoryCollection(canonicalRaw);
   }
 
   const migrated = await tryLegacyMigration();
   if (migrated && migrated.length > 0) {
-    await kv.set(INVENTORY_PRODUCTS_KEY, migrated);
+    await redisSet(INVENTORY_PRODUCTS_KEY, migrated);
     return migrated;
   }
 
@@ -125,7 +171,7 @@ export async function loadInventoryArray(): Promise<InventoryProduct[]> {
 }
 
 export async function saveInventoryArray(items: InventoryProduct[]) {
-  await kv.set(INVENTORY_PRODUCTS_KEY, items);
+  await redisSet(INVENTORY_PRODUCTS_KEY, items);
 }
 
 export type StorefrontProduct = {
@@ -141,6 +187,8 @@ export type StorefrontProduct = {
   updatedAt: string;
   createdAt: string;
   heroFeatured?: boolean;
+  title?: string;
+  subtitle?: string;
 };
 
 export const toStorefrontProduct = (item: InventoryProduct): StorefrontProduct => ({
@@ -156,4 +204,6 @@ export const toStorefrontProduct = (item: InventoryProduct): StorefrontProduct =
   updatedAt: new Date(item.updatedAt ?? item.createdAt).toISOString(),
   createdAt: new Date(item.createdAt).toISOString(),
   heroFeatured: item.heroFeatured === true,
+  title: item.title ?? item.name,
+  subtitle: item.subtitle ?? "",
 });

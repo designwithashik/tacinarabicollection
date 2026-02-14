@@ -309,11 +309,11 @@ export default function HomePage({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!showCart && !showCheckout && !showPaymentInfo) return;
+    if (!showCart) return;
 
     const scrollY = window.scrollY;
     const previousBodyStyle = document.body.style.cssText;
-    // Keep page position stable while bottom sheets are open.
+    // Keep page position stable only while cart sheet is open.
     document.body.style.position = "fixed";
     document.body.style.top = `-${scrollY}px`;
     document.body.style.left = "0";
@@ -324,7 +324,7 @@ export default function HomePage({
       document.body.style.cssText = previousBodyStyle;
       window.scrollTo(0, scrollY);
     };
-  }, [showCart, showCheckout, showPaymentInfo]);
+  }, [showCart]);
 
   useEffect(() => {
     if (showCart) {
@@ -425,7 +425,7 @@ export default function HomePage({
       image: product.image,
     });
 
-  const handleAddToCart = (product: Product, sizeOverride?: string) => {
+  const handleAddToCart = (product: Product, sizeOverride: string | null = null) => {
     markRecentlyViewed(product);
     const selectedSize = sizeOverride ?? selectedSizes[product.id];
     if (!selectedSize) return;
@@ -474,9 +474,9 @@ export default function HomePage({
     }, 400);
   };
 
-  const handleBuyNow = (product: Product) => {
+  const handleBuyNow = (product: Product, sizeOverride: string | null = null) => {
     markRecentlyViewed(product);
-    const selectedSize = selectedSizes[product.id];
+    const selectedSize = sizeOverride ?? selectedSizes[product.id];
     if (!selectedSize) return;
 
     const normalized = buildNormalizedCartItem(
@@ -724,7 +724,7 @@ export default function HomePage({
 
 
   // Phase1.8: Add-to-cart bridge from hero slides to existing product/cart flow.
-  const handleHeroAddToCart = (heroProduct: HeroProduct) => {
+  const handleHeroAddToCart = (heroProduct: HeroProduct, sizeOverride: string | null = null) => {
     const matchedProduct = adminProducts.find((item) => item.id === heroProduct.id);
 
     if (!matchedProduct) {
@@ -732,9 +732,22 @@ export default function HomePage({
       return;
     }
 
-    const defaultSize = selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
+    const defaultSize = sizeOverride ?? selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
     setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
     handleAddToCart(matchedProduct, defaultSize);
+  };
+
+  const handleHeroBuyNow = (heroProduct: HeroProduct, sizeOverride: string | null = null) => {
+    const matchedProduct = adminProducts.find((item) => item.id === heroProduct.id);
+
+    if (!matchedProduct) {
+      showToast({ type: "error", message: "Product is unavailable right now." });
+      return;
+    }
+
+    const defaultSize = sizeOverride ?? selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
+    setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
+    handleBuyNow(matchedProduct, defaultSize);
   };
 
   // ------------------------------
@@ -764,6 +777,7 @@ export default function HomePage({
           {/* Phase1.8: Componentized dynamic hero carousel with direct add-to-cart action. */}
           <HeroCarousel
             addToCart={handleHeroAddToCart}
+            buyNow={handleHeroBuyNow}
             initialProducts={initialAdminProducts.filter((item) => item.heroFeatured).slice(0, 3)}
           />
       </section>
@@ -900,7 +914,7 @@ export default function HomePage({
         <SectionLoader
           loading={!hasMounted || isLoading}
           loader={
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
               {/* Product placeholders prevent blank state flashes during hydration. */}
               {Array.from({ length: 6 }).map((_, index) => (
                 <SkeletonCard key={`skeleton-${index}`} />
@@ -919,7 +933,7 @@ export default function HomePage({
           <motion.div
             key={productBatchKey}
             className={clsx(
-              "grid gap-6 md:grid-cols-2 lg:grid-cols-3",
+              "grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4",
               !prefersReducedMotion && "retail-batch-enter"
             )}
             initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
@@ -994,7 +1008,7 @@ export default function HomePage({
                 Last 2 items
               </span>
             </div>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
               {recentlyViewed.map((product, index) => (
                 <AnimatedWrapper key={product.id} variant="product-card" delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.1)}>
                   <ProductCard
@@ -1401,184 +1415,203 @@ export default function HomePage({
       ) : null}
 
       {showCheckout ? (
-        <div className="fixed inset-0 z-40 flex items-end bg-black/40">
-          <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-muted">
-                  Universal Checkout
-                </p>
-                <h3
-                  ref={checkoutHeadingRef}
-                  tabIndex={-1}
-                  className="text-lg font-semibold text-ink"
-                >
-                  Confirm your order
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowCheckout(false)}
-                className="interactive-feedback text-sm font-semibold text-accent"
-              >
-                Close
-              </button>
-            </div>
-            <div className="mt-4 space-y-3 text-sm">
-              {checkoutItems.map((item, index) => (
-                <div
-                  key={`${item.id}-${item.size}-${index}`}
-                  className="flex items-center justify-between rounded-2xl border border-[#f0e4da] p-3"
-                >
-                  <div>
-                    <p className="font-semibold text-ink">{item.name}</p>
-                    <p className="text-xs text-muted">
-                      Size: {item.size} · Qty: {item.quantity}
-                    </p>
-                  </div>
-                  <p className="font-semibold text-ink">
-                    {formatPrice(item.price * item.quantity)}
-                  </p>
+        <div className="fixed inset-0 z-40 bg-black/40">
+          <div className="min-h-screen flex flex-col bg-white">
+            <div className="border-b border-[#f0e4da] px-4 sm:px-6 py-4">
+              <div className="mx-auto max-w-4xl flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-muted">Universal Checkout</p>
+                  <h3
+                    ref={checkoutHeadingRef}
+                    tabIndex={-1}
+                    className="text-lg font-semibold text-ink"
+                  >
+                    Confirm your order
+                  </h3>
                 </div>
-              ))}
-            </div>
-            <div className="mt-4">
-              <p className="text-sm font-semibold text-ink">
-                {text.deliveryZone}
-              </p>
-              <div className="mt-2 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setDeliveryZone("inside")}
-                  className={clsx(
-                    "interactive-feedback min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
-                    deliveryZone === "inside"
-                      ? "border-accent bg-accent text-white"
-                      : "border-[#e6d8ce]"
-                  )}
+                  onClick={() => setShowCheckout(false)}
+                  className="interactive-feedback text-sm font-semibold text-accent"
                 >
-                  {text.insideDhaka}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeliveryZone("outside")}
-                  className={clsx(
-                    "interactive-feedback min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
-                    deliveryZone === "outside"
-                      ? "border-accent bg-accent text-white"
-                      : "border-[#e6d8ce]"
-                  )}
-                >
-                  {text.outsideDhaka}
+                  Close
                 </button>
               </div>
             </div>
-            <div className="mt-4 space-y-2 rounded-2xl border border-[#f0e4da] p-4 text-sm">
-              <div className="flex items-center justify-between">
-                <span>{text.subtotal}</span>
-                <span className="font-semibold">
-                  {isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutSubtotal)}
-                </span>
+
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+              <div className="max-w-4xl mx-auto">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <div className="rounded-2xl border border-[#f0e4da] p-4">
+                      <p className="text-sm font-semibold text-ink">Order summary</p>
+                      <div className="mt-3 space-y-3 text-sm">
+                        {checkoutItems.map((item, index) => (
+                          <div
+                            key={`${item.id}-${item.size}-${index}`}
+                            className="flex items-center justify-between gap-3 rounded-2xl border border-[#f0e4da] p-3"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Image
+                                src={item.imageUrl || item.image || "/images/product-1.svg"}
+                                alt={item.name}
+                                width={80}
+                                height={100}
+                                className="rounded-lg object-cover w-20 h-24 shrink-0"
+                                unoptimized={false}
+                              />
+                              <div className="min-w-0">
+                                <p className="font-semibold text-ink break-words">{item.name}</p>
+                                <p className="text-xs text-muted">
+                                  Size: {item.size} · Qty: {item.quantity}
+                                </p>
+                              </div>
+                            </div>
+                            <p className="font-semibold text-ink whitespace-nowrap">
+                              {formatPrice(item.price * item.quantity)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#f0e4da] p-4">
+                      <p className="text-sm font-semibold text-ink">
+                        {text.deliveryZone}
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryZone("inside")}
+                          className={clsx(
+                            "interactive-feedback min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
+                            deliveryZone === "inside"
+                              ? "border-accent bg-accent text-white"
+                              : "border-[#e6d8ce]"
+                          )}
+                        >
+                          {text.insideDhaka}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryZone("outside")}
+                          className={clsx(
+                            "interactive-feedback min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
+                            deliveryZone === "outside"
+                              ? "border-accent bg-accent text-white"
+                              : "border-[#e6d8ce]"
+                          )}
+                        >
+                          {text.outsideDhaka}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 rounded-2xl border border-[#f0e4da] p-4 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span>{text.subtotal}</span>
+                        <span className="font-semibold">
+                          {isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutSubtotal)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>{text.deliveryCharge}</span>
+                        <span className="font-semibold">
+                          {isSummaryLoading ? <SummaryPlaceholder widthClass="w-12" /> : formatPrice(deliveryFee)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-base font-semibold">
+                        <span>{text.totalPayable}</span>
+                        <span>{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="space-y-3">
+                      <label htmlFor="checkout-name" className="sr-only">
+                        Name
+                      </label>
+                      <input
+                        id="checkout-name"
+                        type="text"
+                        placeholder="Name"
+                        value={customer.name}
+                        onChange={(event) =>
+                          setCustomer((prev) => ({
+                            ...prev,
+                            name: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
+                      />
+                      <label htmlFor="checkout-phone" className="sr-only">
+                        Phone
+                      </label>
+                      <input
+                        id="checkout-phone"
+                        type="tel"
+                        placeholder="Phone"
+                        value={customer.phone}
+                        onChange={(event) =>
+                          setCustomer((prev) => ({
+                            ...prev,
+                            phone: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
+                      />
+                      <label htmlFor="checkout-address" className="sr-only">
+                        Address
+                      </label>
+                      <textarea
+                        id="checkout-address"
+                        placeholder="Address"
+                        rows={3}
+                        value={customer.address}
+                        onChange={(event) =>
+                          setCustomer((prev) => ({
+                            ...prev,
+                            address: event.target.value,
+                          }))
+                        }
+                        className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
+                      />
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--brand-muted)]">
+                      <span className="flex items-center gap-1">✓ Cash on Delivery</span>
+                      <span className="flex items-center gap-1">✓ Nationwide Delivery</span>
+                      <span className="flex items-center gap-1">✓ WhatsApp Support</span>
+                    </div>
+
+                    <div className="mt-6">
+                      <button
+                        type="button"
+                        onClick={() => setShowPaymentInfo(true)}
+                        disabled={!isCustomerInfoValid || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
+                        className={clsx(
+                          "interactive-feedback btn-primary w-full py-3 text-base font-semibold",
+                          !(isCustomerInfoValid && isOnline) && "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
+                        )}
+                      >
+                        {text.payNow}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleWhatsappRedirect("COD")}
+                        disabled={!isCustomerInfoValid || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
+                        className={clsx(
+                          "w-full border border-[var(--brand-primary)] text-[var(--brand-primary)] py-3 rounded-lg mt-3 transition hover:bg-[var(--brand-primary)] hover:text-white",
+                          !(isCustomerInfoValid && isOnline) && "cursor-not-allowed border-[#e6d8ce] text-muted hover:bg-transparent"
+                        )}
+                      >
+                        {text.orderCod}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span>{text.deliveryCharge}</span>
-                <span className="font-semibold">
-                  {isSummaryLoading ? <SummaryPlaceholder widthClass="w-12" /> : formatPrice(deliveryFee)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-base font-semibold">
-                <span>{text.totalPayable}</span>
-                <span>{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
-              </div>
-            </div>
-            <div className="mt-4 space-y-3">
-              <label htmlFor="checkout-name" className="sr-only">
-                Name
-              </label>
-              <input
-                id="checkout-name"
-                type="text"
-                placeholder="Name"
-                value={customer.name}
-                onChange={(event) =>
-                  setCustomer((prev) => ({
-                    ...prev,
-                    name: event.target.value,
-                  }))
-                }
-                className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
-              />
-              <label htmlFor="checkout-phone" className="sr-only">
-                Phone
-              </label>
-              <input
-                id="checkout-phone"
-                type="tel"
-                placeholder="Phone"
-                value={customer.phone}
-                onChange={(event) =>
-                  setCustomer((prev) => ({
-                    ...prev,
-                    phone: event.target.value,
-                  }))
-                }
-                className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
-              />
-              <label htmlFor="checkout-address" className="sr-only">
-                Address
-              </label>
-              <textarea
-                id="checkout-address"
-                placeholder="Address"
-                rows={3}
-                value={customer.address}
-                onChange={(event) =>
-                  setCustomer((prev) => ({
-                    ...prev,
-                    address: event.target.value,
-                  }))
-                }
-                className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
-              />
-            </div>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <span className="rounded-full bg-base px-4 py-2 text-xs font-semibold text-ink">
-                Cash on Delivery
-              </span>
-              <span className="rounded-full bg-base px-4 py-2 text-xs font-semibold text-ink">
-                Nationwide Delivery
-              </span>
-              <span className="rounded-full bg-base px-4 py-2 text-xs font-semibold text-ink">
-                WhatsApp Support
-              </span>
-            </div>
-            <div className="mt-6 flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => handleWhatsappRedirect("COD")}
-                disabled={!isCustomerInfoValid || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
-                className={clsx(
-                  "interactive-feedback min-h-[48px] rounded-full px-4 py-3 text-sm font-semibold",
-                  isCustomerInfoValid && isOnline
-                    ? "bg-accent text-white"
-                    : "cursor-not-allowed bg-[#e6d8ce] text-muted"
-                )}
-              >
-                {text.orderCod}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowPaymentInfo(true)}
-                disabled={!isCustomerInfoValid || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
-                className={clsx(
-                  "interactive-feedback min-h-[48px] rounded-full border px-4 py-3 text-sm font-semibold",
-                  isCustomerInfoValid && isOnline
-                    ? "border-accent text-accent"
-                    : "cursor-not-allowed border-[#e6d8ce] text-muted"
-                )}
-              >
-                {text.payNow}
-              </button>
             </div>
           </div>
         </div>
