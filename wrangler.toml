@@ -1,5 +1,7 @@
-name = "tacin-arabi"
-compatibility_date = "2024-12-01"
-pages_build_output_dir = ".vercel/output/static"
+name = "tacin-api"
+main = "worker/src/index.ts"
+compatibility_date = "2024-01-01"
 
-compatibility_flags = ["nodejs_compat"]
+[[d1_databases]]
+binding = "DB"
+database_name = "tacin_db"
