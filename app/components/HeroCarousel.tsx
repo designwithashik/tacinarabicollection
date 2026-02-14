@@ -89,7 +89,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
     const interval = window.setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5500);
+    }, 5000);
 
     return () => window.clearInterval(interval);
   }, [isPaused, slides.length]);
@@ -98,7 +98,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
   return (
     <div
-      className="relative w-full h-[45vh] sm:h-[50vh] md:h-[60vh] overflow-hidden rounded-xl"
+      className="relative w-full h-[38vh] sm:h-[45vh] md:h-[55vh] overflow-hidden rounded-xl"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={(event) => {
@@ -136,10 +136,10 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
             <div className="absolute inset-0 z-20 flex items-end justify-center px-6 pb-8 md:items-center md:pb-0">
               <div className="max-w-xl space-y-3 text-center text-white">
-                <h2 className="text-2xl font-medium tracking-wide md:text-4xl">
+                <h2 className="text-[22px] leading-tight font-medium tracking-wide md:text-4xl">
                   {product.title || product.name}
                 </h2>
-                <p className="text-sm text-white/90 md:text-base">{product.subtitle || ""}</p>
+                <p className="text-[13px] text-white/90 md:text-[14px]">{product.subtitle || ""}</p>
 
                 <div className="flex justify-center">
                   <div className="w-full max-w-xs">
@@ -155,7 +155,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
                     </button>
                     <button
                       type="button"
-                      className="mt-3 w-full rounded-lg border border-white bg-white/15 py-2 font-medium text-white backdrop-blur-sm transition-all duration-300 hover:bg-white hover:text-[var(--brand-primary)]"
+                      className="mt-3 w-full rounded-lg border border-white bg-white/15 py-1.5 font-medium text-white backdrop-blur-sm transition-all duration-300 hover:bg-white hover:text-[var(--brand-primary)]"
                       onClick={(event) => {
                         event.stopPropagation();
                         handleBuyNow(product);

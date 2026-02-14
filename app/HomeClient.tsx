@@ -188,6 +188,7 @@ export default function HomePage({
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPaymentInfo, setShowPaymentInfo] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRouting, setIsRouting] = useState(false);
   const [isOrderConfirmed, setIsOrderConfirmed] = useState(false);
   const [transactionId, setTransactionId] = useState("");
   const [deliveryZone, setDeliveryZone] = useState<"inside" | "outside">("inside");
@@ -430,6 +431,7 @@ export default function HomePage({
     });
 
   const handleAddToCart = (product: Product, sizeOverride: string | null = null) => {
+    if (!product.id) return;
     markRecentlyViewed(product);
     const selectedSize = sizeOverride ?? selectedSizes[product.id];
     if (!selectedSize) return;
@@ -479,6 +481,7 @@ export default function HomePage({
   };
 
   const handleBuyNow = (product: Product, sizeOverride: string | null = null) => {
+    if (isRouting || !product.id) return;
     markRecentlyViewed(product);
     const selectedSize = sizeOverride ?? selectedSizes[product.id];
     if (!selectedSize) return;
@@ -494,14 +497,19 @@ export default function HomePage({
       return;
     }
 
-    setCheckoutItems([normalized]);
-    setIsOrderConfirmed(false);
-    setIsSubmitting(false);
-    logEvent("begin_checkout", { productId: product.id, quantity: normalized.quantity });
-    setShowCheckout(true);
+    setIsRouting(true);
+    window.setTimeout(() => {
+      setCheckoutItems([normalized]);
+      setIsOrderConfirmed(false);
+      setIsSubmitting(false);
+      logEvent("begin_checkout", { productId: product.id, quantity: normalized.quantity });
+      setShowCheckout(true);
+      setIsRouting(false);
+    }, 180);
   };
 
   const handleCartCheckout = () => {
+    if (isRouting) return;
     if (cartItems.length === 0) {
       showToast({ type: "info", message: "Your cart is empty." });
       return;
@@ -511,12 +519,16 @@ export default function HomePage({
       showToast({ type: "error", message: "Unable to checkout. Please review your cart." });
       return;
     }
-    setCheckoutItems(cartItems);
-    setIsOrderConfirmed(false);
-    setIsSubmitting(false);
-    setShowCheckout(true);
-    setShowCart(false);
-    logEvent("begin_checkout", { items: cartItems.length });
+    setIsRouting(true);
+    window.setTimeout(() => {
+      setCheckoutItems(cartItems);
+      setIsOrderConfirmed(false);
+      setIsSubmitting(false);
+      setShowCheckout(true);
+      setShowCart(false);
+      logEvent("begin_checkout", { items: cartItems.length });
+      setIsRouting(false);
+    }, 180);
   };
 
   const handleWhatsappRedirect = (paymentMethod: string) => {
@@ -779,14 +791,19 @@ export default function HomePage({
   // UI
   // ------------------------------
   return (
-    <div className="min-h-screen bg-white pb-24">
+    <div
+      className={clsx(
+        "min-h-screen bg-white pb-24 transition-opacity duration-300 ease-in-out",
+        isRouting && "opacity-80"
+      )}
+    >
       {!isOnline ? (
         <div className="sticky top-0 z-50 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900">
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
       <header className="sticky top-0 z-50 bg-[var(--brand-surface)]/80 backdrop-blur-md border-b border-[var(--brand-secondary)]/20">
-        <div className="mx-auto max-w-6xl px-4 md:px-10 py-5 md:py-6">
+        <div className="mx-auto max-w-6xl px-4 md:px-10 py-5 md:py-5">
           <div className="flex items-center justify-between gap-6">
             <p className="text-lg md:text-xl font-medium tracking-[0.15em] transition-opacity duration-300 hover:opacity-80">
               TACIN ARABI
@@ -798,7 +815,7 @@ export default function HomePage({
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 md:px-10 pb-6 pt-4">
+      <section className="mx-auto max-w-6xl px-4 md:px-10 pb-5 pt-4">
           {/* Phase1.8: Componentized dynamic hero carousel with direct add-to-cart action. */}
           <HeroCarousel
             addToCart={handleHeroAddToCart}
@@ -809,7 +826,7 @@ export default function HomePage({
 
       <section className="mx-auto max-w-6xl px-4 pb-4 md:px-10">
         <div className="overflow-hidden rounded-xl border border-[var(--brand-secondary)]/15 bg-[var(--brand-surface)] py-2">
-          <div className="flex w-max animate-marquee whitespace-nowrap text-sm text-neutral-700">
+          <div className="flex w-max animate-marquee whitespace-nowrap text-[12px] sm:text-[13px] text-neutral-700">
             <span className="mx-6">{announcementText}</span>
             <span className="mx-6">{announcementText}</span>
             <span className="mx-6">{announcementText}</span>
@@ -821,7 +838,7 @@ export default function HomePage({
       {/* Phase1: Place categories above product grid for faster discovery */}
       <section className="sticky top-0 z-30 border-b border-neutral-200 bg-white">
         <AnimatedWrapper className="retail-section-enter" variant="section">
-          <div className="max-w-6xl mx-auto px-4 py-3 flex gap-2 overflow-x-auto scrollbar-hide">
+          <div className="max-w-6xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide">
             <div className="flex flex-1 items-center gap-2 overflow-x-auto">
               {categories.map((category) => (
                 <button
@@ -829,7 +846,7 @@ export default function HomePage({
                   type="button"
                   onClick={() => setSelectedCategory(category)}
                   className={clsx(
-                    "px-4 py-2 text-sm rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white",
+                    "px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white",
                     selectedCategory === category
                       ? "bg-neutral-900 text-white border-neutral-900"
                       : "text-ink"
@@ -842,7 +859,7 @@ export default function HomePage({
             <button
               type="button"
               onClick={() => openSheet("size")}
-              className="px-4 py-2 text-sm rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white flex items-center gap-2"
+              className="px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white flex items-center gap-2"
             >
               Filters
               {(filters.size.length || filters.colors.length || filters.price) ? (
@@ -856,9 +873,9 @@ export default function HomePage({
       </section>
 
       {/* Phase1.5: Retail Divider */}
-      <hr className="my-6 border-gray-200" />
+      <hr className="my-5 border-gray-200" />
 
-      <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-12 pt-4">
+      <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-10 pt-4">
         {activeChips.length > 0 ? (
           <div className="mb-4 flex flex-wrap gap-2">
             {activeChips.map((chip) => (
@@ -866,7 +883,7 @@ export default function HomePage({
                 key={`${chip.type}-${chip.value}`}
                 type="button"
                 onClick={() => removeChip(chip)}
-                className="interactive-feedback rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink shadow-soft"
+                className="interactive-feedback rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-ink shadow-soft"
               >
                 {chip.type === "price"
                   ? priceRanges.find((range) => range.id === chip.value)?.label
@@ -882,7 +899,7 @@ export default function HomePage({
         <SectionLoader
           loading={!hasMounted || isLoading}
           loader={
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {/* Product placeholders prevent blank state flashes during hydration. */}
               {Array.from({ length: 6 }).map((_, index) => (
                 <SkeletonCard key={`skeleton-${index}`} />
@@ -892,8 +909,8 @@ export default function HomePage({
         >
           {visibleProducts.length === 0 ? (
           <div className="rounded-3xl bg-card p-6 text-center shadow-soft">
-            <p className="text-lg font-semibold text-ink">No products found.</p>
-            <p className="mt-2 text-sm text-muted">
+            <p className="text-base font-semibold text-ink">No products found.</p>
+            <p className="mt-2 text-[12px] text-muted">
               Adjust filters or check back soon.
             </p>
           </div>
@@ -901,7 +918,7 @@ export default function HomePage({
           <motion.div
             key={productBatchKey}
             className={clsx(
-              "grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4",
+              "grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
               !prefersReducedMotion && "retail-batch-enter"
             )}
             initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
@@ -938,6 +955,7 @@ export default function HomePage({
                 statusLabel={getStatusLabel(index)}
                 stockLabel={getStockLabel(index)}
                 sizeErrorLabel={text.sizeError}
+                isRouting={isRouting}
               />
               </AnimatedWrapper>
             ))}
@@ -945,23 +963,23 @@ export default function HomePage({
           )}
         </SectionLoader>
 
-        <section className="mt-8 text-sm text-neutral-600 space-y-1">
+        <section className="mt-5 text-[13px] text-neutral-600 space-y-1 leading-relaxed">
           <p>✓ Cash on Delivery Available</p>
           <p>✓ Nationwide Delivery</p>
           <p>✓ WhatsApp Order Support</p>
         </section>
 
         {recentlyViewed.length > 0 ? (
-          <section className="mt-12">
-            <div className="mb-4 flex items-center justify-between">
+          <section className="mt-6">
+            <div className="mb-3 flex items-center justify-between">
               <h2 className="font-heading text-2xl font-semibold">
                 Recently Viewed
               </h2>
-              <span className="text-xs font-semibold text-muted">
+              <span className="text-[12px] font-semibold text-muted">
                 Last 2 items
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {recentlyViewed.map((product, index) => (
                 <AnimatedWrapper key={product.id} variant="product-card" delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.1)}>
                   <ProductCard
@@ -986,6 +1004,7 @@ export default function HomePage({
                   statusLabel={getStatusLabel(index)}
                   stockLabel={getStockLabel(index)}
                   sizeErrorLabel={text.sizeError}
+                  isRouting={isRouting}
                 />
                 </AnimatedWrapper>
               ))}
@@ -995,32 +1014,32 @@ export default function HomePage({
       </main>
 
       <footer className="border-t border-[#e6d8ce] bg-white">
-        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 md:grid-cols-3">
+        <div className="mx-auto grid max-w-6xl gap-5 px-4 py-5 md:grid-cols-3">
           <div>
             <h3 className="font-heading text-lg font-semibold">
               Tacin Arabi Collection
             </h3>
-            <p className="mt-2 text-sm text-muted">
+            <p className="mt-2 text-[12px] text-muted">
               Your trusted online fashion shop in Bangladesh for kurti, modest wear, and ceramic lifestyle picks—powered by WhatsApp-first ordering.
             </p>
-            <p className="mt-3 text-sm font-semibold text-ink">
+            <p className="mt-3 text-[12px] font-semibold text-ink">
               WhatsApp: +8801522119189
             </p>
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-ink">Store Policies</h4>
-            <ul className="mt-3 space-y-2 text-sm text-muted">
+            <h4 className="text-[12px] font-semibold text-ink">Store Policies</h4>
+            <ul className="mt-3 space-y-1 text-[12px] text-muted">
               <li>Cash on Delivery available nationwide</li>
               <li>Delivery confirmation before dispatch</li>
               <li>Support available 10am–10pm daily</li>
             </ul>
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-ink">Social Proof</h4>
-            <p className="mt-3 text-sm text-muted">
+            <h4 className="text-[12px] font-semibold text-ink">Social Proof</h4>
+            <p className="mt-3 text-[12px] text-muted">
               Thousands of Bangladesh fashion shoppers trust our WhatsApp checkout for fast confirmation, secure payment guidance, and reliable delivery updates.
             </p>
-            <p className="mt-3 text-sm font-semibold text-ink">
+            <p className="mt-3 text-[12px] font-semibold text-ink">
               “Fast replies, quality products, safe delivery.”
             </p>
           </div>
@@ -1115,15 +1134,15 @@ export default function HomePage({
           <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-muted">Quick View</p>
-                <h3 className="text-lg font-semibold text-ink">
+                <p className="text-[12px] font-semibold text-muted">Quick View</p>
+                <h3 className="text-base font-semibold text-ink">
                   {detailsProduct.name}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setDetailsProduct(null)}
-                className="text-sm font-semibold text-accent"
+                className="text-[13px] font-semibold text-accent"
               >
                 Close
               </button>
@@ -1138,7 +1157,7 @@ export default function HomePage({
                   className="h-full w-full object-cover"
                 />
               </div>
-              <div className="flex-1 text-sm text-muted">
+              <div className="flex-1 text-[13px] text-muted leading-relaxed">
                 <p>
                   Category:{" "}
                   <span className="font-semibold text-ink">
@@ -1166,7 +1185,7 @@ export default function HomePage({
                   type="button"
                   onClick={() => updateSize(detailsProduct.id, size)}
                   className={clsx(
-                    "rounded-full border px-4 py-2 text-sm font-semibold",
+                    "rounded-lg border px-4 py-2 text-[13px] font-semibold",
                     selectedSizes[detailsProduct.id] === size
                       ? "border-accent bg-accent text-white"
                       : "border-[#e6d8ce]"
@@ -1208,9 +1227,9 @@ export default function HomePage({
                 <button
                   type="button"
                   onClick={() => handleBuyNow(detailsProduct)}
-                  disabled={!selectedSizes[detailsProduct.id]}
+                  disabled={!selectedSizes[detailsProduct.id] || isRouting}
                   className={clsx(
-                    "min-h-[44px] rounded-full px-4 py-2 text-sm font-semibold",
+                    "min-h-[44px] rounded-lg px-4 py-2 text-[13px] font-semibold",
                     selectedSizes[detailsProduct.id]
                       ? "bg-accent text-white"
                       : "cursor-not-allowed bg-[#e6d8ce] text-muted"
@@ -1221,9 +1240,9 @@ export default function HomePage({
                 <button
                   type="button"
                   onClick={() => handleAddToCart(detailsProduct)}
-                  disabled={!selectedSizes[detailsProduct.id]}
+                  disabled={!selectedSizes[detailsProduct.id] || isRouting}
                   className={clsx(
-                    "min-h-[44px] rounded-full border px-4 py-2 text-sm font-semibold",
+                    "min-h-[44px] rounded-lg border px-4 py-2 text-[13px] font-semibold",
                     selectedSizes[detailsProduct.id]
                       ? "border-accent text-accent"
                       : "cursor-not-allowed border-[#e6d8ce] text-muted"
@@ -1244,14 +1263,14 @@ export default function HomePage({
               <h3
                 ref={cartHeadingRef}
                 tabIndex={-1}
-                className="text-lg font-semibold text-ink"
+                className="text-base font-semibold text-ink"
               >
                 Your Cart
               </h3>
               <button
                 type="button"
                 onClick={() => setShowCart(false)}
-                className="interactive-feedback text-sm font-semibold text-accent"
+                className="interactive-feedback text-[13px] font-semibold text-accent"
               >
                 Close
               </button>
@@ -1264,13 +1283,13 @@ export default function HomePage({
                 <p className="mt-2 text-sm font-semibold text-ink">
                   Your cart is empty.
                 </p>
-                <p className="mt-1 text-xs text-muted">
+                <p className="mt-1 text-[12px] text-muted">
                   Start shopping to add items.
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowCart(false)}
-                  className="interactive-feedback mt-3 rounded-full border border-[#e6d8ce] px-4 py-2 text-xs font-semibold text-ink"
+                  className="interactive-feedback mt-3 rounded-full border border-[#e6d8ce] px-4 py-2 text-[12px] font-semibold text-ink"
                 >
                   Browse products
                 </button>
@@ -1288,18 +1307,18 @@ export default function HomePage({
                     <Image
                       src={item.imageUrl ?? item.image ?? "/images/product-1.svg"}
                       alt={item.name}
-                      width={80}
+                      width={60}
                       height={80}
-                      className="h-20 w-20 rounded-xl object-cover"
+                      className="h-[60px] w-[60px] rounded-xl object-cover"
                     />
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-ink">
+                      <p className="text-[12px] font-semibold text-ink">
                         {item.name}
                       </p>
-                      <p className="text-xs text-muted">
+                      <p className="text-[12px] text-muted">
                         Size: {item.size} · Color: {item.color}
                       </p>
-                      <p className="text-sm font-semibold text-ink">
+                      <p className="text-[12px] font-semibold text-ink">
                         {formatPrice(item.price)}
                       </p>
                       {cartQuantityFeedback[index] ? (
@@ -1320,7 +1339,7 @@ export default function HomePage({
                         >
                           -
                         </button>
-                        <span className="text-sm font-semibold">
+                        <span className="text-[13px] font-semibold">
                           {item.quantity}
                         </span>
                         <button
@@ -1358,9 +1377,9 @@ export default function HomePage({
                 <button
                   type="button"
                   onClick={handleCartCheckout}
-                  className="interactive-feedback min-h-[44px] w-full rounded-full bg-accent px-4 py-3 text-sm font-semibold text-white"
+                  className="interactive-feedback min-h-[40px] w-full rounded-lg bg-accent px-4 py-2.5 text-[14px] font-semibold text-white"
                 >
-                  {text.checkout}
+                  {isRouting ? "Redirecting..." : text.checkout}
                 </button>
               </div>
             )}
@@ -1370,15 +1389,15 @@ export default function HomePage({
 
       {showCheckout ? (
         <div className="z-40 bg-black/40">
-          <div className="min-h-screen flex flex-col bg-white">
+          <div className="animate-fadeIn min-h-screen flex flex-col bg-white">
             <div className="border-b border-[#f0e4da] px-4 sm:px-6 py-4">
               <div className="mx-auto max-w-4xl flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold text-muted">Universal Checkout</p>
+                  <p className="text-[12px] font-semibold text-muted">Universal Checkout</p>
                   <h3
                     ref={checkoutHeadingRef}
                     tabIndex={-1}
-                    className="text-lg font-semibold text-ink"
+                    className="text-base font-semibold text-ink"
                   >
                     Confirm your order
                   </h3>
@@ -1390,16 +1409,16 @@ export default function HomePage({
                     setIsOrderConfirmed(false);
                     setIsSubmitting(false);
                   }}
-                  className="interactive-feedback text-sm font-semibold text-accent"
+                  className="interactive-feedback text-[13px] font-semibold text-accent"
                 >
                   Close
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-visible px-4 py-6 pb-10 sm:px-6">
+            <div className="flex-1 overflow-visible px-4 py-6 pb-8 sm:px-6">
               {isOrderConfirmed ? (
-                <div className="max-w-4xl mx-auto px-4 py-8">
+                <div className="max-w-4xl mx-auto px-4 py-5">
                   <div className="text-center py-16">
                     <h2 className="text-2xl font-semibold mb-4">
                       Order Confirmed
@@ -1410,14 +1429,14 @@ export default function HomePage({
                   </div>
                 </div>
               ) : (
-                <div className="max-w-4xl mx-auto px-4 py-8">
-                  <div className="grid md:grid-cols-2 gap-8">
+                <div className="max-w-4xl mx-auto px-4 py-5">
+                  <div className="grid md:grid-cols-2 gap-5">
                     <div className="space-y-4">
-                      <h2 className="text-lg font-semibold mb-4">
+                      <h2 className="text-base font-semibold mb-4">
                         Order Summary
                       </h2>
-                      <div className="rounded-2xl border border-[#f0e4da] p-4">
-                        <div className="space-y-3 text-sm">
+                      <div className="rounded-2xl border border-[#f0e4da] p-3">
+                        <div className="space-y-3 text-[13px]">
                           {checkoutItems.map((item, index) => (
                             <div
                               key={`${item.id}-${item.size}-${index}`}
@@ -1427,14 +1446,14 @@ export default function HomePage({
                                 <Image
                                   src={item.imageUrl || item.image || "/images/product-1.svg"}
                                   alt={item.name}
-                                  width={80}
-                                  height={100}
-                                  className="rounded-lg object-cover w-20 h-24 shrink-0"
+                                  width={60}
+                                  height={86}
+                                  className="rounded-lg object-cover w-[60px] h-[86px] shrink-0"
                                   unoptimized={false}
                                 />
                                 <div className="min-w-0">
                                   <p className="font-semibold text-ink break-words">{item.name}</p>
-                                  <p className="text-xs text-muted">
+                                  <p className="text-[12px] text-muted">
                                     Size: {item.size} · Qty: {item.quantity}
                                   </p>
                                 </div>
@@ -1447,14 +1466,14 @@ export default function HomePage({
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-[#f0e4da] p-4">
-                        <p className="text-sm font-semibold text-ink">{text.deliveryZone}</p>
+                      <div className="rounded-2xl border border-[#f0e4da] p-3">
+                        <p className="text-[12px] font-semibold text-ink">{text.deliveryZone}</p>
                         <div className="mt-2 flex gap-2">
                           <button
                             type="button"
                             onClick={() => setDeliveryZone("inside")}
                             className={clsx(
-                              "interactive-feedback min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
+                              "interactive-feedback min-h-[40px] flex-1 rounded-lg border px-3 py-1.5 text-[12px] font-semibold",
                               deliveryZone === "inside"
                                 ? "border-accent bg-accent text-white"
                                 : "border-[#e6d8ce]"
@@ -1466,7 +1485,7 @@ export default function HomePage({
                             type="button"
                             onClick={() => setDeliveryZone("outside")}
                             className={clsx(
-                              "interactive-feedback min-h-[44px] flex-1 rounded-full border px-4 py-2 text-sm font-semibold",
+                              "interactive-feedback min-h-[40px] flex-1 rounded-lg border px-3 py-1.5 text-[12px] font-semibold",
                               deliveryZone === "outside"
                                 ? "border-accent bg-accent text-white"
                                 : "border-[#e6d8ce]"
@@ -1477,7 +1496,7 @@ export default function HomePage({
                         </div>
                       </div>
 
-                      <div className="space-y-2 rounded-2xl border border-[#f0e4da] p-4 text-sm">
+                      <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs">
                         <div className="flex items-center justify-between">
                           <span>{text.subtotal}</span>
                           <span className="font-semibold">
@@ -1496,7 +1515,7 @@ export default function HomePage({
                         </div>
                       </div>
 
-                      <div className="text-sm text-neutral-600 mt-4 space-y-1">
+                      <div className="text-xs text-neutral-600 mt-3 space-y-1">
                         <p>✓ Cash on Delivery Available</p>
                         <p>✓ Nationwide Delivery</p>
                         <p>✓ WhatsApp Confirmation</p>
@@ -1504,7 +1523,7 @@ export default function HomePage({
                     </div>
 
                     <div>
-                      <h2 className="text-lg font-semibold mb-4">
+                      <h2 className="text-base font-semibold mb-4">
                         Shipping Information
                       </h2>
                       <div className="space-y-4">
@@ -1517,7 +1536,7 @@ export default function HomePage({
                           onChange={(event) =>
                             setCustomer((prev) => ({ ...prev, name: event.target.value }))
                           }
-                          className="w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
+                          className="w-full border border-neutral-300 rounded-lg px-4 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-neutral-900 transition-all duration-200 ease-out"
                         />
                         <label htmlFor="checkout-phone" className="sr-only">Phone</label>
                         <input
@@ -1528,7 +1547,7 @@ export default function HomePage({
                           onChange={(event) =>
                             setCustomer((prev) => ({ ...prev, phone: event.target.value }))
                           }
-                          className="w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
+                          className="w-full border border-neutral-300 rounded-lg px-4 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-neutral-900 transition-all duration-200 ease-out"
                         />
                         <label htmlFor="checkout-address" className="sr-only">Address</label>
                         <textarea
@@ -1539,7 +1558,7 @@ export default function HomePage({
                           onChange={(event) =>
                             setCustomer((prev) => ({ ...prev, address: event.target.value }))
                           }
-                          className="w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
+                          className="w-full border border-neutral-300 rounded-lg px-4 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-neutral-900 transition-all duration-200 ease-out"
                         />
                       </div>
 
@@ -1560,7 +1579,7 @@ export default function HomePage({
                             !Number.isFinite(checkoutTotal)
                           }
                           className={clsx(
-                            "interactive-feedback btn-primary w-full py-3 text-base font-semibold mt-6",
+                            "interactive-feedback btn-primary w-full py-2.5 text-[14px] font-semibold mt-6",
                             (isSubmitting || !(isCustomerInfoValid && isOnline)) &&
                               "opacity-60 cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
                           )}
@@ -1579,7 +1598,7 @@ export default function HomePage({
                             !Number.isFinite(checkoutTotal)
                           }
                           className={clsx(
-                            "w-full border border-neutral-900 text-neutral-900 py-3 rounded-lg mt-3 hover:bg-neutral-900 hover:text-white transition",
+                            "w-full border border-neutral-900 text-neutral-900 py-2.5 rounded-lg mt-3 hover:bg-neutral-900 hover:text-white transition",
                             (isSubmitting || !(isCustomerInfoValid && isOnline)) &&
                               "opacity-60 cursor-not-allowed border-[#e6d8ce] text-muted hover:bg-transparent"
                           )}
@@ -1601,8 +1620,8 @@ export default function HomePage({
           <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-muted">Payment Info</p>
-                <h3 className="text-lg font-semibold text-ink">
+                <p className="text-[12px] font-semibold text-muted">Payment Info</p>
+                <h3 className="text-base font-semibold text-ink">
                   bKash / Nagad Transfer
                 </h3>
               </div>
@@ -1612,19 +1631,19 @@ export default function HomePage({
                     setShowPaymentInfo(false);
                     setIsSubmitting(false);
                   }}
-                className="interactive-feedback text-sm font-semibold text-accent"
+                className="interactive-feedback text-[13px] font-semibold text-accent"
               >
                 Close
               </button>
             </div>
-            <div className="mt-4 space-y-2 text-sm">
+            <div className="mt-4 space-y-1 text-[13px]">
               <p>
                 bKash: <span className="font-semibold">{paymentNumber}</span>
               </p>
               <p>
                 Nagad: <span className="font-semibold">{paymentNumber}</span>
               </p>
-              <p className="text-xs text-muted">
+              <p className="text-[12px] text-muted">
                 Please pay first, then paste your Transaction ID below.
               </p>
               <label htmlFor="transaction-id" className="sr-only">
@@ -1636,7 +1655,7 @@ export default function HomePage({
                 placeholder="Transaction ID"
                 value={transactionId}
                 onChange={(event) => setTransactionId(event.target.value)}
-                className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-3 text-sm"
+                className="w-full rounded-xl border border-[#e6d8ce] px-4 py-2.5 text-[14px]"
               />
             </div>
             <button
@@ -1644,7 +1663,7 @@ export default function HomePage({
               disabled={isSubmitting || !hasPaymentProof || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
               onClick={() => handleWhatsappRedirect("bKash/Nagad")}
               className={clsx(
-                "interactive-feedback mt-6 min-h-[48px] w-full rounded-full px-4 py-3 text-sm font-semibold",
+                "interactive-feedback mt-6 min-h-[44px] w-full rounded-lg px-4 py-2.5 text-[14px] font-semibold",
                 hasPaymentProof && isOnline && !isSubmitting
                   ? "bg-accent text-white"
                   : "opacity-60 cursor-not-allowed bg-[#e6d8ce] text-muted"
