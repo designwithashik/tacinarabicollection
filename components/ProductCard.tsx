@@ -31,6 +31,7 @@ type Props = {
   statusLabel: string;
   stockLabel: string;
   sizeErrorLabel: string;
+  isRouting?: boolean;
 };
 
 export default function ProductCard({
@@ -53,12 +54,15 @@ export default function ProductCard({
   statusLabel,
   stockLabel,
   sizeErrorLabel,
+  isRouting = false,
 }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [showSizeError, setShowSizeError] = useState(false);
 
   useEffect(() => {
     setImageFailed(false);
+    setShowSizeError(false);
   }, [product.id, product.image]);
 
   const imageSrc = useMemo(() => {
@@ -74,13 +78,38 @@ export default function ProductCard({
         ? addedLabel
         : addToCartLabel;
 
+  const handleSizeChange = (size: string) => {
+    setShowSizeError(false);
+    onSizeChange(size);
+  };
+
+  const handleAddClick = () => {
+    if (!product.id) return;
+    if (!selectedSize) {
+      setShowSizeError(true);
+      return;
+    }
+    setShowSizeError(false);
+    onAddToCart();
+  };
+
+  const handleBuyClick = () => {
+    if (!product.id) return;
+    if (!selectedSize) {
+      setShowSizeError(true);
+      return;
+    }
+    setShowSizeError(false);
+    onBuyNow();
+  };
+
   const stockCount = (product as Product & { stock?: number }).stock;
   const originalPrice =
     (product as Product & { originalPrice?: number; compareAtPrice?: number }).originalPrice ??
     (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--brand-secondary)]/10 bg-[var(--brand-surface)] transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--brand-secondary)]/10 bg-white shadow-sm transition-all duration-200 ease-out md:hover:-translate-y-1 md:hover:shadow-md">
       <div
         role="button"
         tabIndex={0}
@@ -116,10 +145,10 @@ export default function ProductCard({
 
         <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/30 bg-white/35 p-3 text-left backdrop-blur-sm">
           <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/80">{product.category}</p>
-          <p className="mt-1 font-heading text-sm sm:text-base font-semibold text-charcoal transition-transform duration-200 group-hover:translate-y-[-1px] break-words line-clamp-2">
+          <p className="mt-0.5 font-heading text-sm sm:text-base font-semibold text-charcoal transition-transform duration-200 group-hover:translate-y-[-1px] break-words line-clamp-2">
             {product.name}
           </p>
-          <p className="mt-1 text-xs font-semibold text-charcoal/85 transition-transform duration-200 delay-75 group-hover:translate-y-[-1px]">
+          <p className="mt-0.5 text-xs font-semibold text-charcoal/85 transition-transform duration-200 delay-75 group-hover:translate-y-[-1px]">
             {stockLabel}
           </p>
         </div>
@@ -145,15 +174,15 @@ export default function ProductCard({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-2.5 sm:p-4">
-        <h3 className="text-sm sm:text-base font-medium leading-snug text-[var(--brand-primary)] line-clamp-2 break-words">
+      <div className="flex flex-1 flex-col space-y-1.5 p-2.5 sm:p-3">
+        <h3 className="text-sm font-medium leading-snug text-[var(--brand-primary)] line-clamp-2 break-words">
           {product.name}
         </h3>
 
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex flex-col min-w-0">
             <p className="text-[10px] uppercase tracking-[0.15em] text-support">{priceLabel}</p>
-            <p className="text-sm sm:text-base font-semibold text-neutral-900">৳ {product.price.toLocaleString()}</p>
+            <p className="text-[14px] font-semibold tracking-tight text-neutral-900">৳ {product.price.toLocaleString()}</p>
             {typeof originalPrice === "number" && originalPrice > product.price ? (
               <p className="text-xs text-[var(--brand-muted)] line-through">৳ {originalPrice.toLocaleString()}</p>
             ) : null}
@@ -165,83 +194,81 @@ export default function ProductCard({
           ) : null}
         </div>
 
-        <p className="text-xs sm:text-sm text-support break-words">{product.category}</p>
+        <p className="text-[11px] uppercase tracking-wider text-neutral-500 break-words">{product.category}</p>
 
         <div>
-          <p className="text-sm font-medium text-ink">Select Size</p>
+          <p className="text-[13px] font-medium text-ink">Select Size</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {sizes.map((size) => (
               <button
                 key={size}
                 type="button"
                 className={clsx(
-                  "interactive-feedback rounded-full border px-3 py-1 text-xs sm:text-sm font-medium transition",
+                  "interactive-feedback rounded-full border px-3 py-1 text-[12px] sm:text-[13px] font-medium transition-all duration-200 ease-out",
                   selectedSize === size
                     ? "border-accent bg-accent text-white"
                     : "border-[#e5d7cc] bg-white text-ink"
                 )}
-                onClick={() => onSizeChange(size)}
+                onClick={() => handleSizeChange(size)}
               >
                 {size}
               </button>
             ))}
           </div>
-          {sizeMissing ? (
-            <p className="text-red-600 text-sm mt-2">{sizeErrorLabel}</p>
+          {showSizeError ? (
+            <p className="text-red-600 text-[12px] mt-1 transition-opacity duration-200">{sizeErrorLabel}</p>
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div>
-            <p className="text-sm font-medium text-ink">Qty</p>
-            <div className="mt-2 flex items-center gap-2 rounded-full border border-[#e5d7cc] bg-white px-3 py-1">
-              <button
-                type="button"
-                className="interactive-feedback px-1 text-base font-semibold text-ink"
-                onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-              >
-                -
-              </button>
-              <span className="text-center text-sm font-semibold">{quantity}</span>
-              <button
-                type="button"
-                className="interactive-feedback px-1 text-base font-semibold text-ink"
-                onClick={() => onQuantityChange(quantity + 1)}
-              >
-                +
-              </button>
-            </div>
-            {quantityFeedback ? (
-              <p className="mt-2 text-xs font-semibold text-accent">{quantityFeedback}</p>
-            ) : null}
+        <div>
+          <p className="text-[13px] font-medium text-ink">Qty</p>
+          <div className="mt-2 flex items-center gap-2 rounded-full border border-[#e5d7cc] bg-white px-3 py-1">
+            <button
+              type="button"
+              className="interactive-feedback px-1 text-base font-semibold text-ink"
+              onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+            >
+              -
+            </button>
+            <span className="text-center text-[13px] font-semibold">{quantity}</span>
+            <button
+              type="button"
+              className="interactive-feedback px-1 text-base font-semibold text-ink"
+              onClick={() => onQuantityChange(quantity + 1)}
+            >
+              +
+            </button>
           </div>
-          <button
-            type="button"
-            className={clsx(
-              "interactive-feedback btn-secondary w-full sm:w-auto text-xs font-semibold uppercase tracking-[0.15em] px-3 py-2",
-              sizeMissing && "cursor-not-allowed border-[#d9cdc0] text-muted"
-            )}
-            onClick={onBuyNow}
-            disabled={sizeMissing}
-          >
-            {buyNowLabel}
-          </button>
+          {quantityFeedback ? (
+            <p className="mt-2 text-xs font-semibold text-accent">{quantityFeedback}</p>
+          ) : null}
         </div>
 
-        <div className="mt-auto pt-2">
+        <div className="mt-2 flex gap-2">
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-primary w-full text-xs sm:text-sm py-2",
-              sizeMissing || addState === "loading"
+              "interactive-feedback flex-1 btn-primary rounded-md py-2 text-[13px]",
+              addState === "loading" || isRouting
                 ? "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
                 : "",
-              addState === "success" && "border-[var(--brand-accent)] bg-[var(--brand-accent)] text-[#1f1f1f]"
+              addState === "success" && "border-[var(--brand-accent)] bg-[var(--brand-accent)] text-white"
             )}
-            onClick={onAddToCart}
-            disabled={sizeMissing || addState === "loading"}
+            onClick={handleAddClick}
+            disabled={addState === "loading" || isRouting}
           >
             {addLabel}
+          </button>
+          <button
+            type="button"
+            className={clsx(
+              "interactive-feedback flex-1 border border-neutral-900 text-neutral-900 rounded-md py-2 text-[13px] transition-all duration-200 ease-out hover:bg-neutral-900 hover:text-white",
+              isRouting && "cursor-not-allowed opacity-70"
+            )}
+            onClick={handleBuyClick}
+            disabled={isRouting}
+          >
+            {isRouting ? "Redirecting..." : buyNowLabel}
           </button>
         </div>
       </div>
@@ -253,7 +280,7 @@ export default function ProductCard({
           onSizeChange={onSizeChange}
           onClose={() => setQuickViewProduct(null)}
           onAddToCart={(size) => {
-            onSizeChange(size);
+            handleSizeChange(size);
             onAddToCart();
           }}
           addToCartLabel={addToCartLabel}

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
+import clsx from "clsx";
 import type { Product } from "../../../lib/products";
 import useCart from "../../../hooks/useCart";
 
@@ -12,8 +13,9 @@ type Props = {
 const whatsappNumber = "8801522119189";
 
 export default function ProductDetailClient({ product }: Props) {
-  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [sizeError, setSizeError] = useState(false);
+  const [isRouting, setIsRouting] = useState(false);
   const { setCartItems } = useCart();
 
   const formattedPrice = useMemo(
@@ -23,10 +25,6 @@ export default function ProductDetailClient({ product }: Props) {
 
   const oldPrice = null;
 
-  const getDefaultSize = () => {
-    if (product.sizes.includes("M")) return "M";
-    return product.sizes[0] ?? "M";
-  };
 
   const buildCartItem = (size: string) => ({
     id: product.id,
@@ -40,6 +38,7 @@ export default function ProductDetailClient({ product }: Props) {
   });
 
   const handleAddToCart = (sizeOverride?: string) => {
+    if (!product.id) return;
     const sizeToUse = sizeOverride ?? selectedSize;
     if (!sizeToUse) {
       setSizeError(true);
@@ -64,22 +63,32 @@ export default function ProductDetailClient({ product }: Props) {
   };
 
   const handleBuyNow = () => {
-    const sizeToUse = selectedSize || getDefaultSize();
+    if (isRouting || !product.id) return;
     if (!selectedSize) {
-      setSelectedSize(sizeToUse);
+      setSizeError(true);
+      return;
     }
 
-    handleAddToCart(sizeToUse);
+    handleAddToCart(selectedSize);
+    setIsRouting(true);
 
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-      `I want to order ${product.name} (Size: ${sizeToUse}) now.`
+      `I want to order ${product.name} (Size: ${selectedSize}) now.`
     )}`;
-    window.location.href = whatsappUrl;
+
+    window.setTimeout(() => {
+      window.location.href = whatsappUrl;
+    }, 180);
   };
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-8 pb-24 md:pb-8">
-      <div className="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-2 gap-10">
+    <main
+      className={clsx(
+        "max-w-6xl mx-auto px-4 py-8 pb-24 md:pb-8 transition-opacity duration-300 ease-in-out",
+        isRouting && "opacity-80"
+      )}
+    >
+      <div className="max-w-6xl mx-auto px-4 py-6 md:py-8 grid md:grid-cols-2 gap-8">
         <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden bg-[var(--brand-surface)]">
           <Image
             src={product.image}
@@ -92,15 +101,15 @@ export default function ProductDetailClient({ product }: Props) {
         </div>
 
         <div className="space-y-5">
-          <h1 className="text-3xl font-medium text-[var(--brand-primary)]">{product.name}</h1>
+          <h1 className="text-xl md:text-2xl font-medium leading-tight text-[var(--brand-primary)]">{product.name}</h1>
 
           <div className="mb-4">
-            <p className="text-2xl font-semibold text-neutral-900">{formattedPrice}</p>
-            {oldPrice ? <p className="text-sm line-through text-neutral-500">{oldPrice}</p> : null}
+            <p className="text-lg md:text-xl font-semibold text-neutral-900">{formattedPrice}</p>
+            {oldPrice ? <p className="text-[13px] line-through text-neutral-500">{oldPrice}</p> : null}
           </div>
 
           <div className="pt-1">
-            <p className="text-sm font-medium text-ink">Select Size</p>
+            <p className="text-[13px] font-medium text-ink">Select Size</p>
             <div className="mt-3 flex flex-wrap gap-3">
               {product.sizes.map((size) => (
                 <button
@@ -110,7 +119,7 @@ export default function ProductDetailClient({ product }: Props) {
                     setSelectedSize(size);
                     setSizeError(false);
                   }}
-                  className={`px-4 py-2 rounded-lg border border-neutral-300 text-sm transition ${
+                  className={`px-4 py-2 rounded-lg border border-neutral-300 text-[13px] transition-all duration-200 ease-out ${
                     selectedSize === size
                       ? "bg-neutral-900 text-white border-neutral-900"
                       : "hover:border-neutral-900"
@@ -121,12 +130,12 @@ export default function ProductDetailClient({ product }: Props) {
               ))}
             </div>
             {sizeError ? (
-              <p className="text-red-600 text-sm mt-2">
+              <p className="text-red-600 text-[12px] mt-1 transition-opacity duration-200">
                 Please select a size first
               </p>
             ) : null}
 
-            <div className="mt-4 text-sm text-neutral-600 space-y-1">
+            <div className="mt-4 text-[13px] text-neutral-600 space-y-1">
               <p>✓ Cash on Delivery Available</p>
               <p>✓ Nationwide Delivery</p>
               <p>✓ WhatsApp Order Support</p>
@@ -136,7 +145,7 @@ export default function ProductDetailClient({ product }: Props) {
           <button
             type="button"
             onClick={() => handleAddToCart()}
-            className="btn-primary w-full py-3 text-base font-semibold mt-6"
+            className="btn-primary w-full py-2 text-[13px] rounded-lg font-semibold mt-4"
           >
             Add to Cart
           </button>
@@ -144,9 +153,15 @@ export default function ProductDetailClient({ product }: Props) {
           <button
             type="button"
             onClick={handleBuyNow}
-            className="w-full border border-neutral-900 text-neutral-900 py-3 rounded-lg mt-3 hover:bg-neutral-900 hover:text-white transition"
+            disabled={isRouting}
+            className={clsx(
+              "w-full border border-neutral-900 text-neutral-900 py-2 text-[13px] rounded-lg mt-3 transition-all duration-200 ease-out",
+              isRouting
+                ? "cursor-not-allowed opacity-70"
+                : "hover:bg-neutral-900 hover:text-white"
+            )}
           >
-            Buy Now
+            {isRouting ? "Redirecting..." : "Buy Now"}
           </button>
         </div>
       </div>
@@ -155,7 +170,7 @@ export default function ProductDetailClient({ product }: Props) {
         <button
           type="button"
           onClick={() => handleAddToCart()}
-          className="btn-primary w-full py-3 text-base font-semibold"
+          className="btn-primary w-full py-2 text-[13px] rounded-lg font-semibold"
         >
           Add to Cart
         </button>
