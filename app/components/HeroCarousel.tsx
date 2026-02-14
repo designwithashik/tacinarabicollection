@@ -136,10 +136,10 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
             <div className="absolute inset-0 z-20 flex items-end justify-center px-6 pb-8 md:items-center md:pb-0">
               <div className="max-w-xl space-y-3 text-center text-white">
-                <h2 className="text-2xl font-medium tracking-wide md:text-4xl">
+                <h2 className="text-[22px] leading-tight font-medium tracking-wide md:text-4xl">
                   {product.title || product.name}
                 </h2>
-                <p className="text-sm text-white/90 md:text-base">{product.subtitle || ""}</p>
+                <p className="text-[13px] text-white/90 md:text-[14px]">{product.subtitle || ""}</p>
 
                 <div className="flex justify-center">
                   <div className="w-full max-w-xs">

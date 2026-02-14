@@ -88,7 +88,7 @@ export default function ProductDetailClient({ product }: Props) {
         isRouting && "opacity-80"
       )}
     >
-      <div className="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-2 gap-10">
+      <div className="max-w-6xl mx-auto px-4 py-6 md:py-8 grid md:grid-cols-2 gap-8">
         <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden bg-[var(--brand-surface)]">
           <Image
             src={product.image}
@@ -101,15 +101,15 @@ export default function ProductDetailClient({ product }: Props) {
         </div>
 
         <div className="space-y-5">
-          <h1 className="text-3xl font-medium text-[var(--brand-primary)]">{product.name}</h1>
+          <h1 className="text-xl md:text-2xl font-medium leading-tight text-[var(--brand-primary)]">{product.name}</h1>
 
           <div className="mb-4">
-            <p className="text-2xl font-semibold text-neutral-900">{formattedPrice}</p>
-            {oldPrice ? <p className="text-sm line-through text-neutral-500">{oldPrice}</p> : null}
+            <p className="text-lg md:text-xl font-semibold text-neutral-900">{formattedPrice}</p>
+            {oldPrice ? <p className="text-[13px] line-through text-neutral-500">{oldPrice}</p> : null}
           </div>
 
           <div className="pt-1">
-            <p className="text-sm font-medium text-ink">Select Size</p>
+            <p className="text-[13px] font-medium text-ink">Select Size</p>
             <div className="mt-3 flex flex-wrap gap-3">
               {product.sizes.map((size) => (
                 <button
@@ -119,7 +119,7 @@ export default function ProductDetailClient({ product }: Props) {
                     setSelectedSize(size);
                     setSizeError(false);
                   }}
-                  className={`px-4 py-2 rounded-lg border border-neutral-300 text-sm transition ${
+                  className={`px-4 py-2 rounded-lg border border-neutral-300 text-[13px] transition-all duration-200 ease-out ${
                     selectedSize === size
                       ? "bg-neutral-900 text-white border-neutral-900"
                       : "hover:border-neutral-900"
@@ -130,12 +130,12 @@ export default function ProductDetailClient({ product }: Props) {
               ))}
             </div>
             {sizeError ? (
-              <p className="text-red-600 text-xs mt-1 transition-opacity duration-200">
+              <p className="text-red-600 text-[12px] mt-1 transition-opacity duration-200">
                 Please select a size first
               </p>
             ) : null}
 
-            <div className="mt-4 text-sm text-neutral-600 space-y-1">
+            <div className="mt-4 text-[13px] text-neutral-600 space-y-1">
               <p>✓ Cash on Delivery Available</p>
               <p>✓ Nationwide Delivery</p>
               <p>✓ WhatsApp Order Support</p>
@@ -145,7 +145,7 @@ export default function ProductDetailClient({ product }: Props) {
           <button
             type="button"
             onClick={() => handleAddToCart()}
-            className="btn-primary w-full py-2 text-xs rounded-md font-semibold mt-6"
+            className="btn-primary w-full py-2 text-[13px] rounded-lg font-semibold mt-4"
           >
             Add to Cart
           </button>
@@ -155,7 +155,7 @@ export default function ProductDetailClient({ product }: Props) {
             onClick={handleBuyNow}
             disabled={isRouting}
             className={clsx(
-              "w-full border border-neutral-900 text-neutral-900 py-2 text-xs rounded-md mt-3 transition",
+              "w-full border border-neutral-900 text-neutral-900 py-2 text-[13px] rounded-lg mt-3 transition-all duration-200 ease-out",
               isRouting
                 ? "cursor-not-allowed opacity-70"
                 : "hover:bg-neutral-900 hover:text-white"
@@ -170,7 +170,7 @@ export default function ProductDetailClient({ product }: Props) {
         <button
           type="button"
           onClick={() => handleAddToCart()}
-          className="btn-primary w-full py-2 text-xs rounded-md font-semibold"
+          className="btn-primary w-full py-2 text-[13px] rounded-lg font-semibold"
         >
           Add to Cart
         </button>

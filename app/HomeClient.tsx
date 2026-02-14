@@ -826,7 +826,7 @@ export default function HomePage({
 
       <section className="mx-auto max-w-6xl px-4 pb-4 md:px-10">
         <div className="overflow-hidden rounded-xl border border-[var(--brand-secondary)]/15 bg-[var(--brand-surface)] py-2">
-          <div className="flex w-max animate-marquee whitespace-nowrap text-xs sm:text-sm text-neutral-700">
+          <div className="flex w-max animate-marquee whitespace-nowrap text-[12px] sm:text-[13px] text-neutral-700">
             <span className="mx-6">{announcementText}</span>
             <span className="mx-6">{announcementText}</span>
             <span className="mx-6">{announcementText}</span>
@@ -846,7 +846,7 @@ export default function HomePage({
                   type="button"
                   onClick={() => setSelectedCategory(category)}
                   className={clsx(
-                    "px-3 py-1.5 text-xs rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white",
+                    "px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white",
                     selectedCategory === category
                       ? "bg-neutral-900 text-white border-neutral-900"
                       : "text-ink"
@@ -859,7 +859,7 @@ export default function HomePage({
             <button
               type="button"
               onClick={() => openSheet("size")}
-              className="px-3 py-1.5 text-xs rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white flex items-center gap-2"
+              className="px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white flex items-center gap-2"
             >
               Filters
               {(filters.size.length || filters.colors.length || filters.price) ? (
@@ -883,7 +883,7 @@ export default function HomePage({
                 key={`${chip.type}-${chip.value}`}
                 type="button"
                 onClick={() => removeChip(chip)}
-                className="interactive-feedback rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink shadow-soft"
+                className="interactive-feedback rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-ink shadow-soft"
               >
                 {chip.type === "price"
                   ? priceRanges.find((range) => range.id === chip.value)?.label
@@ -909,8 +909,8 @@ export default function HomePage({
         >
           {visibleProducts.length === 0 ? (
           <div className="rounded-3xl bg-card p-6 text-center shadow-soft">
-            <p className="text-lg font-semibold text-ink">No products found.</p>
-            <p className="mt-2 text-xs text-muted">
+            <p className="text-base font-semibold text-ink">No products found.</p>
+            <p className="mt-2 text-[12px] text-muted">
               Adjust filters or check back soon.
             </p>
           </div>
@@ -963,7 +963,7 @@ export default function HomePage({
           )}
         </SectionLoader>
 
-        <section className="mt-5 text-xs text-neutral-600 space-y-1">
+        <section className="mt-5 text-[13px] text-neutral-600 space-y-1 leading-relaxed">
           <p>✓ Cash on Delivery Available</p>
           <p>✓ Nationwide Delivery</p>
           <p>✓ WhatsApp Order Support</p>
@@ -975,7 +975,7 @@ export default function HomePage({
               <h2 className="font-heading text-2xl font-semibold">
                 Recently Viewed
               </h2>
-              <span className="text-xs font-semibold text-muted">
+              <span className="text-[12px] font-semibold text-muted">
                 Last 2 items
               </span>
             </div>
@@ -1019,27 +1019,27 @@ export default function HomePage({
             <h3 className="font-heading text-lg font-semibold">
               Tacin Arabi Collection
             </h3>
-            <p className="mt-2 text-xs text-muted">
+            <p className="mt-2 text-[12px] text-muted">
               Your trusted online fashion shop in Bangladesh for kurti, modest wear, and ceramic lifestyle picks—powered by WhatsApp-first ordering.
             </p>
-            <p className="mt-3 text-xs font-semibold text-ink">
+            <p className="mt-3 text-[12px] font-semibold text-ink">
               WhatsApp: +8801522119189
             </p>
           </div>
           <div>
-            <h4 className="text-xs font-semibold text-ink">Store Policies</h4>
-            <ul className="mt-3 space-y-1 text-xs text-muted">
+            <h4 className="text-[12px] font-semibold text-ink">Store Policies</h4>
+            <ul className="mt-3 space-y-1 text-[12px] text-muted">
               <li>Cash on Delivery available nationwide</li>
               <li>Delivery confirmation before dispatch</li>
               <li>Support available 10am–10pm daily</li>
             </ul>
           </div>
           <div>
-            <h4 className="text-xs font-semibold text-ink">Social Proof</h4>
-            <p className="mt-3 text-xs text-muted">
+            <h4 className="text-[12px] font-semibold text-ink">Social Proof</h4>
+            <p className="mt-3 text-[12px] text-muted">
               Thousands of Bangladesh fashion shoppers trust our WhatsApp checkout for fast confirmation, secure payment guidance, and reliable delivery updates.
             </p>
-            <p className="mt-3 text-xs font-semibold text-ink">
+            <p className="mt-3 text-[12px] font-semibold text-ink">
               “Fast replies, quality products, safe delivery.”
             </p>
           </div>
@@ -1134,15 +1134,15 @@ export default function HomePage({
           <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-muted">Quick View</p>
-                <h3 className="text-lg font-semibold text-ink">
+                <p className="text-[12px] font-semibold text-muted">Quick View</p>
+                <h3 className="text-base font-semibold text-ink">
                   {detailsProduct.name}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setDetailsProduct(null)}
-                className="text-sm font-semibold text-accent"
+                className="text-[13px] font-semibold text-accent"
               >
                 Close
               </button>
@@ -1157,7 +1157,7 @@ export default function HomePage({
                   className="h-full w-full object-cover"
                 />
               </div>
-              <div className="flex-1 text-sm text-muted">
+              <div className="flex-1 text-[13px] text-muted leading-relaxed">
                 <p>
                   Category:{" "}
                   <span className="font-semibold text-ink">
@@ -1185,7 +1185,7 @@ export default function HomePage({
                   type="button"
                   onClick={() => updateSize(detailsProduct.id, size)}
                   className={clsx(
-                    "rounded-full border px-4 py-2 text-sm font-semibold",
+                    "rounded-lg border px-4 py-2 text-[13px] font-semibold",
                     selectedSizes[detailsProduct.id] === size
                       ? "border-accent bg-accent text-white"
                       : "border-[#e6d8ce]"
@@ -1229,7 +1229,7 @@ export default function HomePage({
                   onClick={() => handleBuyNow(detailsProduct)}
                   disabled={!selectedSizes[detailsProduct.id] || isRouting}
                   className={clsx(
-                    "min-h-[44px] rounded-full px-4 py-2 text-sm font-semibold",
+                    "min-h-[44px] rounded-lg px-4 py-2 text-[13px] font-semibold",
                     selectedSizes[detailsProduct.id]
                       ? "bg-accent text-white"
                       : "cursor-not-allowed bg-[#e6d8ce] text-muted"
@@ -1242,7 +1242,7 @@ export default function HomePage({
                   onClick={() => handleAddToCart(detailsProduct)}
                   disabled={!selectedSizes[detailsProduct.id] || isRouting}
                   className={clsx(
-                    "min-h-[44px] rounded-full border px-4 py-2 text-sm font-semibold",
+                    "min-h-[44px] rounded-lg border px-4 py-2 text-[13px] font-semibold",
                     selectedSizes[detailsProduct.id]
                       ? "border-accent text-accent"
                       : "cursor-not-allowed border-[#e6d8ce] text-muted"
@@ -1263,14 +1263,14 @@ export default function HomePage({
               <h3
                 ref={cartHeadingRef}
                 tabIndex={-1}
-                className="text-lg font-semibold text-ink"
+                className="text-base font-semibold text-ink"
               >
                 Your Cart
               </h3>
               <button
                 type="button"
                 onClick={() => setShowCart(false)}
-                className="interactive-feedback text-sm font-semibold text-accent"
+                className="interactive-feedback text-[13px] font-semibold text-accent"
               >
                 Close
               </button>
@@ -1283,13 +1283,13 @@ export default function HomePage({
                 <p className="mt-2 text-sm font-semibold text-ink">
                   Your cart is empty.
                 </p>
-                <p className="mt-1 text-xs text-muted">
+                <p className="mt-1 text-[12px] text-muted">
                   Start shopping to add items.
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowCart(false)}
-                  className="interactive-feedback mt-3 rounded-full border border-[#e6d8ce] px-4 py-2 text-xs font-semibold text-ink"
+                  className="interactive-feedback mt-3 rounded-full border border-[#e6d8ce] px-4 py-2 text-[12px] font-semibold text-ink"
                 >
                   Browse products
                 </button>
@@ -1312,13 +1312,13 @@ export default function HomePage({
                       className="h-[60px] w-[60px] rounded-xl object-cover"
                     />
                     <div className="flex-1">
-                      <p className="text-xs font-semibold text-ink">
+                      <p className="text-[12px] font-semibold text-ink">
                         {item.name}
                       </p>
-                      <p className="text-xs text-muted">
+                      <p className="text-[12px] text-muted">
                         Size: {item.size} · Color: {item.color}
                       </p>
-                      <p className="text-xs font-semibold text-ink">
+                      <p className="text-[12px] font-semibold text-ink">
                         {formatPrice(item.price)}
                       </p>
                       {cartQuantityFeedback[index] ? (
@@ -1339,7 +1339,7 @@ export default function HomePage({
                         >
                           -
                         </button>
-                        <span className="text-sm font-semibold">
+                        <span className="text-[13px] font-semibold">
                           {item.quantity}
                         </span>
                         <button
@@ -1377,7 +1377,7 @@ export default function HomePage({
                 <button
                   type="button"
                   onClick={handleCartCheckout}
-                  className="interactive-feedback min-h-[40px] w-full rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-white"
+                  className="interactive-feedback min-h-[40px] w-full rounded-lg bg-accent px-4 py-2.5 text-[14px] font-semibold text-white"
                 >
                   {isRouting ? "Redirecting..." : text.checkout}
                 </button>
@@ -1393,11 +1393,11 @@ export default function HomePage({
             <div className="border-b border-[#f0e4da] px-4 sm:px-6 py-4">
               <div className="mx-auto max-w-4xl flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold text-muted">Universal Checkout</p>
+                  <p className="text-[12px] font-semibold text-muted">Universal Checkout</p>
                   <h3
                     ref={checkoutHeadingRef}
                     tabIndex={-1}
-                    className="text-lg font-semibold text-ink"
+                    className="text-base font-semibold text-ink"
                   >
                     Confirm your order
                   </h3>
@@ -1409,14 +1409,14 @@ export default function HomePage({
                     setIsOrderConfirmed(false);
                     setIsSubmitting(false);
                   }}
-                  className="interactive-feedback text-sm font-semibold text-accent"
+                  className="interactive-feedback text-[13px] font-semibold text-accent"
                 >
                   Close
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-visible px-4 py-5 pb-8 sm:px-6">
+            <div className="flex-1 overflow-visible px-4 py-6 pb-8 sm:px-6">
               {isOrderConfirmed ? (
                 <div className="max-w-4xl mx-auto px-4 py-5">
                   <div className="text-center py-16">
@@ -1432,11 +1432,11 @@ export default function HomePage({
                 <div className="max-w-4xl mx-auto px-4 py-5">
                   <div className="grid md:grid-cols-2 gap-5">
                     <div className="space-y-4">
-                      <h2 className="text-lg font-semibold mb-4">
+                      <h2 className="text-base font-semibold mb-4">
                         Order Summary
                       </h2>
                       <div className="rounded-2xl border border-[#f0e4da] p-3">
-                        <div className="space-y-3 text-sm">
+                        <div className="space-y-3 text-[13px]">
                           {checkoutItems.map((item, index) => (
                             <div
                               key={`${item.id}-${item.size}-${index}`}
@@ -1453,7 +1453,7 @@ export default function HomePage({
                                 />
                                 <div className="min-w-0">
                                   <p className="font-semibold text-ink break-words">{item.name}</p>
-                                  <p className="text-xs text-muted">
+                                  <p className="text-[12px] text-muted">
                                     Size: {item.size} · Qty: {item.quantity}
                                   </p>
                                 </div>
@@ -1467,13 +1467,13 @@ export default function HomePage({
                       </div>
 
                       <div className="rounded-2xl border border-[#f0e4da] p-3">
-                        <p className="text-xs font-semibold text-ink">{text.deliveryZone}</p>
+                        <p className="text-[12px] font-semibold text-ink">{text.deliveryZone}</p>
                         <div className="mt-2 flex gap-2">
                           <button
                             type="button"
                             onClick={() => setDeliveryZone("inside")}
                             className={clsx(
-                              "interactive-feedback min-h-[40px] flex-1 rounded-full border px-3 py-1.5 text-xs font-semibold",
+                              "interactive-feedback min-h-[40px] flex-1 rounded-lg border px-3 py-1.5 text-[12px] font-semibold",
                               deliveryZone === "inside"
                                 ? "border-accent bg-accent text-white"
                                 : "border-[#e6d8ce]"
@@ -1485,7 +1485,7 @@ export default function HomePage({
                             type="button"
                             onClick={() => setDeliveryZone("outside")}
                             className={clsx(
-                              "interactive-feedback min-h-[40px] flex-1 rounded-full border px-3 py-1.5 text-xs font-semibold",
+                              "interactive-feedback min-h-[40px] flex-1 rounded-lg border px-3 py-1.5 text-[12px] font-semibold",
                               deliveryZone === "outside"
                                 ? "border-accent bg-accent text-white"
                                 : "border-[#e6d8ce]"
@@ -1523,7 +1523,7 @@ export default function HomePage({
                     </div>
 
                     <div>
-                      <h2 className="text-lg font-semibold mb-4">
+                      <h2 className="text-base font-semibold mb-4">
                         Shipping Information
                       </h2>
                       <div className="space-y-4">
@@ -1536,7 +1536,7 @@ export default function HomePage({
                           onChange={(event) =>
                             setCustomer((prev) => ({ ...prev, name: event.target.value }))
                           }
-                          className="w-full border border-neutral-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
+                          className="w-full border border-neutral-300 rounded-lg px-4 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-neutral-900 transition-all duration-200 ease-out"
                         />
                         <label htmlFor="checkout-phone" className="sr-only">Phone</label>
                         <input
@@ -1547,7 +1547,7 @@ export default function HomePage({
                           onChange={(event) =>
                             setCustomer((prev) => ({ ...prev, phone: event.target.value }))
                           }
-                          className="w-full border border-neutral-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
+                          className="w-full border border-neutral-300 rounded-lg px-4 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-neutral-900 transition-all duration-200 ease-out"
                         />
                         <label htmlFor="checkout-address" className="sr-only">Address</label>
                         <textarea
@@ -1558,7 +1558,7 @@ export default function HomePage({
                           onChange={(event) =>
                             setCustomer((prev) => ({ ...prev, address: event.target.value }))
                           }
-                          className="w-full border border-neutral-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
+                          className="w-full border border-neutral-300 rounded-lg px-4 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-neutral-900 transition-all duration-200 ease-out"
                         />
                       </div>
 
@@ -1579,7 +1579,7 @@ export default function HomePage({
                             !Number.isFinite(checkoutTotal)
                           }
                           className={clsx(
-                            "interactive-feedback btn-primary w-full py-2.5 text-base font-semibold mt-6",
+                            "interactive-feedback btn-primary w-full py-2.5 text-[14px] font-semibold mt-6",
                             (isSubmitting || !(isCustomerInfoValid && isOnline)) &&
                               "opacity-60 cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
                           )}
@@ -1620,8 +1620,8 @@ export default function HomePage({
           <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-muted">Payment Info</p>
-                <h3 className="text-lg font-semibold text-ink">
+                <p className="text-[12px] font-semibold text-muted">Payment Info</p>
+                <h3 className="text-base font-semibold text-ink">
                   bKash / Nagad Transfer
                 </h3>
               </div>
@@ -1631,19 +1631,19 @@ export default function HomePage({
                     setShowPaymentInfo(false);
                     setIsSubmitting(false);
                   }}
-                className="interactive-feedback text-sm font-semibold text-accent"
+                className="interactive-feedback text-[13px] font-semibold text-accent"
               >
                 Close
               </button>
             </div>
-            <div className="mt-4 space-y-1 text-sm">
+            <div className="mt-4 space-y-1 text-[13px]">
               <p>
                 bKash: <span className="font-semibold">{paymentNumber}</span>
               </p>
               <p>
                 Nagad: <span className="font-semibold">{paymentNumber}</span>
               </p>
-              <p className="text-xs text-muted">
+              <p className="text-[12px] text-muted">
                 Please pay first, then paste your Transaction ID below.
               </p>
               <label htmlFor="transaction-id" className="sr-only">
@@ -1655,7 +1655,7 @@ export default function HomePage({
                 placeholder="Transaction ID"
                 value={transactionId}
                 onChange={(event) => setTransactionId(event.target.value)}
-                className="w-full rounded-2xl border border-[#e6d8ce] px-4 py-2.5 text-sm"
+                className="w-full rounded-xl border border-[#e6d8ce] px-4 py-2.5 text-[14px]"
               />
             </div>
             <button
@@ -1663,7 +1663,7 @@ export default function HomePage({
               disabled={isSubmitting || !hasPaymentProof || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
               onClick={() => handleWhatsappRedirect("bKash/Nagad")}
               className={clsx(
-                "interactive-feedback mt-6 min-h-[44px] w-full rounded-full px-4 py-2.5 text-sm font-semibold",
+                "interactive-feedback mt-6 min-h-[44px] w-full rounded-lg px-4 py-2.5 text-[14px] font-semibold",
                 hasPaymentProof && isOnline && !isSubmitting
                   ? "bg-accent text-white"
                   : "opacity-60 cursor-not-allowed bg-[#e6d8ce] text-muted"
