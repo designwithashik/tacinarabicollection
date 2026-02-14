@@ -188,6 +188,7 @@ export default function HomePage({
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPaymentInfo, setShowPaymentInfo] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRouting, setIsRouting] = useState(false);
   const [isOrderConfirmed, setIsOrderConfirmed] = useState(false);
   const [transactionId, setTransactionId] = useState("");
   const [deliveryZone, setDeliveryZone] = useState<"inside" | "outside">("inside");
@@ -430,6 +431,7 @@ export default function HomePage({
     });
 
   const handleAddToCart = (product: Product, sizeOverride: string | null = null) => {
+    if (!product.id) return;
     markRecentlyViewed(product);
     const selectedSize = sizeOverride ?? selectedSizes[product.id];
     if (!selectedSize) return;
@@ -479,6 +481,7 @@ export default function HomePage({
   };
 
   const handleBuyNow = (product: Product, sizeOverride: string | null = null) => {
+    if (isRouting || !product.id) return;
     markRecentlyViewed(product);
     const selectedSize = sizeOverride ?? selectedSizes[product.id];
     if (!selectedSize) return;
@@ -494,14 +497,19 @@ export default function HomePage({
       return;
     }
 
-    setCheckoutItems([normalized]);
-    setIsOrderConfirmed(false);
-    setIsSubmitting(false);
-    logEvent("begin_checkout", { productId: product.id, quantity: normalized.quantity });
-    setShowCheckout(true);
+    setIsRouting(true);
+    window.setTimeout(() => {
+      setCheckoutItems([normalized]);
+      setIsOrderConfirmed(false);
+      setIsSubmitting(false);
+      logEvent("begin_checkout", { productId: product.id, quantity: normalized.quantity });
+      setShowCheckout(true);
+      setIsRouting(false);
+    }, 180);
   };
 
   const handleCartCheckout = () => {
+    if (isRouting) return;
     if (cartItems.length === 0) {
       showToast({ type: "info", message: "Your cart is empty." });
       return;
@@ -511,12 +519,16 @@ export default function HomePage({
       showToast({ type: "error", message: "Unable to checkout. Please review your cart." });
       return;
     }
-    setCheckoutItems(cartItems);
-    setIsOrderConfirmed(false);
-    setIsSubmitting(false);
-    setShowCheckout(true);
-    setShowCart(false);
-    logEvent("begin_checkout", { items: cartItems.length });
+    setIsRouting(true);
+    window.setTimeout(() => {
+      setCheckoutItems(cartItems);
+      setIsOrderConfirmed(false);
+      setIsSubmitting(false);
+      setShowCheckout(true);
+      setShowCart(false);
+      logEvent("begin_checkout", { items: cartItems.length });
+      setIsRouting(false);
+    }, 180);
   };
 
   const handleWhatsappRedirect = (paymentMethod: string) => {
@@ -779,7 +791,12 @@ export default function HomePage({
   // UI
   // ------------------------------
   return (
-    <div className="min-h-screen bg-white pb-24">
+    <div
+      className={clsx(
+        "min-h-screen bg-white pb-24 transition-opacity duration-300 ease-in-out",
+        isRouting && "opacity-80"
+      )}
+    >
       {!isOnline ? (
         <div className="sticky top-0 z-50 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900">
           ⚠️ You are offline — checkout is disabled.
@@ -882,7 +899,7 @@ export default function HomePage({
         <SectionLoader
           loading={!hasMounted || isLoading}
           loader={
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {/* Product placeholders prevent blank state flashes during hydration. */}
               {Array.from({ length: 6 }).map((_, index) => (
                 <SkeletonCard key={`skeleton-${index}`} />
@@ -901,7 +918,7 @@ export default function HomePage({
           <motion.div
             key={productBatchKey}
             className={clsx(
-              "grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+              "grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
               !prefersReducedMotion && "retail-batch-enter"
             )}
             initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
@@ -938,6 +955,7 @@ export default function HomePage({
                 statusLabel={getStatusLabel(index)}
                 stockLabel={getStockLabel(index)}
                 sizeErrorLabel={text.sizeError}
+                isRouting={isRouting}
               />
               </AnimatedWrapper>
             ))}
@@ -961,7 +979,7 @@ export default function HomePage({
                 Last 2 items
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {recentlyViewed.map((product, index) => (
                 <AnimatedWrapper key={product.id} variant="product-card" delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.1)}>
                   <ProductCard
@@ -986,6 +1004,7 @@ export default function HomePage({
                   statusLabel={getStatusLabel(index)}
                   stockLabel={getStockLabel(index)}
                   sizeErrorLabel={text.sizeError}
+                  isRouting={isRouting}
                 />
                 </AnimatedWrapper>
               ))}
@@ -1208,7 +1227,7 @@ export default function HomePage({
                 <button
                   type="button"
                   onClick={() => handleBuyNow(detailsProduct)}
-                  disabled={!selectedSizes[detailsProduct.id]}
+                  disabled={!selectedSizes[detailsProduct.id] || isRouting}
                   className={clsx(
                     "min-h-[44px] rounded-full px-4 py-2 text-sm font-semibold",
                     selectedSizes[detailsProduct.id]
@@ -1221,7 +1240,7 @@ export default function HomePage({
                 <button
                   type="button"
                   onClick={() => handleAddToCart(detailsProduct)}
-                  disabled={!selectedSizes[detailsProduct.id]}
+                  disabled={!selectedSizes[detailsProduct.id] || isRouting}
                   className={clsx(
                     "min-h-[44px] rounded-full border px-4 py-2 text-sm font-semibold",
                     selectedSizes[detailsProduct.id]
@@ -1360,7 +1379,7 @@ export default function HomePage({
                   onClick={handleCartCheckout}
                   className="interactive-feedback min-h-[40px] w-full rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-white"
                 >
-                  {text.checkout}
+                  {isRouting ? "Redirecting..." : text.checkout}
                 </button>
               </div>
             )}
@@ -1370,7 +1389,7 @@ export default function HomePage({
 
       {showCheckout ? (
         <div className="z-40 bg-black/40">
-          <div className="min-h-screen flex flex-col bg-white">
+          <div className="animate-fadeIn min-h-screen flex flex-col bg-white">
             <div className="border-b border-[#f0e4da] px-4 sm:px-6 py-4">
               <div className="mx-auto max-w-4xl flex items-center justify-between">
                 <div>

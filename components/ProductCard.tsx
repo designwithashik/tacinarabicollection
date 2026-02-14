@@ -31,6 +31,7 @@ type Props = {
   statusLabel: string;
   stockLabel: string;
   sizeErrorLabel: string;
+  isRouting?: boolean;
 };
 
 export default function ProductCard({
@@ -53,12 +54,15 @@ export default function ProductCard({
   statusLabel,
   stockLabel,
   sizeErrorLabel,
+  isRouting = false,
 }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [showSizeError, setShowSizeError] = useState(false);
 
   useEffect(() => {
     setImageFailed(false);
+    setShowSizeError(false);
   }, [product.id, product.image]);
 
   const imageSrc = useMemo(() => {
@@ -74,13 +78,38 @@ export default function ProductCard({
         ? addedLabel
         : addToCartLabel;
 
+  const handleSizeChange = (size: string) => {
+    setShowSizeError(false);
+    onSizeChange(size);
+  };
+
+  const handleAddClick = () => {
+    if (!product.id) return;
+    if (!selectedSize) {
+      setShowSizeError(true);
+      return;
+    }
+    setShowSizeError(false);
+    onAddToCart();
+  };
+
+  const handleBuyClick = () => {
+    if (!product.id) return;
+    if (!selectedSize) {
+      setShowSizeError(true);
+      return;
+    }
+    setShowSizeError(false);
+    onBuyNow();
+  };
+
   const stockCount = (product as Product & { stock?: number }).stock;
   const originalPrice =
     (product as Product & { originalPrice?: number; compareAtPrice?: number }).originalPrice ??
     (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--brand-secondary)]/10 bg-[var(--brand-surface)] transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--brand-secondary)]/10 bg-[var(--brand-surface)] transition-all duration-200 ease-out md:hover:-translate-y-1 md:hover:shadow-md">
       <div
         role="button"
         tabIndex={0}
@@ -145,15 +174,15 @@ export default function ProductCard({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-3">
-        <h3 className="text-sm sm:text-base font-medium leading-snug text-[var(--brand-primary)] line-clamp-2 break-words">
+      <div className="flex flex-1 flex-col gap-2 p-2.5 sm:p-3">
+        <h3 className="text-sm font-medium leading-tight text-[var(--brand-primary)] line-clamp-2 break-words">
           {product.name}
         </h3>
 
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex flex-col min-w-0">
             <p className="text-[10px] uppercase tracking-[0.15em] text-support">{priceLabel}</p>
-            <p className="text-base font-semibold text-neutral-900">৳ {product.price.toLocaleString()}</p>
+            <p className="text-sm font-semibold text-neutral-900">৳ {product.price.toLocaleString()}</p>
             {typeof originalPrice === "number" && originalPrice > product.price ? (
               <p className="text-xs text-[var(--brand-muted)] line-through">৳ {originalPrice.toLocaleString()}</p>
             ) : null}
@@ -180,14 +209,14 @@ export default function ProductCard({
                     ? "border-accent bg-accent text-white"
                     : "border-[#e5d7cc] bg-white text-ink"
                 )}
-                onClick={() => onSizeChange(size)}
+                onClick={() => handleSizeChange(size)}
               >
                 {size}
               </button>
             ))}
           </div>
-          {sizeMissing ? (
-            <p className="text-red-600 text-sm mt-2">{sizeErrorLabel}</p>
+          {showSizeError ? (
+            <p className="text-red-600 text-xs mt-1 transition-opacity duration-200">{sizeErrorLabel}</p>
           ) : null}
         </div>
 
@@ -218,13 +247,13 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-secondary w-full sm:w-auto text-xs font-semibold uppercase tracking-[0.15em] px-3 py-2",
-              sizeMissing && "cursor-not-allowed border-[#d9cdc0] text-muted"
+              "interactive-feedback btn-secondary w-full sm:w-auto rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em]",
+              isRouting && "cursor-not-allowed border-[#d9cdc0] text-muted"
             )}
-            onClick={onBuyNow}
-            disabled={sizeMissing}
+            onClick={handleBuyClick}
+            disabled={isRouting}
           >
-            {buyNowLabel}
+            {isRouting ? "Redirecting..." : buyNowLabel}
           </button>
         </div>
 
@@ -232,14 +261,14 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-primary w-full text-xs sm:text-sm py-2",
-              sizeMissing || addState === "loading"
+              "interactive-feedback btn-primary w-full rounded-md py-2 text-xs",
+              addState === "loading" || isRouting
                 ? "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
                 : "",
               addState === "success" && "border-[var(--brand-accent)] bg-[var(--brand-accent)] text-[#1f1f1f]"
             )}
-            onClick={onAddToCart}
-            disabled={sizeMissing || addState === "loading"}
+            onClick={handleAddClick}
+            disabled={addState === "loading" || isRouting}
           >
             {addLabel}
           </button>
@@ -253,7 +282,7 @@ export default function ProductCard({
           onSizeChange={onSizeChange}
           onClose={() => setQuickViewProduct(null)}
           onAddToCart={(size) => {
-            onSizeChange(size);
+            handleSizeChange(size);
             onAddToCart();
           }}
           addToCartLabel={addToCartLabel}
