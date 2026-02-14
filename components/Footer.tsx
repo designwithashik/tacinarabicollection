@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between gap-3">
         <p>© {new Date().getFullYear()} Tacin Arabi Collection</p>
         <div className="flex gap-3">
-          <a href="/" className="transition-all duration-200 ease-out hover:text-[var(--brand-accent)]">Home</a>
+          <a href="/">Home</a>
         </div>
       </div>
     </footer>

@@ -793,7 +793,7 @@ export default function HomePage({
   return (
     <div
       className={clsx(
-        "min-h-screen bg-[var(--brand-soft)] pb-24 transition-opacity duration-300 ease-in-out",
+        "min-h-screen bg-white pb-24 transition-opacity duration-300 ease-in-out",
         isRouting && "opacity-80"
       )}
     >
@@ -846,7 +846,7 @@ export default function HomePage({
                   type="button"
                   onClick={() => setSelectedCategory(category)}
                   className={clsx(
-                    "px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-[var(--brand-accent)] hover:text-white",
+                    "px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white",
                     selectedCategory === category
                       ? "bg-[var(--brand-accent)] text-white border-[var(--brand-accent)]"
                       : "text-ink"
@@ -859,7 +859,7 @@ export default function HomePage({
             <button
               type="button"
               onClick={() => openSheet("size")}
-              className="px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-[var(--brand-accent)] hover:text-white flex items-center gap-2"
+              className="px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white flex items-center gap-2"
             >
               Filters
               {(filters.size.length || filters.colors.length || filters.price) ? (
@@ -883,7 +883,7 @@ export default function HomePage({
                 key={`${chip.type}-${chip.value}`}
                 type="button"
                 onClick={() => removeChip(chip)}
-                className="interactive-feedback rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-ink shadow-soft border border-[var(--brand-accent)]/15"
+                className="interactive-feedback rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-ink shadow-soft"
               >
                 {chip.type === "price"
                   ? priceRanges.find((range) => range.id === chip.value)?.label
@@ -899,7 +899,7 @@ export default function HomePage({
         <SectionLoader
           loading={!hasMounted || isLoading}
           loader={
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {/* Product placeholders prevent blank state flashes during hydration. */}
               {Array.from({ length: 6 }).map((_, index) => (
                 <SkeletonCard key={`skeleton-${index}`} />
@@ -918,7 +918,7 @@ export default function HomePage({
           <motion.div
             key={productBatchKey}
             className={clsx(
-              "grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+              "grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
               !prefersReducedMotion && "retail-batch-enter"
             )}
             initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
@@ -979,7 +979,7 @@ export default function HomePage({
                 Last 2 items
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {recentlyViewed.map((product, index) => (
                 <AnimatedWrapper key={product.id} variant="product-card" delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.1)}>
                   <ProductCard
@@ -1496,8 +1496,8 @@ export default function HomePage({
                         </div>
                       </div>
 
-                      <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-[13px]">
-                        <div className="flex items-center justify-between text-neutral-700">
+                      <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs">
+                        <div className="flex items-center justify-between">
                           <span>{text.subtotal}</span>
                           <span className="font-medium text-[var(--brand-primary)]">
                             {isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutSubtotal)}
@@ -1598,7 +1598,7 @@ export default function HomePage({
                             !Number.isFinite(checkoutTotal)
                           }
                           className={clsx(
-                            "w-full rounded-lg border border-[var(--brand-primary)] bg-[var(--brand-primary)] py-2.5 text-[14px] text-white transition-all duration-200 ease-out hover:opacity-90 mt-3",
+                            "w-full border border-neutral-900 text-neutral-900 py-2.5 rounded-lg mt-3 hover:bg-neutral-900 hover:text-white transition",
                             (isSubmitting || !(isCustomerInfoValid && isOnline)) &&
                               "opacity-60 cursor-not-allowed bg-[var(--brand-primary)]/60 text-white hover:bg-[var(--brand-primary)]"
                           )}
