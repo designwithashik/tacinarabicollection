@@ -33,6 +33,8 @@ export async function PUT(
       price: typeof body.price === "number" ? body.price : current.price,
       updatedAt: Date.now(),
       heroFeatured: body.heroFeatured === true,
+      heroTitle: typeof body.heroTitle === "string" ? body.heroTitle : current.heroTitle,
+      heroSubtitle: typeof body.heroSubtitle === "string" ? body.heroSubtitle : current.heroSubtitle,
       id,
     };
 

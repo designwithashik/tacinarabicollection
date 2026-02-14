@@ -16,6 +16,8 @@ export type InventoryProduct = {
   colors?: string[];
   sizes?: string[];
   description?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
   whatsappNumber?: string;
   heroFeatured?: boolean;
 };
@@ -67,6 +69,8 @@ const toInventoryProduct = (source: unknown): InventoryProduct | null => {
       ? source.sizes.filter((s): s is string => typeof s === "string")
       : undefined,
     description: typeof source.description === "string" ? source.description : undefined,
+    heroTitle: typeof source.heroTitle === "string" ? source.heroTitle : undefined,
+    heroSubtitle: typeof source.heroSubtitle === "string" ? source.heroSubtitle : undefined,
     whatsappNumber:
       typeof source.whatsappNumber === "string" ? source.whatsappNumber : undefined,
     heroFeatured: source.heroFeatured === true,
@@ -140,6 +144,9 @@ export type StorefrontProduct = {
   active: boolean;
   updatedAt: string;
   createdAt: string;
+  description?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
   heroFeatured?: boolean;
 };
 
@@ -155,5 +162,8 @@ export const toStorefrontProduct = (item: InventoryProduct): StorefrontProduct =
   active: item.active,
   updatedAt: new Date(item.updatedAt ?? item.createdAt).toISOString(),
   createdAt: new Date(item.createdAt).toISOString(),
+  description: item.description ?? "",
+  heroTitle: item.heroTitle ?? "",
+  heroSubtitle: item.heroSubtitle ?? "",
   heroFeatured: item.heroFeatured === true,
 });
