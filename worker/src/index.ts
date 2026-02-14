@@ -34,12 +34,20 @@ const resolveLimit = (rawLimit: string | undefined, max = 200) => {
 
 const app = new Hono<Bindings>()
 
+const isAllowedOrigin = (origin: string) => {
+  if (origin === 'https://tacinarabicollection.pages.dev') return true
+  return /^https:\/\/[a-z0-9-]+\.tacinarabicollection\.pages\.dev$/.test(origin)
+}
+
 app.use(
   '*',
   cors({
-    origin: ['https://b31ea108.tacinarabicollection.pages.dev'],
+    origin: (origin) => {
+      if (!origin) return ''
+      return isAllowedOrigin(origin) ? origin : ''
+    },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type'],
+    allowHeaders: ['Content-Type', 'Authorization'],
     exposeHeaders: [],
     credentials: true,
     maxAge: 86400,
