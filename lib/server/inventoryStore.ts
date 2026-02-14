@@ -8,6 +8,8 @@ export type InventoryProduct = {
   id: string;
   name: string;
   price: number;
+  title?: string;
+  subtitle?: string;
   imageUrl: string | null;
   active: boolean;
   createdAt: number;
@@ -48,6 +50,8 @@ const toInventoryProduct = (source: unknown): InventoryProduct | null => {
     id,
     name,
     price,
+    title: typeof source.title === "string" ? source.title : undefined,
+    subtitle: typeof source.subtitle === "string" ? source.subtitle : undefined,
     imageUrl:
       normalizeImageUrl(source.imageUrl) ?? normalizeImageUrl(source.image) ?? null,
     active: source.active !== false,
@@ -132,6 +136,8 @@ export type StorefrontProduct = {
   id: string;
   name: string;
   price: number;
+  title?: string;
+  subtitle?: string;
   image: string;
   imageUrl: string | null;
   category: "Clothing" | "Ceramic";
@@ -147,6 +153,8 @@ export const toStorefrontProduct = (item: InventoryProduct): StorefrontProduct =
   id: item.id,
   name: item.name,
   price: item.price,
+  title: item.title,
+  subtitle: item.subtitle,
   image: item.imageUrl ?? "",
   imageUrl: item.imageUrl,
   category: item.category === "Ceramic" ? "Ceramic" : "Clothing",

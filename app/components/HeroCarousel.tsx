@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 import clsx from "clsx";
+import { useRouter } from "next/navigation";
 
 export type HeroProduct = {
   id: string;
@@ -10,6 +11,8 @@ export type HeroProduct = {
   image?: string;
   imageUrl?: string | null;
   price?: number;
+  title?: string;
+  subtitle?: string;
 };
 
 type HeroCarouselProps = {
@@ -18,13 +21,29 @@ type HeroCarouselProps = {
 };
 
 export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCarouselProps) {
+  const router = useRouter();
   const handleAddToCart = useCallback((product: HeroProduct) => {
     addToCart(product);
   }, [addToCart]);
   // Phase1.8: State for dynamic hero products and active slide index.
   const [heroProducts, setHeroProducts] = useState<HeroProduct[]>(initialProducts.slice(0, 3));
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
   const prefersReducedMotion = useReducedMotion();
+
+  const nextSlide = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % heroProducts.length);
+  }, [heroProducts.length]);
+
+  const prevSlide = useCallback(() => {
+    setCurrentIndex((prev) => (prev - 1 + heroProducts.length) % heroProducts.length);
+  }, [heroProducts.length]);
+
+  const handleBuyNow = useCallback((product: HeroProduct) => {
+    addToCart(product);
+    router.push("/checkout");
+  }, [addToCart, router]);
 
   // Phase1.8: Fetch admin-controlled featured products.
   useEffect(() => {
@@ -44,16 +63,16 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
     void loadHeroProducts();
   }, []);
 
-  // Phase1.8: Auto-scroll slides every 6 seconds for calmer pacing.
+  // Phase1.8: Auto-scroll slides with hover/touch pause controls.
   useEffect(() => {
-    if (heroProducts.length < 2 || prefersReducedMotion) return;
+    if (heroProducts.length < 2 || prefersReducedMotion || isPaused) return;
 
     const interval = window.setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % heroProducts.length);
-    }, 6000);
+    }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [heroProducts.length, prefersReducedMotion]);
+  }, [heroProducts.length, isPaused, prefersReducedMotion]);
 
   useEffect(() => {
     setCurrentIndex((prev) => {
@@ -67,23 +86,42 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
   }
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl md:rounded-3xl">
+    <div
+      className="relative w-full overflow-hidden rounded-2xl md:rounded-3xl aspect-[16/10] md:aspect-[21/8]"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={(event) => setTouchStart(event.targetTouches[0]?.clientX ?? null)}
+      onTouchEnd={(event) => {
+        if (touchStart === null) return;
+        const endX = event.changedTouches[0]?.clientX;
+        if (typeof endX !== "number") {
+          setTouchStart(null);
+          return;
+        }
+        const diff = touchStart - endX;
+        if (diff > 50) nextSlide();
+        if (diff < -50) prevSlide();
+        setTouchStart(null);
+      }}
+    >
       {/* Phase1.8: Horizontal slide animation wrapper. */}
-      <motion.div
-        className="flex"
-        animate={{ x: `-${currentIndex * 100}%` }}
-        transition={{ type: "tween", duration: prefersReducedMotion ? 0 : 0.7, ease: "easeInOut" }}
+      <div
+        className={clsx(
+          "flex h-full transition-transform ease-in-out",
+          prefersReducedMotion ? "duration-0" : "duration-700"
+        )}
+        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {heroProducts.map((product) => (
           <div
             key={product.id}
-            className="relative min-w-full overflow-hidden"
+            className="relative min-w-full h-full overflow-hidden"
           >
-            <div className="aspect-[16/7] md:aspect-[21/8] pointer-events-none">
+            <div className="h-full pointer-events-none">
               <img
                 src={product.imageUrl || product.image || "/images/product-1.svg"}
                 alt={product.name}
-                className="w-full h-auto md:h-full object-cover"
+                className="w-full h-full object-cover"
               />
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent pointer-events-none" />
@@ -91,14 +129,14 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
             <div className="absolute inset-0 z-20 flex items-end md:items-center justify-center px-6 pb-10 md:pb-0">
               <div className="text-center text-white max-w-xl">
                 <h2 className="text-2xl md:text-4xl font-medium tracking-wide">
-                  {product.name}
+                  {product.title || product.name}
                 </h2>
 
                 <p className="mt-3 text-sm md:text-base text-white/80">
-                  A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living.
+                  {product.subtitle || "A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living."}
                 </p>
 
-                <div className="mt-5 flex justify-center">
+                <div className="mt-5 flex justify-center flex-col">
                   <button
                     type="button"
                     className="btn-primary relative z-30"
@@ -109,12 +147,22 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
                   >
                     Add to Cart
                   </button>
+                  <button
+                    type="button"
+                    className="btn-secondary w-full mt-3 relative z-30"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleBuyNow(product);
+                    }}
+                  >
+                    Buy Now
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         ))}
-      </motion.div>
+      </div>
 
       {/* Phase1.8: Subtle navigation dots. */}
       <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
