@@ -308,25 +308,6 @@ export default function HomePage({
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!showCart) return;
-
-    const scrollY = window.scrollY;
-    const previousBodyStyle = document.body.style.cssText;
-    // Keep page position stable only while cart sheet is open.
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.left = "0";
-    document.body.style.right = "0";
-    document.body.style.width = "100%";
-
-    return () => {
-      document.body.style.cssText = previousBodyStyle;
-      window.scrollTo(0, scrollY);
-    };
-  }, [showCart]);
-
-  useEffect(() => {
     if (showCart) {
       cartHeadingRef.current?.focus();
     }
@@ -713,6 +694,11 @@ export default function HomePage({
 
   const isCustomerInfoValid =
     customer.name.trim() && customer.phone.trim() && customer.address.trim();
+
+  const checkoutItemsWithImage = checkoutItems.map((item) => ({
+    ...item,
+    image: item.image ?? item.imageUrl ?? "/images/product-1.svg",
+  }));
 
   const checkoutSubtotal = getSafeCartSubtotal(checkoutItems);
   const deliveryFee = Number.isFinite(deliveryFees[deliveryZone])
@@ -1416,7 +1402,7 @@ export default function HomePage({
 
       {showCheckout ? (
         <div className="fixed inset-0 z-40 bg-black/40">
-          <div className="min-h-screen flex flex-col bg-white">
+          <div className="min-h-screen flex flex-col">
             <div className="border-b border-[#f0e4da] px-4 sm:px-6 py-4">
               <div className="mx-auto max-w-4xl flex items-center justify-between">
                 <div>
@@ -1439,25 +1425,25 @@ export default function HomePage({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+            <div className="flex-1 overflow-y-auto px-4 py-6">
               <div className="max-w-4xl mx-auto">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <div className="rounded-2xl border border-[#f0e4da] p-4">
                       <p className="text-sm font-semibold text-ink">Order summary</p>
                       <div className="mt-3 space-y-3 text-sm">
-                        {checkoutItems.map((item, index) => (
+                        {checkoutItemsWithImage.map((item, index) => (
                           <div
                             key={`${item.id}-${item.size}-${index}`}
                             className="flex items-center justify-between gap-3 rounded-2xl border border-[#f0e4da] p-3"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <Image
-                                src={item.imageUrl || item.image || "/images/product-1.svg"}
+                                src={item.image}
                                 alt={item.name}
-                                width={80}
-                                height={100}
-                                className="rounded-lg object-cover w-20 h-24 shrink-0"
+                                width={70}
+                                height={90}
+                                className="rounded-md object-cover"
                                 unoptimized={false}
                               />
                               <div className="min-w-0">
@@ -1579,10 +1565,10 @@ export default function HomePage({
                       />
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--brand-muted)]">
-                      <span className="flex items-center gap-1">✓ Cash on Delivery</span>
-                      <span className="flex items-center gap-1">✓ Nationwide Delivery</span>
-                      <span className="flex items-center gap-1">✓ WhatsApp Support</span>
+                    <div className="flex flex-wrap gap-2 text-sm text-neutral-600">
+                      <span>✓ Cash on Delivery</span>
+                      <span>✓ Nationwide Delivery</span>
+                      <span>✓ WhatsApp Support</span>
                     </div>
 
                     <div className="mt-6">
@@ -1602,7 +1588,7 @@ export default function HomePage({
                         onClick={() => handleWhatsappRedirect("COD")}
                         disabled={!isCustomerInfoValid || !isOnline || checkoutItems.length === 0 || checkoutTotal <= 0 || !Number.isFinite(checkoutTotal)}
                         className={clsx(
-                          "w-full border border-[var(--brand-primary)] text-[var(--brand-primary)] py-3 rounded-lg mt-3 transition hover:bg-[var(--brand-primary)] hover:text-white",
+                          "w-full border border-neutral-800 text-neutral-800 py-3 rounded-lg mt-3 hover:bg-neutral-800 hover:text-white transition",
                           !(isCustomerInfoValid && isOnline) && "cursor-not-allowed border-[#e6d8ce] text-muted hover:bg-transparent"
                         )}
                       >
