@@ -3,15 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
 
 export const runtime = "edge";
-
-type AdminMeResponse = {
-  id: number;
-  email: string;
-  role: string;
-};
 
 export default function AdminLayout({
   children,
@@ -35,17 +28,28 @@ export default function AdminLayout({
 
     const checkAuth = async () => {
       try {
-        await apiFetch<AdminMeResponse>("/admin/me", { method: "GET" });
-        if (mounted) {
+        const response = await fetch("https://tacin-api.designwithashik.workers.dev/admin/me", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!mounted) return;
+
+        if (response.ok) {
           setAuthError(null);
           setCheckingAuth(false);
+          return;
         }
-      } catch (error) {
-        if (!mounted) return;
-        if (error instanceof Error && error.message === "UNAUTHORIZED") {
+
+        if (response.status === 401) {
           router.push("/admin/login");
           return;
         }
+
+        setAuthError("Unable to validate admin session.");
+        setCheckingAuth(false);
+      } catch {
+        if (!mounted) return;
         setAuthError("Unable to validate admin session.");
         setCheckingAuth(false);
       }
