@@ -119,7 +119,7 @@ const copy = {
     adding: "Adding...",
     added: "Added",
     checkout: "Checkout",
-    orderCod: "Order via WhatsApp (COD)",
+    orderCod: "Order via WhatsApp (Cash on Delivery)",
     payNow: "Pay Now (bKash / Nagad)",
     confirmWhatsapp: "Confirm & Send on WhatsApp",
     applyFilters: "Apply Filters",
@@ -139,7 +139,7 @@ const copy = {
     adding: "যোগ হচ্ছে...",
     added: "যোগ হয়েছে",
     checkout: "চেকআউট",
-    orderCod: "হোয়াটসঅ্যাপে অর্ডার (COD)",
+    orderCod: "হোয়াটসঅ্যাপে অর্ডার (ক্যাশ অন ডেলিভারি)",
     payNow: "পে নাও (বিকাশ / নগদ)",
     confirmWhatsapp: "নিশ্চিত করে হোয়াটসঅ্যাপে পাঠান",
     applyFilters: "ফিল্টার প্রয়োগ করুন",
@@ -816,7 +816,7 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-40">
+      <header className="sticky top-0 z-40 bg-white">
         <div className="mx-auto max-w-6xl">
           <nav className="flex items-center justify-between px-4 py-3 bg-white border-b border-neutral-200">
             <LanguageToggle language={language} setLanguage={setLanguage} />
@@ -1516,22 +1516,22 @@ export default function HomePage({
                         </div>
                       </div>
 
-                      <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs">
+                      <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs text-neutral-800">
                         <div className="flex items-center justify-between">
                           <span>{text.subtotal}</span>
-                          <span className="font-semibold">
+                          <span className="text-neutral-900 font-medium">
                             {isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutSubtotal)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span>{text.deliveryCharge}</span>
-                          <span className="font-semibold">
+                          <span className="text-neutral-900 font-medium">
                             {isSummaryLoading ? <SummaryPlaceholder widthClass="w-12" /> : formatPrice(deliveryFee)}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between text-base font-semibold">
+                        <div className="mt-3 flex justify-between border-t pt-3 text-[16px] font-semibold">
                           <span>{text.totalPayable}</span>
-                          <span>{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
+                          <span className="text-black">{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
                         </div>
                       </div>
 
@@ -1618,13 +1618,16 @@ export default function HomePage({
                             !Number.isFinite(checkoutTotal)
                           }
                           className={clsx(
-                            "w-full border border-neutral-900 text-neutral-900 py-2.5 rounded-lg mt-3 hover:bg-neutral-900 hover:text-white transition",
+                            "mt-3 w-full rounded-lg bg-green-600 py-2.5 text-[14px] text-white transition hover:bg-green-700",
                             (isSubmitting || !(isCustomerInfoValid && isOnline)) &&
-                              "opacity-60 cursor-not-allowed border-[#e6d8ce] text-muted hover:bg-transparent"
+                              "cursor-not-allowed opacity-60 hover:bg-green-600"
                           )}
                         >
                           {isSubmitting ? "Processing..." : text.orderCod}
                         </button>
+                        <p className="mt-3 text-[12px] text-neutral-600">
+                          Cash on Delivery available nationwide. You will receive confirmation before dispatch.
+                        </p>
                       </div>
                     </div>
                   </div>
