@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
 import clsx from "clsx";
 
 export type HeroProduct = {
@@ -13,39 +13,55 @@ export type HeroProduct = {
   image?: string;
   imageUrl?: string | null;
   price?: number;
+  sizes?: string[];
 };
 
 type HeroCarouselProps = {
-  addToCart: (product: HeroProduct) => void;
+  addToCart: (product: HeroProduct, sizeOverride?: string | null) => void;
   initialProducts?: HeroProduct[];
 };
 
 export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCarouselProps) {
   const router = useRouter();
-  const handleAddToCart = useCallback((product: HeroProduct) => {
-    addToCart(product);
-  }, [addToCart]);
-  // Phase1.8: State for dynamic hero products and active slide index.
   const [heroProducts, setHeroProducts] = useState<HeroProduct[]>(initialProducts.slice(0, 3));
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
-  const prefersReducedMotion = useReducedMotion();
+
+  const slides = useMemo(() => heroProducts.slice(0, 3), [heroProducts]);
 
   const nextSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % heroProducts.length);
-  }, [heroProducts.length]);
+    if (slides.length < 2) return;
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  }, [slides.length]);
 
   const prevSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + heroProducts.length) % heroProducts.length);
-  }, [heroProducts.length]);
+    if (slides.length < 2) return;
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  }, [slides.length]);
 
-  const handleBuyNow = useCallback((product: HeroProduct) => {
-    addToCart(product);
-    router.push("/checkout");
-  }, [addToCart, router]);
+  const handleAddToCart = useCallback(
+    (product: HeroProduct) => {
+      addToCart(product);
+    },
+    [addToCart]
+  );
 
-  // Phase1.8: Fetch admin-controlled featured products.
+  const handleBuyNow = useCallback(
+    (product: HeroProduct) => {
+      if (!product) return;
+
+      let defaultSize: string | null = null;
+      if (product.sizes && product.sizes.length > 0) {
+        defaultSize = product.sizes.includes("M") ? "M" : product.sizes[0];
+      }
+
+      addToCart(product, defaultSize);
+      router.push("/checkout");
+    },
+    [addToCart, router]
+  );
+
   useEffect(() => {
     const loadHeroProducts = async () => {
       try {
@@ -63,27 +79,24 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
     void loadHeroProducts();
   }, []);
 
-  // Phase1.8: Auto-scroll slides every 5 seconds with pause support.
   useEffect(() => {
-    if (isPaused || heroProducts.length < 2 || prefersReducedMotion) return;
+    setCurrentSlide((prev) => {
+      if (slides.length === 0) return 0;
+      return prev % slides.length;
+    });
+  }, [slides.length]);
+
+  useEffect(() => {
+    if (isPaused || slides.length < 2) return;
 
     const interval = window.setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % heroProducts.length);
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [heroProducts.length, isPaused, prefersReducedMotion]);
+  }, [isPaused, slides.length]);
 
-  useEffect(() => {
-    setCurrentIndex((prev) => {
-      if (heroProducts.length === 0) return 0;
-      return prev % heroProducts.length;
-    });
-  }, [heroProducts.length]);
-
-  if (heroProducts.length === 0) {
-    return null;
-  }
+  if (slides.length === 0) return null;
 
   return (
     <div
@@ -99,33 +112,29 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
         setTouchStart(null);
       }}
     >
-      {/* Phase1.8: Horizontal slide animation wrapper. */}
-      <motion.div
+      <div
         className="flex transition-transform duration-700 ease-in-out h-full"
-        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-        transition={{ type: "tween", duration: prefersReducedMotion ? 0 : 0.7, ease: "easeInOut" }}
+        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
-        {heroProducts.map((product) => (
-          <div
-            key={product.id}
-            className="relative min-w-full overflow-hidden h-full"
-          >
-            <div className="h-full pointer-events-none">
-              <img
-                src={product.imageUrl || product.image || "/images/product-1.svg"}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent pointer-events-none" />
+        {slides.map((product, index) => (
+          <div key={product.id} className="relative min-w-full h-full overflow-hidden">
+            <Image
+              src={product.imageUrl || product.image || "/images/product-1.svg"}
+              alt={product.title || product.name}
+              fill
+              priority={index === 0}
+              sizes="(max-width: 768px) 100vw, 1200px"
+              className="object-cover"
+            />
 
-            <div className="absolute inset-0 z-20 flex items-end md:items-center justify-center px-6 pb-10 md:pb-0">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/45 to-black/20" />
+
+            <div className="absolute inset-0 z-20 flex items-end md:items-center justify-center px-6 pb-8 md:pb-0">
               <div className="text-center text-white max-w-xl">
                 <h2 className="text-2xl md:text-4xl font-medium tracking-wide">
                   {product.title || product.name}
                 </h2>
-
-                <p className="mt-3 text-sm md:text-base text-white/80">
+                <p className="mt-3 text-sm md:text-base text-white/90">
                   {product.subtitle || ""}
                 </p>
 
@@ -134,8 +143,8 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
                     <button
                       type="button"
                       className="btn-primary relative z-30 w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      onClick={(event) => {
+                        event.stopPropagation();
                         handleAddToCart(product);
                       }}
                     >
@@ -143,9 +152,9 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
                     </button>
                     <button
                       type="button"
-                      className="btn-secondary w-full mt-3"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      className="w-full mt-3 border border-white text-white bg-white/15 backdrop-blur-sm hover:bg-white hover:text-[var(--brand-primary)] transition-all duration-300 py-2 rounded-lg font-medium"
+                      onClick={(event) => {
+                        event.stopPropagation();
                         handleBuyNow(product);
                       }}
                     >
@@ -157,22 +166,21 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
             </div>
           </div>
         ))}
-      </motion.div>
+      </div>
 
-      {/* Phase1.8: Subtle navigation dots. */}
-      <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
-        {heroProducts.map((product, index) => (
+      <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2 z-30">
+        {slides.map((product, index) => (
           <button
             key={`dot-${product.id}`}
             type="button"
             aria-label={`Go to slide ${index + 1}`}
             className={clsx(
               "h-2.5 w-2.5 rounded-full transition-opacity duration-300",
-              index === currentIndex
-                ? "bg-[var(--brand-primary)]/70"
-                : "bg-[var(--brand-secondary)]/35 hover:opacity-100 opacity-60"
+              index === currentSlide
+                ? "bg-[var(--brand-primary)]/80"
+                : "bg-white/50 hover:opacity-100 opacity-70"
             )}
-            onClick={() => setCurrentIndex(index)}
+            onClick={() => setCurrentSlide(index)}
           />
         ))}
       </div>

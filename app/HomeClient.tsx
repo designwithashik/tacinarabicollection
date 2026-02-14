@@ -425,7 +425,7 @@ export default function HomePage({
       image: product.image,
     });
 
-  const handleAddToCart = (product: Product, sizeOverride?: string) => {
+  const handleAddToCart = (product: Product, sizeOverride: string | null = null) => {
     markRecentlyViewed(product);
     const selectedSize = sizeOverride ?? selectedSizes[product.id];
     if (!selectedSize) return;
