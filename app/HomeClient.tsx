@@ -425,7 +425,7 @@ export default function HomePage({
       image: product.image,
     });
 
-  const handleAddToCart = (product: Product, sizeOverride?: string) => {
+  const handleAddToCart = (product: Product, sizeOverride: string | null = null) => {
     markRecentlyViewed(product);
     const selectedSize = sizeOverride ?? selectedSizes[product.id];
     if (!selectedSize) return;
@@ -474,9 +474,9 @@ export default function HomePage({
     }, 400);
   };
 
-  const handleBuyNow = (product: Product) => {
+  const handleBuyNow = (product: Product, sizeOverride: string | null = null) => {
     markRecentlyViewed(product);
-    const selectedSize = selectedSizes[product.id];
+    const selectedSize = sizeOverride ?? selectedSizes[product.id];
     if (!selectedSize) return;
 
     const normalized = buildNormalizedCartItem(
@@ -724,7 +724,7 @@ export default function HomePage({
 
 
   // Phase1.8: Add-to-cart bridge from hero slides to existing product/cart flow.
-  const handleHeroAddToCart = (heroProduct: HeroProduct) => {
+  const handleHeroAddToCart = (heroProduct: HeroProduct, sizeOverride: string | null = null) => {
     const matchedProduct = adminProducts.find((item) => item.id === heroProduct.id);
 
     if (!matchedProduct) {
@@ -732,9 +732,22 @@ export default function HomePage({
       return;
     }
 
-    const defaultSize = selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
+    const defaultSize = sizeOverride ?? selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
     setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
     handleAddToCart(matchedProduct, defaultSize);
+  };
+
+  const handleHeroBuyNow = (heroProduct: HeroProduct, sizeOverride: string | null = null) => {
+    const matchedProduct = adminProducts.find((item) => item.id === heroProduct.id);
+
+    if (!matchedProduct) {
+      showToast({ type: "error", message: "Product is unavailable right now." });
+      return;
+    }
+
+    const defaultSize = sizeOverride ?? selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
+    setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
+    handleBuyNow(matchedProduct, defaultSize);
   };
 
   // ------------------------------
@@ -764,6 +777,7 @@ export default function HomePage({
           {/* Phase1.8: Componentized dynamic hero carousel with direct add-to-cart action. */}
           <HeroCarousel
             addToCart={handleHeroAddToCart}
+            buyNow={handleHeroBuyNow}
             initialProducts={initialAdminProducts.filter((item) => item.heroFeatured).slice(0, 3)}
           />
       </section>
@@ -900,7 +914,7 @@ export default function HomePage({
         <SectionLoader
           loading={!hasMounted || isLoading}
           loader={
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
               {/* Product placeholders prevent blank state flashes during hydration. */}
               {Array.from({ length: 6 }).map((_, index) => (
                 <SkeletonCard key={`skeleton-${index}`} />
@@ -919,7 +933,7 @@ export default function HomePage({
           <motion.div
             key={productBatchKey}
             className={clsx(
-              "grid gap-6 md:grid-cols-2 lg:grid-cols-3",
+              "grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4",
               !prefersReducedMotion && "retail-batch-enter"
             )}
             initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
@@ -994,7 +1008,7 @@ export default function HomePage({
                 Last 2 items
               </span>
             </div>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
               {recentlyViewed.map((product, index) => (
                 <AnimatedWrapper key={product.id} variant="product-card" delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.1)}>
                   <ProductCard
