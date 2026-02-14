@@ -774,18 +774,6 @@ export default function HomePage({
     handleAddToCart(matchedProduct, defaultSize);
   };
 
-  const handleHeroBuyNow = (heroProduct: HeroProduct, sizeOverride: string | null = null) => {
-    const matchedProduct = adminProducts.find((item) => item.id === heroProduct.id);
-
-    if (!matchedProduct) {
-      showToast({ type: "error", message: "Product is unavailable right now." });
-      return;
-    }
-
-    const defaultSize = sizeOverride ?? selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
-    setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
-    handleBuyNow(matchedProduct, defaultSize);
-  };
 
   // ------------------------------
   // UI
@@ -793,7 +781,7 @@ export default function HomePage({
   return (
     <div
       className={clsx(
-        "min-h-screen bg-white pb-24 transition-opacity duration-300 ease-in-out",
+        "bg-white pb-24 transition-opacity duration-300 ease-in-out",
         isRouting && "opacity-80"
       )}
     >
@@ -815,16 +803,15 @@ export default function HomePage({
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 md:px-10 pb-5 pt-4">
+      <section className="mx-auto max-w-6xl px-4 md:px-10 py-8">
           {/* Phase1.8: Componentized dynamic hero carousel with direct add-to-cart action. */}
           <HeroCarousel
             addToCart={handleHeroAddToCart}
-            buyNow={handleHeroBuyNow}
             initialProducts={initialAdminProducts.filter((item) => item.heroFeatured).slice(0, 3)}
           />
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-4 md:px-10">
+      <section className="mx-auto max-w-6xl px-4 md:px-10 py-8">
         <div className="overflow-hidden rounded-xl border border-[var(--brand-secondary)]/15 bg-[var(--brand-surface)] py-2">
           <div className="flex w-max animate-marquee whitespace-nowrap text-[12px] sm:text-[13px] text-neutral-700">
             <span className="mx-6">{announcementText}</span>
@@ -836,9 +823,9 @@ export default function HomePage({
       </section>
 
       {/* Phase1: Place categories above product grid for faster discovery */}
-      <section className="sticky top-0 z-30 border-b border-neutral-200 bg-white">
+      <section className="sticky top-0 z-30 bg-[#F7F6F4] border-b border-neutral-200">
         <AnimatedWrapper className="retail-section-enter" variant="section">
-          <div className="max-w-6xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex gap-2 overflow-x-auto scrollbar-hide">
             <div className="flex flex-1 items-center gap-2 overflow-x-auto">
               {categories.map((category) => (
                 <button
@@ -846,9 +833,9 @@ export default function HomePage({
                   type="button"
                   onClick={() => setSelectedCategory(category)}
                   className={clsx(
-                    "px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white",
+                    "px-4 py-1.5 text-[13px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-black hover:text-white",
                     selectedCategory === category
-                      ? "bg-neutral-900 text-white border-neutral-900"
+                      ? "bg-black text-white border-black"
                       : "text-ink"
                   )}
                 >
@@ -859,7 +846,7 @@ export default function HomePage({
             <button
               type="button"
               onClick={() => openSheet("size")}
-              className="px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white flex items-center gap-2"
+              className="px-4 py-1.5 text-[13px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-black hover:text-white flex items-center gap-2"
             >
               Filters
               {(filters.size.length || filters.colors.length || filters.price) ? (
@@ -873,9 +860,9 @@ export default function HomePage({
       </section>
 
       {/* Phase1.5: Retail Divider */}
-      <hr className="my-5 border-gray-200" />
+      <hr className="border-gray-200" />
 
-      <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-10 pt-4">
+      <main id="product-grid" className="mx-auto mt-6 max-w-6xl px-4 py-8">
         {activeChips.length > 0 ? (
           <div className="mb-4 flex flex-wrap gap-2">
             {activeChips.map((chip) => (
@@ -1013,8 +1000,8 @@ export default function HomePage({
         ) : null}
       </main>
 
-      <footer className="border-t border-[#e6d8ce] bg-white">
-        <div className="mx-auto grid max-w-6xl gap-5 px-4 py-5 md:grid-cols-3">
+      <footer className="border-t border-[#e6d8ce] bg-white py-8">
+        <div className="mx-auto grid max-w-6xl gap-5 px-4 md:grid-cols-3">
           <div>
             <h3 className="font-heading text-lg font-semibold">
               Tacin Arabi Collection
