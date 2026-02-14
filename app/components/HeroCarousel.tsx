@@ -98,7 +98,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
   return (
     <div
-      className="relative w-full h-[38vh] sm:h-[45vh] md:h-[55vh] overflow-hidden rounded-xl"
+      className="relative w-full h-[36vh] overflow-hidden rounded-xl sm:h-[42vh] md:h-[52vh]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={(event) => {
@@ -136,16 +136,16 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
             <div className="absolute inset-0 z-20 flex items-end justify-center px-6 pb-8 md:items-center md:pb-0">
               <div className="max-w-xl space-y-3 text-center text-white">
-                <h2 className="text-[22px] leading-tight font-medium tracking-wide md:text-4xl">
+                <h2 className="text-[22px] font-semibold leading-tight tracking-tight sm:text-2xl md:text-3xl">
                   {product.title || product.name}
                 </h2>
-                <p className="text-[13px] text-white/90 md:text-[14px]">{product.subtitle || ""}</p>
+                <p className="mt-2 text-[14px] text-white opacity-90">{product.subtitle || ""}</p>
 
                 <div className="flex justify-center">
                   <div className="w-full max-w-xs">
                     <button
                       type="button"
-                      className="btn-primary relative z-30 w-full"
+                      className="relative z-30 w-full rounded-full bg-black px-6 py-2 text-[14px] text-white transition-opacity hover:opacity-90"
                       onClick={(event) => {
                         event.stopPropagation();
                         handleAddToCart(product);
@@ -155,7 +155,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
                     </button>
                     <button
                       type="button"
-                      className="mt-3 w-full rounded-lg border border-white bg-white/15 py-1.5 font-medium text-white backdrop-blur-sm transition-all duration-300 hover:bg-white hover:text-[var(--brand-primary)]"
+                      className="mt-3 w-full rounded-full border border-white bg-white/10 px-6 py-2 text-[14px] text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20"
                       onClick={(event) => {
                         event.stopPropagation();
                         handleBuyNow(product);
@@ -204,6 +204,8 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
           />
         ))}
       </div>
+
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#F7F6F4] to-transparent" />
     </div>
   );
 }
