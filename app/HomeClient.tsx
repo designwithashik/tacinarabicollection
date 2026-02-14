@@ -819,6 +819,12 @@ export default function HomePage({
       <header className="sticky top-0 z-40">
         <div className="mx-auto max-w-6xl">
           <nav className="flex items-center justify-between px-4 py-3 bg-white border-b border-neutral-200">
+            <LanguageToggle language={language} setLanguage={setLanguage} />
+
+            <h1 className="text-[18px] font-semibold tracking-tight">
+              Tacin Arabi
+            </h1>
+
             <button
               type="button"
               onClick={() => setShowCart(true)}
@@ -834,12 +840,6 @@ export default function HomePage({
                 <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[#eadad0]" />
               ) : null}
             </button>
-
-            <h1 className="text-[18px] font-semibold tracking-tight">
-              Tacin Arabi
-            </h1>
-
-            <LanguageToggle language={language} setLanguage={setLanguage} />
           </nav>
         </div>
       </header>
