@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
 type AdminProduct = {
@@ -36,7 +35,6 @@ const defaultDraft: ProductDraft = {
 };
 
 export default function AdminProductsPage() {
-  const router = useRouter();
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +51,7 @@ export default function AdminProductsPage() {
       setProducts(data ?? []);
     } catch (loadError) {
       if (loadError instanceof Error && loadError.message === "UNAUTHORIZED") {
-        router.push("/admin/login");
+        setError("Auth is disabled in temporary mode.");
         return;
       }
       setError(loadError instanceof Error ? loadError.message : "Failed to load products.");
@@ -125,7 +123,7 @@ export default function AdminProductsPage() {
       await loadProducts();
     } catch (saveError) {
       if (saveError instanceof Error && saveError.message === "UNAUTHORIZED") {
-        router.push("/admin/login");
+        setError("Auth is disabled in temporary mode.");
         return;
       }
       setError(saveError instanceof Error ? saveError.message : "Failed to save product.");
@@ -142,7 +140,7 @@ export default function AdminProductsPage() {
       await loadProducts();
     } catch (deleteError) {
       if (deleteError instanceof Error && deleteError.message === "UNAUTHORIZED") {
-        router.push("/admin/login");
+        setError("Auth is disabled in temporary mode.");
         return;
       }
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete product.");

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
 type AdminOrder = {
@@ -16,7 +15,6 @@ type AdminOrder = {
 const statuses: AdminOrder["status"][] = ["pending", "confirmed", "shipped", "delivered", "failed"];
 
 export default function AdminOrdersPage() {
-  const router = useRouter();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +34,7 @@ export default function AdminOrdersPage() {
       setOrders(data ?? []);
     } catch (loadError) {
       if (loadError instanceof Error && loadError.message === "UNAUTHORIZED") {
-        router.push("/admin/login");
+        setError("Auth is disabled in temporary mode.");
         return;
       }
       setError(loadError instanceof Error ? loadError.message : "Unable to load orders.");
@@ -66,7 +64,7 @@ export default function AdminOrdersPage() {
     } catch (updateError) {
       setOrders(previousOrders);
       if (updateError instanceof Error && updateError.message === "UNAUTHORIZED") {
-        router.push("/admin/login");
+        setError("Auth is disabled in temporary mode.");
         return;
       }
       setError(updateError instanceof Error ? updateError.message : "Failed to update order status.");
@@ -75,13 +73,42 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiBaseUrl) {
       setError("Missing NEXT_PUBLIC_API_URL");
       return;
     }
-    window.open(`${apiBaseUrl}/admin/orders/export`, "_blank", "noopener,noreferrer");
+
+    setError(null);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/admin/orders/export`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        setError("Auth is disabled in temporary mode.");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to export CSV.");
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = "orders.csv";
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : "Failed to export CSV.");
+    }
   };
 
   return (

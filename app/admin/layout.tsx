@@ -1,89 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
 
 export const runtime = "edge";
-
-type AdminMeResponse = {
-  id: number;
-  email: string;
-  role: string;
-};
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const isLoginRoute = pathname === "/admin/login";
-  const [checkingAuth, setCheckingAuth] = useState(true);
-  const [authError, setAuthError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isLoginRoute) {
-      setCheckingAuth(false);
-      setAuthError(null);
-      return;
-    }
-
-    let mounted = true;
-
-    const checkAuth = async () => {
-      try {
-        await apiFetch<AdminMeResponse>("/admin/me", { method: "GET" });
-        if (mounted) {
-          setAuthError(null);
-          setCheckingAuth(false);
-        }
-      } catch (error) {
-        if (!mounted) return;
-        if (error instanceof Error && error.message === "UNAUTHORIZED") {
-          router.push("/admin/login");
-          return;
-        }
-        setAuthError("Unable to validate admin session.");
-        setCheckingAuth(false);
-      }
-    };
-
-    checkAuth();
-
-    return () => {
-      mounted = false;
-    };
-  }, [isLoginRoute, router]);
-
-  if (isLoginRoute) {
-    return <>{children}</>;
-  }
-
-  if (checkingAuth) {
-    return (
-      <div className="min-h-screen bg-base text-ink">
-        <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-6">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#e6d8ce] border-t-accent" />
-        </div>
-      </div>
-    );
-  }
-
-  if (authError) {
-    return (
-      <div className="min-h-screen bg-base text-ink">
-        <div className="mx-auto max-w-6xl px-4 py-6">
-          <div className="rounded-2xl bg-white p-4 text-sm text-red-600 shadow-soft">
-            {authError}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-base text-ink">
       <header className="border-b border-[#e6d8ce] bg-white">
