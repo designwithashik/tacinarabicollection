@@ -39,24 +39,31 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   }, [slides.length]);
 
+  const getDefaultSize = useCallback((product: HeroProduct) => {
+    if (!product.sizes?.length) return null;
+    return product.sizes.includes("M") ? "M" : product.sizes[0];
+  }, []);
+
   const handleBuyNow = useCallback(
     (product: HeroProduct) => {
       if (!product) return;
-
-      let defaultSize: string | null = null;
-      if (product.sizes && product.sizes.length > 0) {
-        defaultSize = product.sizes.includes("M") ? "M" : product.sizes[0];
-      }
-
-      buyNow(product, defaultSize);
+      buyNow(product, getDefaultSize(product));
     },
-    [buyNow]
+    [buyNow, getDefaultSize]
+  );
+
+  const handleAddToCart = useCallback(
+    (product: HeroProduct) => {
+      if (!product) return;
+      addToCart(product, getDefaultSize(product));
+    },
+    [addToCart, getDefaultSize]
   );
 
   useEffect(() => {
     const loadHeroProducts = async () => {
       try {
-        const res = await fetch("/api/products?hero=true", { cache: "no-store" });
+        const res = await fetch("/api/products?hero=true", { cache: "default" });
         if (!res.ok) return;
         const data = (await res.json()) as HeroProduct[];
         if (Array.isArray(data) && data.length > 0) {
@@ -82,7 +89,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
     const interval = window.setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
+    }, 5500);
 
     return () => window.clearInterval(interval);
   }, [isPaused, slides.length]);
@@ -91,59 +98,64 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-2xl md:rounded-3xl aspect-[16/10] md:aspect-[21/8]"
+      className="relative w-full h-[45vh] sm:h-[50vh] md:h-[60vh] overflow-hidden rounded-xl"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={(event) => setTouchStart(event.targetTouches[0].clientX)}
+      onTouchStart={(event) => {
+        setIsPaused(true);
+        setTouchStart(event.targetTouches[0].clientX);
+      }}
       onTouchEnd={(event) => {
-        if (touchStart === null) return;
+        if (touchStart === null) {
+          setIsPaused(false);
+          return;
+        }
         const diff = touchStart - event.changedTouches[0].clientX;
-        if (diff > 50) nextSlide();
-        if (diff < -50) prevSlide();
+        if (diff > 40) nextSlide();
+        if (diff < -40) prevSlide();
         setTouchStart(null);
+        setIsPaused(false);
       }}
     >
       <div
-        className="flex transition-transform duration-300 ease-out h-full"
+        className="flex h-full transition-transform duration-500 ease-out"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
         {slides.map((product, index) => (
-          <div key={product.id} className="relative min-w-full h-full overflow-hidden">
+          <div key={product.id} className="relative h-full min-w-full overflow-hidden">
             <Image
               src={product.imageUrl || product.image || "/images/product-1.svg"}
               alt={product.title || product.name}
               fill
               priority={index === 0}
-              sizes="(max-width: 768px) 100vw, 1200px"
+              sizes="100vw"
               className="object-cover"
             />
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/45 to-black/20" />
 
-            <div className="absolute inset-0 z-20 flex items-end md:items-center justify-center px-6 pb-8 md:pb-0">
-              <div className="text-center text-white max-w-xl">
-                <h2 className="text-2xl md:text-4xl font-medium tracking-wide">
+            <div className="absolute inset-0 z-20 flex items-end justify-center px-6 pb-8 md:items-center md:pb-0">
+              <div className="max-w-xl space-y-3 text-center text-white">
+                <h2 className="text-2xl font-medium tracking-wide md:text-4xl">
                   {product.title || product.name}
                 </h2>
-                <p className="mt-3 text-sm md:text-base text-white/90">
-                  {product.subtitle || ""}
-                </p>
+                <p className="text-sm text-white/90 md:text-base">{product.subtitle || ""}</p>
 
-                <div className="mt-5 flex justify-center">
+                <div className="flex justify-center">
                   <div className="w-full max-w-xs">
                     <button
                       type="button"
                       className="btn-primary relative z-30 w-full"
                       onClick={(event) => {
                         event.stopPropagation();
-                        addToCart(product);
+                        handleAddToCart(product);
                       }}
                     >
                       Add to Cart
                     </button>
                     <button
                       type="button"
-                      className="w-full mt-3 border border-white text-white bg-white/15 backdrop-blur-sm hover:bg-white hover:text-[var(--brand-primary)] transition-all duration-300 py-2 rounded-lg font-medium"
+                      className="mt-3 w-full rounded-lg border border-white bg-white/15 py-2 font-medium text-white backdrop-blur-sm transition-all duration-300 hover:bg-white hover:text-[var(--brand-primary)]"
                       onClick={(event) => {
                         event.stopPropagation();
                         handleBuyNow(product);
@@ -163,7 +175,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
         type="button"
         aria-label="Previous slide"
         onClick={prevSlide}
-        className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 z-30 h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white hover:bg-black/55 transition-colors"
+        className="absolute left-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white transition-colors hover:bg-black/55 md:flex"
       >
         ‹
       </button>
@@ -171,12 +183,12 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
         type="button"
         aria-label="Next slide"
         onClick={nextSlide}
-        className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 z-30 h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white hover:bg-black/55 transition-colors"
+        className="absolute right-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white transition-colors hover:bg-black/55 md:flex"
       >
         ›
       </button>
 
-      <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2 z-30">
+      <div className="absolute bottom-5 left-1/2 z-30 flex -translate-x-1/2 gap-2">
         {slides.map((product, index) => (
           <button
             key={`dot-${product.id}`}
@@ -186,7 +198,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
               "h-2.5 w-2.5 rounded-full transition-opacity duration-300",
               index === currentSlide
                 ? "bg-[var(--brand-primary)]/80"
-                : "bg-white/50 hover:opacity-100 opacity-70"
+                : "bg-white/50 opacity-70 hover:opacity-100"
             )}
             onClick={() => setCurrentSlide(index)}
           />

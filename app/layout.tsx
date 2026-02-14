@@ -1,8 +1,8 @@
-export const runtime = 'edge';
+export const runtime = "edge";
 import "./globals.css";
 import { Playfair_Display, Inter } from "next/font/google";
-import type { Metadata } from "next";
 import GlobalAnimatedWrapper from "../components/AnimatedWrapper";
+import Footer from "../components/Footer";
 
 const headingFont = Playfair_Display({
   subsets: ["latin"],
@@ -16,53 +16,25 @@ const bodyFont = Inter({
   variable: "--font-body",
 });
 
-export const metadata: Metadata = {
+export const metadata = {
+  metadataBase: new URL("https://tacinarabicollection.pages.dev"),
   title: {
-    default: "Tacin Arabi Collection Bangladesh | Buy Kurti, Fashion & Ceramic Online",
+    default: "Tacin Arabi Collection | Elegant Modest Fashion in Bangladesh",
     template: "%s | Tacin Arabi Collection",
   },
   description:
-    "Shop women's fashion, kurti collections, and ceramic home pieces online in Bangladesh. Enjoy WhatsApp ordering, cash on delivery, and secure bKash/Nagad payment support with nationwide delivery.",
-  keywords: [
-    "Tacin Arabi Collection",
-    "online shopping Bangladesh",
-    "kurti online Bangladesh",
-    "women fashion Bangladesh",
-    "ceramic products Bangladesh",
-    "WhatsApp shopping Bangladesh",
-    "cash on delivery Bangladesh",
-    "bKash Nagad payment",
-  ],
-  metadataBase: new URL("https://tacinarabicollection.vercel.app"),
-  alternates: {
-    canonical: "/",
-  },
+    "Discover refined modest fashion, elegant kurtis, and curated lifestyle pieces inspired by heritage and modern sophistication.",
   openGraph: {
-    title: "Tacin Arabi Collection Bangladesh | WhatsApp Fashion Shopping",
-    description:
-      "Discover trending kurti, modest fashion, and ceramic lifestyle picks in Bangladesh with fast WhatsApp checkout, COD, and secure bKash/Nagad payments.",
-    url: "https://tacinarabicollection.vercel.app",
+    title: "Tacin Arabi Collection",
+    description: "Live with heritage. Wear with elegance.",
+    url: "https://tacinarabicollection.pages.dev",
     siteName: "Tacin Arabi Collection",
-    locale: "en_BD",
-    alternateLocale: ["bn_BD"],
     type: "website",
-    images: [{ url: "/images/og-cover.svg", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tacin Arabi Collection Bangladesh | Shop Fashion via WhatsApp",
-    description:
-      "Buy kurti, fashion essentials, and ceramics online in Bangladesh with nationwide delivery and fast WhatsApp order support.",
-    images: ["/images/og-cover.svg"],
-    site: "@tacinarabi",
-    creator: "@tacinarabi",
-  },
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/icons/icon-192.svg",
-  },
-  other: {
-    "mobile-web-app-capable": "yes",
+    title: "Tacin Arabi Collection",
+    description: "Live with heritage. Wear with elegance.",
   },
 };
 
@@ -77,7 +49,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en-BD" className={`${headingFont.variable} ${bodyFont.variable}`}>
-      <body><GlobalAnimatedWrapper>{children}</GlobalAnimatedWrapper></body>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Tacin Arabi Collection",
+              url: "https://tacinarabicollection.pages.dev",
+            }),
+          }}
+        />
+      </head>
+      <body>
+        <GlobalAnimatedWrapper>{children}</GlobalAnimatedWrapper>
+        <Footer />
+      </body>
     </html>
   );
 }
