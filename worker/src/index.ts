@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import type { MiddlewareHandler } from 'hono'
 
 export type Env = {
@@ -32,6 +33,18 @@ const resolveLimit = (rawLimit: string | undefined, max = 200) => {
 }
 
 const app = new Hono<Bindings>()
+
+app.use(
+  '*',
+  cors({
+    origin: ['https://b31ea108.tacinarabicollection.pages.dev'],
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type'],
+    exposeHeaders: [],
+    credentials: true,
+    maxAge: 86400,
+  })
+)
 
 app.use('*', async (c, next) => {
   c.header('Content-Type', 'application/json; charset=utf-8')
