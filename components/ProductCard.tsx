@@ -116,10 +116,10 @@ export default function ProductCard({
 
         <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/30 bg-white/35 p-3 text-left backdrop-blur-sm">
           <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/80">{product.category}</p>
-          <p className="mt-1 font-heading text-sm sm:text-base font-semibold text-charcoal transition-transform duration-200 group-hover:translate-y-[-1px] break-words line-clamp-2">
+          <p className="mt-0.5 font-heading text-sm sm:text-base font-semibold text-charcoal transition-transform duration-200 group-hover:translate-y-[-1px] break-words line-clamp-2">
             {product.name}
           </p>
-          <p className="mt-1 text-xs font-semibold text-charcoal/85 transition-transform duration-200 delay-75 group-hover:translate-y-[-1px]">
+          <p className="mt-0.5 text-xs font-semibold text-charcoal/85 transition-transform duration-200 delay-75 group-hover:translate-y-[-1px]">
             {stockLabel}
           </p>
         </div>
@@ -145,7 +145,7 @@ export default function ProductCard({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-2.5 sm:p-4">
+      <div className="flex flex-1 flex-col gap-2 p-3">
         <h3 className="text-sm sm:text-base font-medium leading-snug text-[var(--brand-primary)] line-clamp-2 break-words">
           {product.name}
         </h3>
@@ -153,7 +153,7 @@ export default function ProductCard({
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex flex-col min-w-0">
             <p className="text-[10px] uppercase tracking-[0.15em] text-support">{priceLabel}</p>
-            <p className="text-sm sm:text-base font-semibold text-neutral-900">৳ {product.price.toLocaleString()}</p>
+            <p className="text-base font-semibold text-neutral-900">৳ {product.price.toLocaleString()}</p>
             {typeof originalPrice === "number" && originalPrice > product.price ? (
               <p className="text-xs text-[var(--brand-muted)] line-through">৳ {originalPrice.toLocaleString()}</p>
             ) : null}
