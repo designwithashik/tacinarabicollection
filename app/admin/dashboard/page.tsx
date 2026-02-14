@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
 type DashboardSummary = {
@@ -34,7 +33,6 @@ const summaryCards = (summary: DashboardSummary) => [
 ];
 
 export default function AdminDashboardPage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -57,10 +55,6 @@ export default function AdminDashboardPage() {
         setLowStockItems(lowStockData ?? []);
       } catch (loadError) {
         if (!mounted) return;
-        if (loadError instanceof Error && loadError.message === "UNAUTHORIZED") {
-          router.push("/admin/login");
-          return;
-        }
         setError(loadError instanceof Error ? loadError.message : "Failed to load dashboard.");
       } finally {
         if (mounted) setLoading(false);
@@ -72,7 +66,7 @@ export default function AdminDashboardPage() {
     return () => {
       mounted = false;
     };
-  }, [router]);
+  }, []);
 
   return (
     <section className="space-y-6">
