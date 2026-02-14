@@ -5,10 +5,10 @@ const indexPath = resolve('src/index.ts')
 const source = readFileSync(indexPath, 'utf8')
 
 const requiredSnippets = [
-  'const isAllowedOrigin = (origin: string) => {',
-  "origin === 'https://tacinarabicollection.pages.dev'",
-  '/^https:\\/\\/[a-z0-9-]+\\.tacinarabicollection\\.pages\\.dev$/.test(origin)',
   'origin: (origin) => {',
+  'if (!origin) return origin',
+  "if (origin.endsWith('.tacinarabicollection.pages.dev')) return origin",
+  "return ''",
   'credentials: true,',
 ]
 

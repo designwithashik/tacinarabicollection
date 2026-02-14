@@ -45,24 +45,13 @@ const resolveLimit = (rawLimit: string | undefined, max = 200) => {
 
 const app = new Hono<Bindings>()
 
-const isAllowedOrigin = (origin: string) => {
-  if (origin === 'https://tacinarabicollection.pages.dev') {
-    return true
-  }
-
-  if (/^https:\/\/[a-z0-9-]+\.tacinarabicollection\.pages\.dev$/.test(origin)) {
-    return true
-  }
-
-  return false
-}
-
 app.use(
   '*',
   cors({
     origin: (origin) => {
-      if (!origin) return ''
-      return isAllowedOrigin(origin) ? origin : ""
+      if (!origin) return origin
+      if (origin.endsWith('.tacinarabicollection.pages.dev')) return origin
+      return ''
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
@@ -231,9 +220,9 @@ app.post('/admin/login', async (c) => {
   setCookie(c, 'admin_token', token, {
     httpOnly: true,
     secure: true,
-    sameSite: 'Strict',
+    sameSite: 'None',
     path: '/',
-    maxAge: 7 * 24 * 60 * 60,
+    maxAge: 60 * 60 * 24 * 7,
   })
 
   return c.json({ success: true })

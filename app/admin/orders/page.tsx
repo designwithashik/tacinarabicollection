@@ -75,13 +75,42 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiBaseUrl) {
       setError("Missing NEXT_PUBLIC_API_URL");
       return;
     }
-    window.open(`${apiBaseUrl}/admin/orders/export`, "_blank", "noopener,noreferrer");
+
+    setError(null);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/admin/orders/export`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        router.push("/admin/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to export CSV.");
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = "orders.csv";
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : "Failed to export CSV.");
+    }
   };
 
   return (
