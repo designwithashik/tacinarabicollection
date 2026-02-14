@@ -1,6 +1,8 @@
 export type Product = {
   id: string;
   name: string;
+  title?: string;
+  subtitle?: string;
   price: number;
   image: string;
   category: "Clothing" | "Ceramic";

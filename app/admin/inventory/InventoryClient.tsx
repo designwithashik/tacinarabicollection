@@ -13,6 +13,8 @@ const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "p
 const defaultDraft: AdminProduct = {
   id: "",
   name: "",
+  title: "",
+  subtitle: "",
   price: 0,
   image: "",
   category: "Clothing",
@@ -148,6 +150,8 @@ export default function AdminInventory() {
 
       const payload: Partial<AdminProduct> & { imageUrl?: string } = {
         name: draft.name,
+        title: draft.title,
+        subtitle: draft.subtitle,
         price: Number(draft.price),
         image: imageUrl,
         // Alias for compatibility with imageUrl-based payload handlers.
@@ -252,6 +256,26 @@ export default function AdminInventory() {
               value={draft.name}
               onChange={(event) =>
                 setDraft((prev) => ({ ...prev, name: event.target.value }))
+              }
+            />
+          </label>
+          <label className="text-xs font-semibold">
+            Banner Title
+            <input
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={draft.title ?? ""}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, title: event.target.value }))
+              }
+            />
+          </label>
+          <label className="text-xs font-semibold">
+            Banner Subtitle
+            <input
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={draft.subtitle ?? ""}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, subtitle: event.target.value }))
               }
             />
           </label>
