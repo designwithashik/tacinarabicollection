@@ -98,7 +98,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
   return (
     <div
-      className="relative w-full h-[38vh] sm:h-[45vh] md:h-[55vh] overflow-hidden rounded-xl"
+      className="relative h-[34vh] w-full overflow-hidden rounded-xl sm:h-[40vh] md:h-[50vh]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={(event) => {
