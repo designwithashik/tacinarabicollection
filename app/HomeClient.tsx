@@ -816,16 +816,31 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 bg-[var(--brand-surface)]/80 backdrop-blur-md border-b border-[var(--brand-secondary)]/20">
-        <div className="mx-auto max-w-6xl px-4 md:px-10 py-5 md:py-5">
-          <div className="flex items-center justify-between gap-6">
-            <p className="text-lg md:text-xl font-medium tracking-[0.15em] transition-opacity duration-300 hover:opacity-80">
-              TACIN ARABI
-            </p>
-            <div className="flex items-center gap-3">
-              <LanguageToggle language={language} setLanguage={setLanguage} />
-            </div>
-          </div>
+      <header className="sticky top-0 z-40">
+        <div className="mx-auto max-w-6xl">
+          <nav className="flex items-center justify-between px-4 py-3 bg-white border-b border-neutral-200">
+            <button
+              type="button"
+              onClick={() => setShowCart(true)}
+              className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
+              aria-label="Open cart"
+            >
+              <span className={clsx(cartBump && "animate-cart-bounce")}>🛍️</span>
+              {hasMounted && cartItems.length > 0 ? (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
+                  {cartItems.length}
+                </span>
+              ) : !hasMounted ? (
+                <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[#eadad0]" />
+              ) : null}
+            </button>
+
+            <h1 className="text-[18px] font-semibold tracking-tight">
+              Tacin Arabi
+            </h1>
+
+            <LanguageToggle language={language} setLanguage={setLanguage} />
+          </nav>
         </div>
       </header>
 
@@ -1091,30 +1106,6 @@ export default function HomePage({
         aria-label="Open filters"
       >
         <SlidersHorizontal className="h-5 w-5" />
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setShowCart(true)}
-        className="floating-action interactive-feedback group fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-soft"
-        aria-label="Open cart"
-      >
-        <span
-          className={clsx(
-            "relative flex h-14 w-14 items-center justify-center text-xl text-ink",
-            cartBump && "animate-cart-bounce"
-          )}
-        >
-          🛍️
-          {hasMounted && cartItems.length > 0 ? (
-            <span className="absolute -top-1 -right-1 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">
-              {cartItems.length}
-            </span>
-          ) : !hasMounted ? (
-            // Keeps button badge area visually stable before client cart hydration completes.
-            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-[#eadad0]" />
-          ) : null}
-        </span>
       </button>
 
       <a
