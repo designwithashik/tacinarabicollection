@@ -793,7 +793,7 @@ export default function HomePage({
   return (
     <div
       className={clsx(
-        "min-h-screen bg-white pb-24 transition-opacity duration-300 ease-in-out",
+        "bg-[#F7F6F4] min-h-screen pb-24 transition-opacity duration-300 ease-in-out",
         isRouting && "opacity-80"
       )}
     >
@@ -899,7 +899,7 @@ export default function HomePage({
         <SectionLoader
           loading={!hasMounted || isLoading}
           loader={
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {/* Product placeholders prevent blank state flashes during hydration. */}
               {Array.from({ length: 6 }).map((_, index) => (
                 <SkeletonCard key={`skeleton-${index}`} />
@@ -918,7 +918,7 @@ export default function HomePage({
           <motion.div
             key={productBatchKey}
             className={clsx(
-              "grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+              "grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
               !prefersReducedMotion && "retail-batch-enter"
             )}
             initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
@@ -933,28 +933,11 @@ export default function HomePage({
               >
                 <ProductCard
                 product={product}
-                selectedSize={selectedSizes[product.id]}
-                quantity={quantities[product.id] ?? 1}
-                onSizeChange={(size) => updateSize(product.id, size)}
-                onQuantityChange={(quantity) =>
-                  updateQuantity(product.id, quantity)
-                }
-                onBuyNow={() => handleBuyNow(product)}
-                onAddToCart={() => handleAddToCart(product)}
-                onOpenDetails={() => {
-                  markRecentlyViewed(product);
-                  setDetailsProduct(product);
-                }}
-                priceLabel={text.priceLabel}
-                buyNowLabel={text.buyNow}
+                onAddToCart={() => handleAddToCart(product, selectedSizes[product.id] ?? product.sizes[0] ?? "M")}
                 addToCartLabel={text.addToCart}
                 addingLabel={text.adding}
                 addedLabel={text.added}
                 addState={addStates[product.id] ?? "idle"}
-                quantityFeedback={quantityFeedback[product.id]}
-                statusLabel={getStatusLabel(index)}
-                stockLabel={getStockLabel(index)}
-                sizeErrorLabel={text.sizeError}
                 isRouting={isRouting}
               />
               </AnimatedWrapper>
@@ -979,31 +962,16 @@ export default function HomePage({
                 Last 2 items
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {recentlyViewed.map((product, index) => (
                 <AnimatedWrapper key={product.id} variant="product-card" delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.1)}>
                   <ProductCard
                   product={product}
-                  selectedSize={selectedSizes[product.id]}
-                  quantity={quantities[product.id] ?? 1}
-                  onSizeChange={(size) => updateSize(product.id, size)}
-                  onQuantityChange={(quantity) =>
-                    updateQuantity(product.id, quantity)
-                  }
-                  onBuyNow={() => handleBuyNow(product)}
-                  onAddToCart={() => handleAddToCart(product)}
-                  onOpenDetails={() => setDetailsProduct(product)}
-                  showBadge="Recently Viewed"
-                  priceLabel={text.priceLabel}
-                  buyNowLabel={text.buyNow}
+                  onAddToCart={() => handleAddToCart(product, selectedSizes[product.id] ?? product.sizes[0] ?? "M")}
                   addToCartLabel={text.addToCart}
                   addingLabel={text.adding}
                   addedLabel={text.added}
                   addState={addStates[product.id] ?? "idle"}
-                  quantityFeedback={quantityFeedback[product.id]}
-                  statusLabel={getStatusLabel(index)}
-                  stockLabel={getStockLabel(index)}
-                  sizeErrorLabel={text.sizeError}
                   isRouting={isRouting}
                 />
                 </AnimatedWrapper>
