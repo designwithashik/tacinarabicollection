@@ -1,4 +1,4 @@
-export const runtime = 'edge';
+export const runtime = "edge";
 import { notFound } from "next/navigation";
 import { products, type Product } from "../../../lib/products";
 import { loadInventoryArray, toStorefrontProduct } from "../../../lib/server/inventoryStore";
@@ -31,5 +31,33 @@ export default async function ProductPage({ params }: { params: Params }) {
     notFound();
   }
 
-  return <ProductDetailClient product={product} />;
+  const productStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    image: [product.image],
+    description: `${product.name} from Tacin Arabi Collection with elegant modest styling and nationwide delivery.`,
+    sku: product.id,
+    brand: {
+      "@type": "Brand",
+      name: "Tacin Arabi Collection",
+    },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "BDT",
+      price: product.price,
+      availability: "https://schema.org/InStock",
+      url: `https://tacinarabicollection.pages.dev/products/${product.id}`,
+    },
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productStructuredData) }}
+      />
+      <ProductDetailClient product={product} />
+    </>
+  );
 }

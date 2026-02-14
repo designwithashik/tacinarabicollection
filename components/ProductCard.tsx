@@ -30,6 +30,7 @@ type Props = {
   quantityFeedback?: string | null;
   statusLabel: string;
   stockLabel: string;
+  sizeErrorLabel: string;
 };
 
 export default function ProductCard({
@@ -51,6 +52,7 @@ export default function ProductCard({
   quantityFeedback,
   statusLabel,
   stockLabel,
+  sizeErrorLabel,
 }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -78,7 +80,7 @@ export default function ProductCard({
     (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group flex flex-col w-full min-w-0 bg-[var(--brand-surface)] rounded-2xl border border-[var(--brand-secondary)]/10 overflow-hidden transition duration-300 hover:shadow-lg">
+    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--brand-secondary)]/10 bg-[var(--brand-surface)] transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
       <div
         role="button"
         tabIndex={0}
@@ -137,13 +139,13 @@ export default function ProductCard({
             event.stopPropagation();
             setQuickViewProduct(product);
           }}
-          className="absolute right-3 top-12 rounded-full bg-white/90 px-2.5 py-1 text-[10px] sm:text-xs opacity-0 backdrop-blur-sm transition duration-300 group-hover:opacity-100"
+          className="absolute right-3 top-12 rounded-full bg-white/90 px-2.5 py-1 text-[10px] opacity-0 backdrop-blur-sm transition duration-300 group-hover:opacity-100 sm:text-xs"
         >
           Quick View
         </button>
       </div>
 
-      <div className="flex flex-col flex-1 p-3 sm:p-4 gap-2">
+      <div className="flex flex-1 flex-col gap-2 p-2.5 sm:p-4">
         <h3 className="text-sm sm:text-base font-medium leading-snug text-[var(--brand-primary)] line-clamp-2 break-words">
           {product.name}
         </h3>
@@ -151,7 +153,7 @@ export default function ProductCard({
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex flex-col min-w-0">
             <p className="text-[10px] uppercase tracking-[0.15em] text-support">{priceLabel}</p>
-            <p className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-white">৳ {product.price.toLocaleString()}</p>
+            <p className="text-sm sm:text-base font-semibold text-neutral-900">৳ {product.price.toLocaleString()}</p>
             {typeof originalPrice === "number" && originalPrice > product.price ? (
               <p className="text-xs text-[var(--brand-muted)] line-through">৳ {originalPrice.toLocaleString()}</p>
             ) : null}
@@ -185,7 +187,7 @@ export default function ProductCard({
             ))}
           </div>
           {sizeMissing ? (
-            <p className="mt-2 text-xs text-accent">Select a size to continue.</p>
+            <p className="text-red-600 text-sm mt-2">{sizeErrorLabel}</p>
           ) : null}
         </div>
 

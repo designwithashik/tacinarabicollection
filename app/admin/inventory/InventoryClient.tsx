@@ -100,9 +100,8 @@ export default function AdminInventory() {
       const result = (await uploadRes.json()) as { url?: string };
       if (!result.url) throw new Error("Upload missing URL");
       return result.url; // This is the final image/video link
-    } catch (error) {
-      console.error("Upload failed:", error);
-      alert("Media upload failed. Check console.");
+    } catch {
+      alert("Media upload failed. Please try again.");
       return null;
     }
   };
