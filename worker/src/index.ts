@@ -249,6 +249,10 @@ app.put('/admin/orders/:id/status', requireAdmin, async (c) => {
   return c.json({ success: true, id, status })
 })
 
+app.get('/admin/me', requireAdmin, (c) => {
+  return c.json({ ok: true, role: 'admin' })
+})
+
 app.get('/admin/products/low-stock', requireAdmin, async (c) => {
   const limit = resolveLimit(c.req.query('limit'))
   const result = await c.env.DB.prepare(
