@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 
@@ -19,10 +19,18 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isLoginRoute = pathname === "/admin/login";
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isLoginRoute) {
+      setCheckingAuth(false);
+      setAuthError(null);
+      return;
+    }
+
     let mounted = true;
 
     const checkAuth = async () => {
@@ -48,7 +56,11 @@ export default function AdminLayout({
     return () => {
       mounted = false;
     };
-  }, [router]);
+  }, [isLoginRoute, router]);
+
+  if (isLoginRoute) {
+    return <>{children}</>;
+  }
 
   if (checkingAuth) {
     return (
