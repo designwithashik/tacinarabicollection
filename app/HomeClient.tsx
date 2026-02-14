@@ -819,9 +819,9 @@ export default function HomePage({
       </section>
 
       {/* Phase1: Place categories above product grid for faster discovery */}
-      <section className="sticky top-0 z-20 bg-white/95">
+      <section className="sticky top-0 z-30 border-b border-neutral-200 bg-white">
         <AnimatedWrapper className="retail-section-enter" variant="section">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex gap-2 overflow-x-auto scrollbar-hide">
             <div className="flex flex-1 items-center gap-2 overflow-x-auto">
               {categories.map((category) => (
                 <button
@@ -829,10 +829,10 @@ export default function HomePage({
                   type="button"
                   onClick={() => setSelectedCategory(category)}
                   className={clsx(
-                    "interactive-feedback min-h-[42px] whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold",
+                    "px-4 py-2 text-sm rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white",
                     selectedCategory === category
-                      ? "border-accent bg-accent text-white"
-                      : "border-[#e6d8ce] bg-white text-ink"
+                      ? "bg-neutral-900 text-white border-neutral-900"
+                      : "text-ink"
                   )}
                 >
                   {category}
@@ -842,7 +842,7 @@ export default function HomePage({
             <button
               type="button"
               onClick={() => openSheet("size")}
-              className="interactive-feedback flex min-h-[44px] items-center gap-2 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white shadow-soft hover:bg-red-800"
+              className="px-4 py-2 text-sm rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white flex items-center gap-2"
             >
               Filters
               {(filters.size.length || filters.colors.length || filters.price) ? (
@@ -1369,7 +1369,7 @@ export default function HomePage({
       ) : null}
 
       {showCheckout ? (
-        <div className="fixed inset-0 z-40 bg-black/40">
+        <div className="z-40 bg-black/40">
           <div className="min-h-screen flex flex-col bg-white">
             <div className="border-b border-[#f0e4da] px-4 sm:px-6 py-4">
               <div className="mx-auto max-w-4xl flex items-center justify-between">
@@ -1397,7 +1397,7 @@ export default function HomePage({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+            <div className="flex-1 overflow-visible px-4 py-6 pb-10 sm:px-6">
               {isOrderConfirmed ? (
                 <div className="max-w-4xl mx-auto px-4 py-8">
                   <div className="text-center py-16">

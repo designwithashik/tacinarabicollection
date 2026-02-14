@@ -17,14 +17,15 @@
 
 html,
 body {
+  height: auto;
   overflow-x: hidden;
+  overflow-y: auto;
 }
 
 body {
   @apply font-body;
   background-color: var(--brand-bg);
   color: var(--brand-primary);
-  overflow-y: auto;
 }
 
 h1,
@@ -314,5 +315,5 @@ a:focus-visible {
 }
 
 .animate-marquee {
-  animation: marquee 24s linear infinite;
+  animation: marquee 10s linear infinite;
 }

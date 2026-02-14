@@ -98,7 +98,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
   return (
     <div
-      className="relative h-[65vh] md:h-[70vh] w-full overflow-hidden rounded-xl"
+      className="relative w-full h-[45vh] sm:h-[50vh] md:h-[60vh] overflow-hidden rounded-xl"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={(event) => {
@@ -135,13 +135,13 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/45 to-black/20" />
 
             <div className="absolute inset-0 z-20 flex items-end justify-center px-6 pb-8 md:items-center md:pb-0">
-              <div className="max-w-xl text-center text-white">
+              <div className="max-w-xl space-y-3 text-center text-white">
                 <h2 className="text-2xl font-medium tracking-wide md:text-4xl">
                   {product.title || product.name}
                 </h2>
-                <p className="mt-3 text-sm text-white/90 md:text-base">{product.subtitle || ""}</p>
+                <p className="text-sm text-white/90 md:text-base">{product.subtitle || ""}</p>
 
-                <div className="mt-5 flex justify-center">
+                <div className="flex justify-center">
                   <div className="w-full max-w-xs">
                     <button
                       type="button"
