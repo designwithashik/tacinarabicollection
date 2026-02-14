@@ -139,6 +139,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
                 <h2 className="text-[22px] leading-tight font-medium tracking-wide md:text-4xl">
                   {product.title || product.name}
                 </h2>
+                <div className="mx-auto mt-3 h-[2px] w-10 bg-[var(--brand-accent)]" />
                 <p className="text-[13px] text-white/90 md:text-[14px]">{product.subtitle || ""}</p>
 
                 <div className="flex justify-center">

@@ -145,12 +145,12 @@ export default function ProductCard({
       </div>
 
       <div className="space-y-2 p-3">
-        <p className="text-[10px] uppercase tracking-widest text-neutral-500">New Arrival</p>
+        <p className="text-[10px] uppercase tracking-widest text-[var(--brand-accent)]">New Arrival</p>
 
-        <h3 className="line-clamp-2 text-[14px] font-medium leading-snug text-neutral-900">{product.name}</h3>
+        <h3 className="line-clamp-2 text-[14px] font-medium leading-snug text-[var(--brand-primary)]">{product.name}</h3>
 
         <div className="flex items-center justify-between">
-          <span className="text-[15px] font-semibold text-neutral-900 tracking-tight">৳ {product.price.toLocaleString()}</span>
+          <span className="text-[15px] font-semibold text-[var(--brand-primary)] tracking-tight">৳ {product.price.toLocaleString()}</span>
           {typeof originalPrice === "number" && originalPrice > product.price ? (
             <span className="text-[11px] text-neutral-500 line-through">৳ {originalPrice.toLocaleString()}</span>
           ) : null}
@@ -164,7 +164,7 @@ export default function ProductCard({
               onClick={() => handleSizeChange(size)}
               className={clsx(
                 "rounded-md border border-neutral-300 px-2 py-1 text-[11px] transition-all duration-200 ease-out",
-                selectedSize === size ? "border-neutral-900 bg-neutral-900 text-white" : "text-neutral-700"
+                selectedSize === size ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-white" : "text-neutral-700"
               )}
             >
               {size}
@@ -180,7 +180,7 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "flex-1 rounded-md bg-neutral-900 py-2 text-[13px] text-white transition hover:bg-black",
+              "flex-1 rounded-md bg-[var(--brand-primary)] py-2 text-[13px] text-white transition hover:opacity-90",
               (addState === "loading" || isRouting) && "cursor-not-allowed bg-neutral-400"
             )}
             onClick={handleAddClick}
@@ -192,7 +192,7 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "flex-1 rounded-md border border-neutral-900 py-2 text-[13px] text-neutral-900 transition hover:bg-neutral-900 hover:text-white",
+              "flex-1 rounded-md border border-[var(--brand-primary)] py-2 text-[13px] text-[var(--brand-primary)] transition hover:bg-[var(--brand-primary)] hover:text-white",
               isRouting && "cursor-not-allowed opacity-70"
             )}
             onClick={handleBuyClick}

@@ -793,7 +793,7 @@ export default function HomePage({
   return (
     <div
       className={clsx(
-        "min-h-screen bg-white pb-24 transition-opacity duration-300 ease-in-out",
+        "min-h-screen bg-[var(--brand-soft)] pb-24 transition-opacity duration-300 ease-in-out",
         isRouting && "opacity-80"
       )}
     >
@@ -1499,19 +1499,19 @@ export default function HomePage({
                       <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-[13px]">
                         <div className="flex items-center justify-between text-neutral-700">
                           <span>{text.subtotal}</span>
-                          <span className="font-medium text-neutral-900">
+                          <span className="font-medium text-[var(--brand-primary)]">
                             {isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutSubtotal)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-neutral-700">
                           <span>{text.deliveryCharge}</span>
-                          <span className="font-medium text-neutral-900">
+                          <span className="font-medium text-[var(--brand-primary)]">
                             {isSummaryLoading ? <SummaryPlaceholder widthClass="w-12" /> : formatPrice(deliveryFee)}
                           </span>
                         </div>
-                        <div className="mt-3 flex items-center justify-between border-t pt-3 text-base font-semibold">
-                          <span className="text-neutral-900">{text.totalPayable}</span>
-                          <span className="text-lg text-neutral-900">{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
+                        <div className="mt-3 flex items-center justify-between border-t border-neutral-200 pt-3 text-base font-semibold">
+                          <span className="text-[var(--brand-primary)]">{text.totalPayable}</span>
+                          <span className="text-lg font-semibold text-[var(--brand-primary)]">{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
                         </div>
                       </div>
 
@@ -1598,9 +1598,9 @@ export default function HomePage({
                             !Number.isFinite(checkoutTotal)
                           }
                           className={clsx(
-                            "w-full rounded-lg bg-green-600 py-2.5 text-[14px] text-white transition-all duration-200 ease-out hover:bg-green-700 mt-3",
+                            "w-full rounded-lg border border-[var(--brand-primary)] bg-[var(--brand-primary)] py-2.5 text-[14px] text-white transition-all duration-200 ease-out hover:opacity-90 mt-3",
                             (isSubmitting || !(isCustomerInfoValid && isOnline)) &&
-                              "opacity-60 cursor-not-allowed bg-green-600/60 text-white hover:bg-green-600"
+                              "opacity-60 cursor-not-allowed bg-[var(--brand-primary)]/60 text-white hover:bg-[var(--brand-primary)]"
                           )}
                         >
                           {isSubmitting ? "Processing..." : text.orderCod}
