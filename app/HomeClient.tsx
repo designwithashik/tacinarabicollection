@@ -474,9 +474,9 @@ export default function HomePage({
     }, 400);
   };
 
-  const handleBuyNow = (product: Product) => {
+  const handleBuyNow = (product: Product, sizeOverride: string | null = null) => {
     markRecentlyViewed(product);
-    const selectedSize = selectedSizes[product.id];
+    const selectedSize = sizeOverride ?? selectedSizes[product.id];
     if (!selectedSize) return;
 
     const normalized = buildNormalizedCartItem(
@@ -724,7 +724,7 @@ export default function HomePage({
 
 
   // Phase1.8: Add-to-cart bridge from hero slides to existing product/cart flow.
-  const handleHeroAddToCart = (heroProduct: HeroProduct) => {
+  const handleHeroAddToCart = (heroProduct: HeroProduct, sizeOverride: string | null = null) => {
     const matchedProduct = adminProducts.find((item) => item.id === heroProduct.id);
 
     if (!matchedProduct) {
@@ -732,9 +732,22 @@ export default function HomePage({
       return;
     }
 
-    const defaultSize = selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
+    const defaultSize = sizeOverride ?? selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
     setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
     handleAddToCart(matchedProduct, defaultSize);
+  };
+
+  const handleHeroBuyNow = (heroProduct: HeroProduct, sizeOverride: string | null = null) => {
+    const matchedProduct = adminProducts.find((item) => item.id === heroProduct.id);
+
+    if (!matchedProduct) {
+      showToast({ type: "error", message: "Product is unavailable right now." });
+      return;
+    }
+
+    const defaultSize = sizeOverride ?? selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
+    setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
+    handleBuyNow(matchedProduct, defaultSize);
   };
 
   // ------------------------------
@@ -764,6 +777,7 @@ export default function HomePage({
           {/* Phase1.8: Componentized dynamic hero carousel with direct add-to-cart action. */}
           <HeroCarousel
             addToCart={handleHeroAddToCart}
+            buyNow={handleHeroBuyNow}
             initialProducts={initialAdminProducts.filter((item) => item.heroFeatured).slice(0, 3)}
           />
       </section>

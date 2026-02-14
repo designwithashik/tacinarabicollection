@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import clsx from "clsx";
 
 export type HeroProduct = {
@@ -18,11 +17,11 @@ export type HeroProduct = {
 
 type HeroCarouselProps = {
   addToCart: (product: HeroProduct, sizeOverride?: string | null) => void;
+  buyNow: (product: HeroProduct, sizeOverride?: string | null) => void;
   initialProducts?: HeroProduct[];
 };
 
-export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCarouselProps) {
-  const router = useRouter();
+export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }: HeroCarouselProps) {
   const [heroProducts, setHeroProducts] = useState<HeroProduct[]>(initialProducts.slice(0, 3));
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -40,13 +39,6 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   }, [slides.length]);
 
-  const handleAddToCart = useCallback(
-    (product: HeroProduct) => {
-      addToCart(product);
-    },
-    [addToCart]
-  );
-
   const handleBuyNow = useCallback(
     (product: HeroProduct) => {
       if (!product) return;
@@ -56,10 +48,9 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
         defaultSize = product.sizes.includes("M") ? "M" : product.sizes[0];
       }
 
-      addToCart(product, defaultSize);
-      router.push("/checkout");
+      buyNow(product, defaultSize);
     },
-    [addToCart, router]
+    [buyNow]
   );
 
   useEffect(() => {
@@ -113,7 +104,7 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
       }}
     >
       <div
-        className="flex transition-transform duration-700 ease-in-out h-full"
+        className="flex transition-transform duration-500 ease-in-out h-full"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
         {slides.map((product, index) => (
@@ -145,7 +136,7 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
                       className="btn-primary relative z-30 w-full"
                       onClick={(event) => {
                         event.stopPropagation();
-                        handleAddToCart(product);
+                        addToCart(product);
                       }}
                     >
                       Add to Cart
@@ -167,6 +158,23 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
           </div>
         ))}
       </div>
+
+      <button
+        type="button"
+        aria-label="Previous slide"
+        onClick={prevSlide}
+        className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 z-30 h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white hover:bg-black/55 transition-colors"
+      >
+        ‹
+      </button>
+      <button
+        type="button"
+        aria-label="Next slide"
+        onClick={nextSlide}
+        className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 z-30 h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white hover:bg-black/55 transition-colors"
+      >
+        ›
+      </button>
 
       <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2 z-30">
         {slides.map((product, index) => (
