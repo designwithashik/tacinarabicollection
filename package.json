@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:pages": "npx @cloudflare/next-on-pages@1",
     "start": "next start",
+    "preview:pages": "npx wrangler pages dev .vercel/output/static",
     "lint": "next lint"
   },
   "dependencies": {
-    "@vercel/kv": "^1.0.0",
     "clsx": "^2.1.1",
     "imagekit": "^5.0.0",
     "next": "^14.2.8",
