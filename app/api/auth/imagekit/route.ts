@@ -1,3 +1,4 @@
+export const runtime = "edge";
 import ImageKit from "imagekit";
 import { NextResponse } from "next/server";
 
@@ -12,7 +13,7 @@ export async function GET() {
     if (!publicKey || !privateKey || !urlEndpoint) {
       return NextResponse.json(
         {
-          error: "Environment variables missing in Vercel.",
+          error: "Environment variables missing.",
         },
         { status: 500 }
       );
