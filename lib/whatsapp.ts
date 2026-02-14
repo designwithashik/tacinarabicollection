@@ -2,6 +2,21 @@ import type { CartItem } from "./cart";
 import type { CustomerInfo } from "./orders";
 import { getPublicImageUrl } from "./images";
 
+type AttributionLike = {
+  firstTouch: {
+    sessionId: string;
+    timestamp: string;
+    params: Record<string, string | undefined>;
+    landingPath: string;
+  } | null;
+  latestTouch: {
+    sessionId: string;
+    timestamp: string;
+    params: Record<string, string | undefined>;
+    landingPath: string;
+  } | null;
+};
+
 const formatMoney = (value: number) => {
   const safe = Number.isFinite(value) ? value : 0;
   return `৳${safe}`;
@@ -27,6 +42,7 @@ export const buildWhatsAppMessage = (options: {
   deliveryFee: number;
   transactionId?: string;
   total: number;
+  attribution?: AttributionLike;
 }) => {
   const safeItems = options.items.filter(
     (item) => item && item.id && item.name && Number.isFinite(item.price)
@@ -61,6 +77,20 @@ export const buildWhatsAppMessage = (options: {
     `Order Total: ${formatMoney(safeTotal)}`,
     ...(options.paymentMethod ? [`Payment Method: ${options.paymentMethod}`] : []),
   ];
+
+  const source = options.attribution?.latestTouch?.params.utm_source
+    ?? options.attribution?.firstTouch?.params.utm_source;
+  const campaign = options.attribution?.latestTouch?.params.utm_campaign
+    ?? options.attribution?.firstTouch?.params.utm_campaign;
+  const medium = options.attribution?.latestTouch?.params.utm_medium
+    ?? options.attribution?.firstTouch?.params.utm_medium;
+
+  if (source || campaign || medium) {
+    lines.push("", "Attribution:");
+    if (source) lines.push(`Source: ${source}`);
+    if (medium) lines.push(`Medium: ${medium}`);
+    if (campaign) lines.push(`Campaign: ${campaign}`);
+  }
 
   if (options.transactionId) {
     lines.push(`Transaction ID: ${options.transactionId}`);
