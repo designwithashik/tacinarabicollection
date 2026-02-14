@@ -131,6 +131,7 @@ const copy = {
     deliveryZone: "Delivery Zone",
     insideDhaka: "Inside Dhaka",
     outsideDhaka: "Outside Dhaka",
+    sizeError: "Please select a size first",
   },
   bn: {
     buyNow: "এখনই কিনুন",
@@ -150,6 +151,7 @@ const copy = {
     deliveryZone: "ডেলিভারি এরিয়া",
     insideDhaka: "ঢাকার ভিতরে",
     outsideDhaka: "ঢাকার বাইরে",
+    sizeError: "অনুগ্রহ করে আগে একটি সাইজ নির্বাচন করুন",
   },
 };
 
@@ -580,6 +582,17 @@ export default function HomePage({
   // ------------------------------
   const productSource = adminProducts.filter((item) => item.active !== false);
 
+  const announcementText = useMemo(() => {
+    const editableAnnouncement = productSource
+      .map((item) => item.subtitle || item.title || "")
+      .find((value) => value.trim().length > 0);
+
+    return (
+      editableAnnouncement ||
+      "Free nationwide delivery updates • WhatsApp-first support • Elegant modest fashion curated for Bangladesh"
+    );
+  }, [productSource]);
+
   const filteredProducts = useMemo(() => {
     let result = [...productSource];
 
@@ -794,72 +807,15 @@ export default function HomePage({
           />
       </section>
 
-      <section className="px-6 py-12 md:px-12">
-        <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-[var(--brand-secondary)]/20 bg-[var(--brand-surface)] shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-4">
-            <div className="group flex items-center gap-4 border-b border-[var(--brand-secondary)]/15 px-8 py-8 md:border-b-0 md:border-r md:py-10">
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--brand-secondary)]/20 to-[var(--brand-secondary)]/5 transition-all duration-500 hover:-translate-y-1 hover:shadow-md">
-                <div className="absolute inset-0 rounded-2xl bg-[var(--brand-secondary)]/15 opacity-30 blur-xl transition-opacity duration-500 group-hover:opacity-60"></div>
-                <svg xmlns="http://www.w3.org/2000/svg" className="relative h-7 w-7 text-[var(--brand-primary)] transition-transform duration-500 group-hover:rotate-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 1.119-3 2.5S10.343 13 12 13s3 1.119 3 2.5S13.657 18 12 18m0-10V6m0 12v-2" />
-                </svg>
-              </div>
-              <div className="transition-all duration-500 group-hover:translate-x-1">
-                <p className="text-sm font-semibold tracking-wide">Cash on Delivery</p>
-                <p className="mt-1 text-xs text-[var(--brand-muted)]">Available nationwide</p>
-              </div>
-            </div>
-
-            <div className="group flex items-center gap-4 border-b border-[var(--brand-secondary)]/15 px-8 py-8 md:border-b-0 md:border-r md:py-10">
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--brand-secondary)]/20 to-[var(--brand-secondary)]/5 transition-all duration-500 hover:-translate-y-1 hover:shadow-md">
-                <div className="absolute inset-0 rounded-2xl bg-[var(--brand-secondary)]/15 opacity-30 blur-xl transition-opacity duration-500 group-hover:opacity-60"></div>
-                <svg xmlns="http://www.w3.org/2000/svg" className="relative h-7 w-7 text-[var(--brand-primary)] transition-transform duration-500 group-hover:rotate-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8 7 6 9 6 12a6 6 0 0012 0c0-3-2-5-6-10z" />
-                </svg>
-              </div>
-              <div className="transition-all duration-500 group-hover:translate-x-1">
-                <p className="text-sm font-semibold tracking-wide">Free Pick-Up</p>
-                <p className="mt-1 text-xs text-[var(--brand-muted)]">DU • Shahbag • Mirpur 10</p>
-              </div>
-            </div>
-
-            <div className="group flex items-center gap-4 border-b border-[var(--brand-secondary)]/15 px-8 py-8 md:border-b-0 md:border-r md:py-10">
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--brand-secondary)]/20 to-[var(--brand-secondary)]/5 transition-all duration-500 hover:-translate-y-1 hover:shadow-md">
-                <div className="absolute inset-0 rounded-2xl bg-[var(--brand-secondary)]/15 opacity-30 blur-xl transition-opacity duration-500 group-hover:opacity-60"></div>
-                <svg xmlns="http://www.w3.org/2000/svg" className="relative h-7 w-7 text-[var(--brand-primary)] transition-transform duration-500 group-hover:scale-105" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div className="transition-all duration-500 group-hover:translate-x-1">
-                <p className="text-sm font-semibold tracking-wide">Thoughtfully Selected</p>
-                <p className="mt-1 text-xs text-[var(--brand-muted)]">Quality over quantity</p>
-              </div>
-            </div>
-
-            <div className="group flex items-center gap-4 border-[var(--brand-secondary)]/15 px-8 py-8 md:py-10">
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--brand-secondary)]/20 to-[var(--brand-secondary)]/5 transition-all duration-500 hover:-translate-y-1 hover:shadow-md">
-                <div className="absolute inset-0 rounded-2xl bg-[var(--brand-secondary)]/15 opacity-30 blur-xl transition-opacity duration-500 group-hover:opacity-60"></div>
-                <svg xmlns="http://www.w3.org/2000/svg" className="relative h-7 w-7 text-[var(--brand-primary)] transition-transform duration-500 group-hover:-rotate-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6" />
-                </svg>
-              </div>
-              <div className="transition-all duration-500 group-hover:translate-x-1">
-                <p className="text-sm font-semibold tracking-wide">7-Day Exchange</p>
-                <p className="mt-1 text-xs text-[var(--brand-muted)]">Easy &amp; hassle-free</p>
-              </div>
-            </div>
+      <section className="mx-auto max-w-6xl px-4 pb-4 md:px-10">
+        <div className="overflow-hidden rounded-xl border border-[var(--brand-secondary)]/15 bg-[var(--brand-surface)] py-2">
+          <div className="flex w-max animate-marquee whitespace-nowrap text-sm text-neutral-700">
+            <span className="mx-6">{announcementText}</span>
+            <span className="mx-6">{announcementText}</span>
+            <span className="mx-6">{announcementText}</span>
+            <span className="mx-6">{announcementText}</span>
           </div>
         </div>
-      </section>
-
-      {/* Phase1.5: Retail Intro Before Product Grid */}
-      <section className="mx-auto my-6 max-w-3xl px-4 text-center">
-        <h2 className="text-2xl font-bold text-primary-heading">
-          Shop Trendy Kurti & Women's Fashion Online in Bangladesh
-        </h2>
-        <p className="mt-2 text-base text-secondary">
-          Discover bestselling cotton kurtis, elegant embroidered designs, and everyday modest fashion at competitive online prices. Buy now via WhatsApp with quick order confirmation and fast nationwide delivery across Bangladesh.
-        </p>
       </section>
 
       {/* Phase1: Place categories above product grid for faster discovery */}
@@ -981,6 +937,7 @@ export default function HomePage({
                 quantityFeedback={quantityFeedback[product.id]}
                 statusLabel={getStatusLabel(index)}
                 stockLabel={getStockLabel(index)}
+                sizeErrorLabel={text.sizeError}
               />
               </AnimatedWrapper>
             ))}
@@ -988,26 +945,10 @@ export default function HomePage({
           )}
         </SectionLoader>
 
-        {/* Phase1: Defer large info blocks below product grid */}
-        <section className="mt-8 hidden md:block">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-3xl bg-card p-5 shadow-soft">
-              <h3 className="font-heading text-xl font-semibold">
-                How ordering works
-              </h3>
-              <p className="mt-2 text-sm text-muted">
-                Choose your size, add to cart, and place your fashion order on WhatsApp in minutes. Get instant confirmation and delivery updates before dispatch.
-              </p>
-            </div>
-            <div className="rounded-3xl bg-card p-5 shadow-soft">
-              <h3 className="font-heading text-xl font-semibold">
-                Why customers choose us
-              </h3>
-              <p className="mt-2 text-sm text-muted">
-                Trusted quality, transparent Bangladesh pricing, and responsive support to help you buy fashion essentials with confidence.
-              </p>
-            </div>
-          </div>
+        <section className="mt-8 text-sm text-neutral-600 space-y-1">
+          <p>✓ Cash on Delivery Available</p>
+          <p>✓ Nationwide Delivery</p>
+          <p>✓ WhatsApp Order Support</p>
         </section>
 
         {recentlyViewed.length > 0 ? (
@@ -1044,6 +985,7 @@ export default function HomePage({
                   quantityFeedback={quantityFeedback[product.id]}
                   statusLabel={getStatusLabel(index)}
                   stockLabel={getStockLabel(index)}
+                  sizeErrorLabel={text.sizeError}
                 />
                 </AnimatedWrapper>
               ))}
