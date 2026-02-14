@@ -77,7 +77,7 @@ export default function ProductCard({
     ?? (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group relative flex min-h-[620px] h-full flex-col overflow-hidden rounded-3xl border border-[var(--brand-secondary)]/10 bg-[var(--brand-surface)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)]">
+    <div className="group relative w-full min-w-0 flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--brand-secondary)]/10 bg-[var(--brand-surface)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)]">
       <div className="relative overflow-hidden rounded-t-3xl">
         <div
         role="button"
@@ -97,7 +97,7 @@ export default function ProductCard({
               alt={product.name}
               width={520}
               height={650}
-              className="h-[360px] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+              className="w-full h-[180px] sm:h-[220px] md:h-[360px] object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
               onError={() => setImageFailed(true)}
             />
           ) : (
@@ -143,10 +143,10 @@ export default function ProductCard({
         </div>
       </div>
 
-      <div className="p-6 space-y-4">
+      <div className="p-3 sm:p-4 md:p-6 flex flex-col gap-2 flex-1">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-medium leading-snug tracking-wide text-[var(--brand-primary)]">
+            <h3 className="text-sm sm:text-base md:text-lg font-medium leading-tight line-clamp-2 break-words tracking-wide text-[var(--brand-primary)]">
               {product.name}
             </h3>
             <p className="mt-1 text-sm text-support">{product.category}</p>
@@ -168,7 +168,7 @@ export default function ProductCard({
 
       <div>
         <p className="text-sm font-medium text-ink">Select Size</p>
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex flex-wrap gap-2">
           {sizes.map((size) => (
             <button
               key={size}
@@ -190,7 +190,7 @@ export default function ProductCard({
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-medium text-ink">Qty</p>
           <div className="mt-2 flex items-center gap-2 rounded-full border border-[#e5d7cc] bg-white px-3 py-1">
@@ -214,11 +214,11 @@ export default function ProductCard({
             <p className="mt-2 text-xs font-semibold text-accent">{quantityFeedback}</p>
           ) : null}
         </div>
-        <div className="mt-2 flex flex-col gap-2 pt-2">
+        <div className="mt-2 flex w-full sm:w-auto flex-col gap-2 pt-2">
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-secondary min-h-[44px] w-full text-[10px] font-semibold uppercase tracking-[0.2em]",
+              "interactive-feedback btn-secondary min-h-[44px] w-full text-xs font-semibold uppercase tracking-[0.15em]",
               sizeMissing && "cursor-not-allowed border-[#d9cdc0] text-muted"
             )}
             onClick={onBuyNow}
@@ -229,7 +229,7 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-primary mt-2 w-full min-h-[44px]",
+              "interactive-feedback btn-primary w-full text-sm sm:text-base py-2 sm:py-2.5",
               sizeMissing || addState === "loading"
                 ? "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
                 : "",
