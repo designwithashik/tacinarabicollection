@@ -34,9 +34,23 @@ const resolveLimit = (rawLimit: string | undefined, max = 200) => {
 
 const app = new Hono<Bindings>()
 
-const isAllowedOrigin = (origin: string) => {
-  if (origin === 'https://tacinarabicollection.pages.dev') return true
-  return /^https:\/\/[a-z0-9-]+\.tacinarabicollection\.pages\.dev$/.test(origin)
+const getAllowedOrigin = (origin: string) => {
+  try {
+    const url = new URL(origin)
+    const hostname = url.hostname.toLowerCase()
+
+    if (hostname === 'tacinarabicollection.pages.dev') {
+      return url.origin
+    }
+
+    if (hostname.endsWith('.tacinarabicollection.pages.dev')) {
+      return url.origin
+    }
+
+    return ''
+  } catch {
+    return ''
+  }
 }
 
 app.use(
@@ -44,7 +58,7 @@ app.use(
   cors({
     origin: (origin) => {
       if (!origin) return ''
-      return isAllowedOrigin(origin) ? origin : ''
+      return getAllowedOrigin(origin)
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
