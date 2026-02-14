@@ -1,13 +1,24 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { getCookie, setCookie } from 'hono/cookie'
+import { sign, verify } from 'hono/jwt'
 import type { MiddlewareHandler } from 'hono'
+import { compare, hash } from 'bcryptjs'
 
 export type Env = {
   DB: D1Database
   ADMIN_API_TOKEN?: string
+  JWT_SECRET: string
 }
 
-type Bindings = { Bindings: Env }
+type JwtUser = {
+  id: number
+  email: string
+  role: string
+  exp: number
+}
+
+type Bindings = { Bindings: Env; Variables: { user: JwtUser } }
 
 type OrderItemInput = {
   product_id: number
@@ -34,23 +45,16 @@ const resolveLimit = (rawLimit: string | undefined, max = 200) => {
 
 const app = new Hono<Bindings>()
 
-const getAllowedOrigin = (origin: string) => {
-  try {
-    const url = new URL(origin)
-    const hostname = url.hostname.toLowerCase()
-
-    if (hostname === 'tacinarabicollection.pages.dev') {
-      return url.origin
-    }
-
-    if (hostname.endsWith('.tacinarabicollection.pages.dev')) {
-      return url.origin
-    }
-
-    return ''
-  } catch {
-    return ''
+const isAllowedOrigin = (origin: string) => {
+  if (origin === 'https://tacinarabicollection.pages.dev') {
+    return true
   }
+
+  if (/^https:\/\/[a-z0-9-]+\.tacinarabicollection\.pages\.dev$/.test(origin)) {
+    return true
+  }
+
+  return false
 }
 
 app.use(
@@ -58,7 +62,7 @@ app.use(
   cors({
     origin: (origin) => {
       if (!origin) return ''
-      return getAllowedOrigin(origin)
+      return isAllowedOrigin(origin) ? origin : ""
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
@@ -74,15 +78,29 @@ app.use('*', async (c, next) => {
 })
 
 const requireAdmin: MiddlewareHandler<Bindings> = async (c, next) => {
-  const expectedToken = c.env.ADMIN_API_TOKEN
-  const authHeader = c.req.header('authorization')
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null
+  const token = getCookie(c, 'admin_token')
+  const jwtSecret = c.env.JWT_SECRET
 
-  if (!expectedToken || !token || token !== expectedToken) {
+  if (!jwtSecret || !token) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
-  await next()
+  try {
+    const decoded = await verify(token, jwtSecret, 'HS256')
+    const id = Number(decoded.id)
+    const email = typeof decoded.email === 'string' ? decoded.email : ''
+    const role = typeof decoded.role === 'string' ? decoded.role : ''
+    const exp = Number(decoded.exp)
+
+    if (!Number.isInteger(id) || !email || !role || !Number.isFinite(exp)) {
+      return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    c.set('user', { id, email, role, exp })
+    await next()
+  } catch {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
 }
 
 const parseOrderBody = (payload: unknown): CreateOrderBody | null => {
@@ -148,6 +166,77 @@ app.get('/products', async (c) => {
   ).all()
 
   return c.json(products.results ?? [])
+})
+
+app.post('/admin/seed', async (c) => {
+  const payload = (await c.req.json().catch(() => null)) as { email?: string; password?: string } | null
+  const email = payload?.email?.trim().toLowerCase()
+  const password = payload?.password
+
+  if (!email || !password) {
+    return c.json({ error: 'Validation error' }, 400)
+  }
+
+  const existing = await c.env.DB.prepare('SELECT COUNT(*) AS count FROM admins').first<{ count: number }>()
+  if (Number(existing?.count ?? 0) > 0) {
+    return c.json({ error: 'Admin already exists' }, 403)
+  }
+
+  const passwordHash = await hash(password, 10)
+
+  await c.env.DB.prepare('INSERT INTO admins (email, password_hash, role) VALUES (?, ?, ?)')
+    .bind(email, passwordHash, 'super_admin')
+    .run()
+
+  return c.json({ success: true })
+})
+
+app.post('/admin/login', async (c) => {
+  const payload = (await c.req.json().catch(() => null)) as { email?: string; password?: string } | null
+  const email = payload?.email?.trim().toLowerCase()
+  const password = payload?.password
+
+  if (!email || !password) {
+    return c.json({ error: 'Invalid credentials' }, 401)
+  }
+
+  const admin = await c.env.DB.prepare('SELECT id, email, password_hash, role FROM admins WHERE email = ?')
+    .bind(email)
+    .first<{ id: number; email: string; password_hash: string; role: string }>()
+
+  if (!admin) {
+    return c.json({ error: 'Invalid credentials' }, 401)
+  }
+
+  const validPassword = await compare(password, admin.password_hash)
+  if (!validPassword) {
+    return c.json({ error: 'Invalid credentials' }, 401)
+  }
+
+  const jwtSecret = c.env.JWT_SECRET
+  if (!jwtSecret) {
+    return c.json({ error: 'Server misconfiguration' }, 500)
+  }
+
+  const token = await sign(
+    {
+      id: admin.id,
+      email: admin.email,
+      role: admin.role,
+      exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60,
+    },
+    jwtSecret
+  )
+
+  setCookie(c, 'admin_token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'Strict',
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60,
+  })
+
+  return c.json({ success: true })
 })
 
 app.post('/orders', async (c) => {
@@ -264,7 +353,12 @@ app.put('/admin/orders/:id/status', requireAdmin, async (c) => {
 })
 
 app.get('/admin/me', requireAdmin, (c) => {
-  return c.json({ ok: true, role: 'admin' })
+  const user = c.get('user')
+  return c.json({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+  })
 })
 
 app.get('/admin/products/low-stock', requireAdmin, async (c) => {

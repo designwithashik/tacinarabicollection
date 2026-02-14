@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20260204.0",
-    "hono": "^4.7.2"
+    "hono": "^4.7.2",
+    "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
     "typescript": "^5.9.2",
