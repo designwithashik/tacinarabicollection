@@ -119,7 +119,7 @@ const copy = {
     adding: "Adding...",
     added: "Added",
     checkout: "Checkout",
-    orderCod: "Order via WhatsApp (COD)",
+    orderCod: "Order via WhatsApp (Cash on Delivery)",
     payNow: "Pay Now (bKash / Nagad)",
     confirmWhatsapp: "Confirm & Send on WhatsApp",
     applyFilters: "Apply Filters",
@@ -848,7 +848,7 @@ export default function HomePage({
                   className={clsx(
                     "px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white",
                     selectedCategory === category
-                      ? "bg-neutral-900 text-white border-neutral-900"
+                      ? "bg-[var(--brand-accent)] text-white border-[var(--brand-accent)]"
                       : "text-ink"
                   )}
                 >
@@ -1499,19 +1499,19 @@ export default function HomePage({
                       <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs">
                         <div className="flex items-center justify-between">
                           <span>{text.subtotal}</span>
-                          <span className="font-semibold">
+                          <span className="font-medium text-[var(--brand-primary)]">
                             {isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutSubtotal)}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between text-neutral-700">
                           <span>{text.deliveryCharge}</span>
-                          <span className="font-semibold">
+                          <span className="font-medium text-[var(--brand-primary)]">
                             {isSummaryLoading ? <SummaryPlaceholder widthClass="w-12" /> : formatPrice(deliveryFee)}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between text-base font-semibold">
-                          <span>{text.totalPayable}</span>
-                          <span>{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
+                        <div className="mt-3 flex items-center justify-between border-t border-neutral-200 pt-3 text-base font-semibold">
+                          <span className="text-[var(--brand-primary)]">{text.totalPayable}</span>
+                          <span className="text-lg font-semibold text-[var(--brand-primary)]">{isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}</span>
                         </div>
                       </div>
 
@@ -1600,7 +1600,7 @@ export default function HomePage({
                           className={clsx(
                             "w-full border border-neutral-900 text-neutral-900 py-2.5 rounded-lg mt-3 hover:bg-neutral-900 hover:text-white transition",
                             (isSubmitting || !(isCustomerInfoValid && isOnline)) &&
-                              "opacity-60 cursor-not-allowed border-[#e6d8ce] text-muted hover:bg-transparent"
+                              "opacity-60 cursor-not-allowed bg-[var(--brand-primary)]/60 text-white hover:bg-[var(--brand-primary)]"
                           )}
                         >
                           {isSubmitting ? "Processing..." : text.orderCod}

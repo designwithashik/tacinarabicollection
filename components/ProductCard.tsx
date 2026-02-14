@@ -1,5 +1,4 @@
 "use client";
-// Client component required for interactive product card buttons.
 
 import Image from "next/image";
 import clsx from "clsx";
@@ -37,22 +36,16 @@ type Props = {
 export default function ProductCard({
   product,
   selectedSize,
-  quantity,
   onSizeChange,
-  onQuantityChange,
   onBuyNow,
   onAddToCart,
   onOpenDetails,
   showBadge,
-  priceLabel,
   buyNowLabel,
   addToCartLabel,
   addingLabel,
   addedLabel,
   addState,
-  quantityFeedback,
-  statusLabel,
-  stockLabel,
   sizeErrorLabel,
   isRouting = false,
 }: Props) {
@@ -70,7 +63,6 @@ export default function ProductCard({
     return product.image;
   }, [product.image]);
 
-  const sizeMissing = !selectedSize;
   const addLabel =
     addState === "loading"
       ? addingLabel
@@ -113,7 +105,7 @@ export default function ProductCard({
       <div
         role="button"
         tabIndex={0}
-        className="interactive-feedback relative w-full overflow-hidden bg-base"
+        className="relative aspect-[3/4] overflow-hidden"
         onClick={onOpenDetails}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -154,13 +146,10 @@ export default function ProductCard({
         </div>
 
         {showBadge ? (
-          <span className="absolute left-3 top-3 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white">
+          <span className="absolute left-2.5 top-2.5 rounded-md bg-[var(--brand-accent)] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
             {showBadge}
           </span>
         ) : null}
-        <span className="absolute right-3 top-3 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink">
-          {statusLabel}
-        </span>
 
         <button
           type="button"
@@ -168,9 +157,9 @@ export default function ProductCard({
             event.stopPropagation();
             setQuickViewProduct(product);
           }}
-          className="absolute right-3 top-12 rounded-full bg-white/90 px-2.5 py-1 text-[10px] opacity-0 backdrop-blur-sm transition duration-300 group-hover:opacity-100 sm:text-xs"
+          className="absolute right-2.5 top-2.5 rounded-md bg-white/90 px-2 py-1 text-[10px] font-semibold text-neutral-700 transition-all duration-200 ease-out hover:bg-white"
         >
-          Quick View
+          View
         </button>
       </div>
 
@@ -255,9 +244,7 @@ export default function ProductCard({
           >
             {isRouting ? "Redirecting..." : buyNowLabel}
           </button>
-        </div>
 
-        <div className="mt-auto pt-2">
           <button
             type="button"
             className={clsx(
@@ -270,7 +257,7 @@ export default function ProductCard({
             onClick={handleAddClick}
             disabled={addState === "loading" || isRouting}
           >
-            {addLabel}
+            {isRouting ? "Redirecting..." : (buyNowLabel === "Buy Now" ? "Buy" : buyNowLabel)}
           </button>
         </div>
       </div>

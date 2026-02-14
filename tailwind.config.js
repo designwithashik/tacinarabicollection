@@ -14,6 +14,11 @@ module.exports = {
         muted: "#6f6860",
         charcoal: "#232323",
         gold: "#c8a96b",
+        brand: {
+          primary: "var(--brand-primary)",
+          accent: "var(--brand-accent)",
+          soft: "var(--brand-soft)",
+        },
       },
       fontFamily: {
         heading: ["var(--font-heading)", "serif"],
