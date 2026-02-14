@@ -21,6 +21,8 @@ const defaultDraft: AdminProduct = {
   active: true,
   heroFeatured: false,
   updatedAt: new Date().toISOString(),
+  heroTitle: "",
+  heroSubtitle: "",
 };
 
 export default function AdminInventory() {
@@ -157,6 +159,8 @@ export default function AdminInventory() {
         sizes: draft.sizes,
         active: draft.active,
         heroFeatured: draft.heroFeatured === true,
+        heroTitle: draft.heroTitle ?? "",
+        heroSubtitle: draft.heroSubtitle ?? "",
       };
 
       const endpoint = isEditing
@@ -308,6 +312,26 @@ export default function AdminInventory() {
               <option value="false">No</option>
               <option value="true">Yes</option>
             </select>
+          </label>
+          <label className="text-xs font-semibold">
+            Hero Title
+            <input
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={draft.heroTitle ?? ""}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, heroTitle: event.target.value }))
+              }
+            />
+          </label>
+          <label className="text-xs font-semibold">
+            Hero Subtitle
+            <input
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={draft.heroSubtitle ?? ""}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, heroSubtitle: event.target.value }))
+              }
+            />
           </label>
         </div>
 

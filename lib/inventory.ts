@@ -3,6 +3,8 @@ import type { Product } from "./products";
 export type AdminProduct = Product & {
   active: boolean;
   updatedAt: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
   heroFeatured?: boolean;
 };
 
