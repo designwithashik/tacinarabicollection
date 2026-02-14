@@ -7,13 +7,11 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "check": "tsc --noEmit",
-    "migrate": "wrangler d1 execute tacin_db --file=./schema.sql",
-    "secret:jwt": "wrangler secret put JWT_SECRET"
+    "migrate": "wrangler d1 execute tacin_db --file=./schema.sql"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20260204.0",
-    "hono": "^4.7.2",
-    "bcryptjs": "^2.4.3"
+    "hono": "^4.7.2"
   },
   "devDependencies": {
     "typescript": "^5.9.2",
