@@ -20,6 +20,8 @@ const defaultDraft: AdminProduct = {
   sizes: ["M", "L", "XL"],
   active: true,
   heroFeatured: false,
+  title: "",
+  subtitle: "",
   updatedAt: new Date().toISOString(),
 };
 
@@ -157,6 +159,8 @@ export default function AdminInventory() {
         sizes: draft.sizes,
         active: draft.active,
         heroFeatured: draft.heroFeatured === true,
+        title: draft.title?.trim() || draft.name,
+        subtitle: draft.subtitle?.trim() || "",
       };
 
       const endpoint = isEditing
@@ -308,6 +312,28 @@ export default function AdminInventory() {
               <option value="false">No</option>
               <option value="true">Yes</option>
             </select>
+          </label>
+          <label className="text-xs font-semibold">
+            Hero Title
+            <input
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={draft.title ?? ""}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, title: event.target.value }))
+              }
+              placeholder="Displayed headline for hero slide"
+            />
+          </label>
+          <label className="text-xs font-semibold md:col-span-2">
+            Hero Subtitle
+            <input
+              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              value={draft.subtitle ?? ""}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, subtitle: event.target.value }))
+              }
+              placeholder="Displayed supporting text for hero slide"
+            />
           </label>
         </div>
 
