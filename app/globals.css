@@ -4,11 +4,12 @@
 
 :root {
   color-scheme: light;
-  --brand-primary: #2e2a27;
+  --brand-primary: #1E1E1E;   /* Deep charcoal */
   --brand-secondary: #8c7a5b;
-  --brand-accent: #111111;
+  --brand-accent: #8C6A5D;    /* Warm mocha tone */
   --brand-bg: #f6f2eb;
   --brand-surface: #ffffff;
+  --brand-soft: #F5F1EE;      /* Soft warm background */
   --brand-muted: #6e6a64;
 
   --radius-soft: 8px;
