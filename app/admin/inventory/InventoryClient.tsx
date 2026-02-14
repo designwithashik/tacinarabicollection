@@ -51,6 +51,7 @@ export default function AdminInventory() {
       const res = await fetch("/api/admin/products", {
         cache: "no-store",
         next: { revalidate: 0 },
+        credentials: "include",
       });
       if (!res.ok) throw new Error();
       const data = (await res.json()) as unknown;
@@ -169,6 +170,7 @@ export default function AdminInventory() {
 
       const res = await fetch(endpoint, {
         method,
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -206,7 +208,7 @@ export default function AdminInventory() {
     try {
       const res = await fetch(
         `/api/admin/products/${encodeURIComponent(id)}/delete`,
-        { method: "DELETE" }
+        { method: "DELETE", credentials: "include" }
       );
       if (!res.ok) throw new Error();
       setNotice("Product deleted.");
