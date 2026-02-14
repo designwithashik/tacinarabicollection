@@ -1,11 +1,12 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import {
   GoogleAuthProvider,
   browserLocalPersistence,
   getAuth,
   setPersistence,
+  type Auth,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -16,12 +17,21 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const hasFirebaseConfig = Object.values(firebaseConfig).every(Boolean);
+const isBrowser = typeof window !== "undefined";
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+const app: FirebaseApp | null =
+  isBrowser && hasFirebaseConfig
+    ? getApps().length
+      ? getApp()
+      : initializeApp(firebaseConfig)
+    : null;
+
+export const auth: Auth | null = app ? getAuth(app) : null;
+export const db: Firestore | null = app ? getFirestore(app) : null;
 export const googleProvider = new GoogleAuthProvider();
 
-if (typeof window !== "undefined") {
-  void setPersistence(auth, browserLocalPersistence);
+export async function ensureAuthPersistence() {
+  if (!auth || !isBrowser) return;
+  await setPersistence(auth, browserLocalPersistence);
 }

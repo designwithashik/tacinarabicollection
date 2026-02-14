@@ -15,7 +15,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { auth, googleProvider } from "../lib/firebase";
+import { auth, ensureAuthPersistence, googleProvider } from "../lib/firebase";
 
 type AuthContextValue = {
   user: User | null;
@@ -38,6 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      setAdminSessionCookie(false);
+      return;
+    }
+
+    void ensureAuthPersistence();
+
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       setUser(nextUser);
       setLoading(false);
@@ -48,6 +56,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const loginWithGoogle = useCallback(async () => {
+    if (!auth) {
+      throw new Error("Firebase auth is not configured.");
+    }
+
     const isMobile =
       typeof window !== "undefined" && /Mobi|Android|iPhone/i.test(navigator.userAgent);
 
@@ -64,6 +76,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    if (!auth) {
+      setAdminSessionCookie(false);
+      return;
+    }
+
     await signOut(auth);
     setAdminSessionCookie(false);
   }, []);

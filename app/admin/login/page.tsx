@@ -1,6 +1,17 @@
 "use client";
 
-import { doc, getDoc, serverTimestamp, setDoc, updateDoc, collection, getDocs, limit, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
@@ -21,6 +32,12 @@ export default function AdminLoginPage() {
       setCheckingAccess(true);
 
       try {
+        if (!db) {
+          setStatus("Auth service is not configured.");
+          await logout();
+          return;
+        }
+
         const email = user.email?.toLowerCase();
 
         if (!email) {
@@ -50,11 +67,7 @@ export default function AdminLoginPage() {
           return;
         }
 
-        const userQuery = query(
-          collection(db, "users"),
-          where("email", "==", email),
-          limit(1)
-        );
+        const userQuery = query(collection(db, "users"), where("email", "==", email), limit(1));
         const snapshot = await getDocs(userQuery);
 
         if (snapshot.empty) {
@@ -76,6 +89,7 @@ export default function AdminLoginPage() {
 
   const handleLogin = async () => {
     setStatus("");
+
     try {
       await loginWithGoogle();
     } catch {
