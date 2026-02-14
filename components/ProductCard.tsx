@@ -145,15 +145,15 @@ export default function ProductCard({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-2.5 sm:p-4">
-        <h3 className="text-sm sm:text-base font-medium leading-snug text-[var(--brand-primary)] line-clamp-2 break-words">
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        <h3 className="text-sm md:text-base font-medium leading-snug text-[var(--brand-primary)] line-clamp-2 break-words">
           {product.name}
         </h3>
 
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex flex-col min-w-0">
             <p className="text-[10px] uppercase tracking-[0.15em] text-support">{priceLabel}</p>
-            <p className="text-sm sm:text-base font-semibold text-neutral-900">৳ {product.price.toLocaleString()}</p>
+            <p className="text-base font-semibold text-neutral-900">৳ {product.price.toLocaleString()}</p>
             {typeof originalPrice === "number" && originalPrice > product.price ? (
               <p className="text-xs text-[var(--brand-muted)] line-through">৳ {originalPrice.toLocaleString()}</p>
             ) : null}

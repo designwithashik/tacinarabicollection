@@ -78,8 +78,8 @@ export default function ProductDetailClient({ product }: Props) {
   };
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-8 pb-24 md:pb-8">
-      <div className="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-2 gap-10">
+    <main className="max-w-6xl mx-auto px-4 py-5 pb-24 md:pb-8">
+      <div className="max-w-6xl mx-auto px-4 py-5 grid gap-5 md:grid-cols-2">
         <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden bg-[var(--brand-surface)]">
           <Image
             src={product.image}
