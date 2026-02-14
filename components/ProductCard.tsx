@@ -72,14 +72,13 @@ export default function ProductCard({
         ? addedLabel
         : addToCartLabel;
 
-  const canQuickAdd = !sizeMissing && addState !== "loading";
   const stockCount = (product as Product & { stock?: number }).stock;
   const originalPrice = (product as Product & { originalPrice?: number; compareAtPrice?: number }).originalPrice
     ?? (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group relative flex min-h-[620px] h-full flex-col overflow-hidden rounded-2xl border border-[var(--brand-secondary)]/10 bg-[var(--brand-surface)] transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
-      <div className="relative overflow-hidden">
+    <div className="group relative flex min-h-[620px] h-full flex-col overflow-hidden rounded-3xl border border-[var(--brand-secondary)]/10 bg-[var(--brand-surface)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)]">
+      <div className="relative overflow-hidden rounded-t-3xl">
         <div
         role="button"
         tabIndex={0}
@@ -98,7 +97,7 @@ export default function ProductCard({
               alt={product.name}
               width={520}
               height={650}
-              className="aspect-[4/5] w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+              className="h-[360px] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
               onError={() => setImageFailed(true)}
             />
           ) : (
@@ -136,18 +135,18 @@ export default function ProductCard({
             event.stopPropagation();
             setQuickViewProduct(product);
           }}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition duration-300 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full text-sm"
+          className="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1.5 text-xs opacity-0 backdrop-blur-sm transition duration-300 group-hover:opacity-100"
         >
           Quick View
         </button>
-          <div className="pointer-events-none absolute inset-0 bg-black/0 transition-all duration-500 group-hover:bg-black/5" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
         </div>
       </div>
 
-      <div className="p-5 space-y-3">
+      <div className="p-6 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-base font-medium leading-snug tracking-wide text-[var(--brand-primary)] transition group-hover:opacity-90">
+            <h3 className="text-lg font-medium leading-snug tracking-wide text-[var(--brand-primary)]">
               {product.name}
             </h3>
             <p className="mt-1 text-sm text-support">{product.category}</p>
@@ -156,14 +155,14 @@ export default function ProductCard({
           <div className="text-right">
             <p className="text-xs uppercase tracking-[0.2em] text-support">{priceLabel}</p>
             {typeof stockCount === "number" && stockCount <= 5 ? (
-              <span className="mt-1 inline-flex rounded-full bg-[var(--brand-secondary)]/15 px-3 py-1 text-xs tracking-wide text-[var(--brand-secondary)]">
+              <span className="mt-1 inline-flex rounded-full bg-[var(--brand-secondary)]/15 px-3 py-1 text-xs uppercase tracking-wider text-[var(--brand-secondary)]">
                 Limited
               </span>
             ) : null}
             {typeof originalPrice === "number" && originalPrice > product.price ? (
               <p className="text-sm line-through text-[var(--brand-muted)]">৳ {originalPrice.toLocaleString()}</p>
             ) : null}
-            <p className="mt-2 text-base font-semibold tracking-wide text-[var(--brand-primary)]">৳ {product.price.toLocaleString()}</p>
+            <p className="mt-2 text-xl font-semibold text-[var(--brand-primary)]">৳ {product.price.toLocaleString()}</p>
           </div>
         </div>
 
@@ -230,7 +229,7 @@ export default function ProductCard({
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-primary w-full min-h-[44px]",
+              "interactive-feedback btn-primary mt-2 w-full min-h-[44px]",
               sizeMissing || addState === "loading"
                 ? "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
                 : "",
@@ -244,21 +243,6 @@ export default function ProductCard({
         </div>
       </div>
       </div>
-      <button
-        type="button"
-        aria-label="Quick add to cart"
-        onClick={onAddToCart}
-        disabled={!canQuickAdd}
-        className={clsx(
-          "interactive-feedback absolute bottom-6 right-6 z-20 hidden h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/95 text-lg text-charcoal shadow-soft transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] md:flex",
-          canQuickAdd
-            ? "opacity-0 translate-y-1 group-hover:translate-y-0 group-hover:opacity-100"
-            : "cursor-not-allowed opacity-60"
-        )}
-      >
-        +
-      </button>
-
       {quickViewProduct ? (
         <QuickView
           product={quickViewProduct}
