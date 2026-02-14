@@ -14,9 +14,15 @@ export default function AnalyticsCharts({ orders }: { orders: Order[] }) {
   const maxTotal = Math.max(codTotal, prepaidTotal, 1);
 
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-soft">
-      <h3 className="text-lg font-semibold">Payment Split</h3>
-      <div className="mt-4 space-y-4">
+    <div className="space-y-4 rounded-3xl bg-white p-6 shadow-soft">
+      <div>
+        <h3 className="text-lg font-semibold">Order-Derived Payment Split</h3>
+        <p className="mt-1 text-xs text-muted">
+          This chart is based on locally stored order records from checkout flow (mock/demo analytics source).
+        </p>
+      </div>
+
+      <div className="space-y-4">
         {[
           { label: "COD", value: codTotal },
           { label: "Prepaid", value: prepaidTotal },
@@ -34,6 +40,11 @@ export default function AnalyticsCharts({ orders }: { orders: Order[] }) {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="rounded-2xl border border-dashed border-[#d7c3b4] bg-card p-3 text-xs text-muted">
+        Real analytics-source metrics (GA/GTM/Hotjar events, attribution, and funnel conversion) should be read from
+        your configured analytics providers, not from this local order-derived widget.
       </div>
     </div>
   );
