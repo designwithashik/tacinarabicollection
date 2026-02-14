@@ -6,7 +6,7 @@
 import { NextResponse } from "next/server";
 import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET(request: Request) {
   try {

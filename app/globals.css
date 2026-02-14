@@ -24,6 +24,7 @@ body {
   @apply font-body;
   background-color: var(--brand-bg);
   color: var(--brand-primary);
+  overflow-y: auto;
 }
 
 h1,
