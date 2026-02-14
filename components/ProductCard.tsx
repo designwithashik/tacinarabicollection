@@ -174,37 +174,38 @@ export default function ProductCard({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col space-y-1.5 p-2.5 sm:p-3">
-        <h3 className="text-sm font-medium leading-snug text-[var(--brand-primary)] line-clamp-2 break-words">
-          {product.name}
-        </h3>
+      <div className="flex flex-1 flex-col p-3 space-y-2">
+        <div className="flex justify-between items-start gap-2">
+          <h3 className="text-[13px] font-medium leading-snug line-clamp-2 text-[var(--brand-primary)] break-words">
+            {product.name}
+          </h3>
+          <span className="text-[14px] font-semibold whitespace-nowrap text-neutral-900">
+            ৳{product.price.toLocaleString()}
+          </span>
+        </div>
 
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex flex-col min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.15em] text-support">{priceLabel}</p>
-            <p className="text-[14px] font-semibold text-neutral-900">৳ {product.price.toLocaleString()}</p>
-            {typeof originalPrice === "number" && originalPrice > product.price ? (
-              <p className="text-xs text-[var(--brand-muted)] line-through">৳ {originalPrice.toLocaleString()}</p>
-            ) : null}
-          </div>
+        {typeof originalPrice === "number" && originalPrice > product.price ? (
+          <p className="text-[11px] text-[var(--brand-muted)] line-through">৳{originalPrice.toLocaleString()}</p>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[12px] text-support break-words">{product.category}</p>
           {typeof stockCount === "number" && stockCount <= 5 ? (
-            <span className="text-[10px] sm:text-xs px-2 py-1 rounded-full bg-[var(--brand-secondary)]/15 whitespace-nowrap text-[var(--brand-secondary)]">
+            <span className="text-[10px] px-2 py-1 rounded-full bg-[var(--brand-secondary)]/15 whitespace-nowrap text-[var(--brand-secondary)]">
               Limited
             </span>
           ) : null}
         </div>
 
-        <p className="text-[12px] sm:text-[13px] text-support break-words">{product.category}</p>
-
         <div>
           <p className="text-[13px] font-medium text-ink">Select Size</p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="flex gap-1 flex-wrap mt-1">
             {sizes.map((size) => (
               <button
                 key={size}
                 type="button"
                 className={clsx(
-                  "interactive-feedback rounded-full border px-3 py-1 text-[12px] sm:text-[13px] font-medium transition-all duration-200 ease-out",
+                  "interactive-feedback text-[11px] px-2 py-1 rounded-md border transition",
                   selectedSize === size
                     ? "border-accent bg-accent text-white"
                     : "border-[#e5d7cc] bg-white text-ink"
@@ -220,34 +221,28 @@ export default function ProductCard({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div>
-            <p className="text-[13px] font-medium text-ink">Qty</p>
-            <div className="mt-2 flex items-center gap-2 rounded-full border border-[#e5d7cc] bg-white px-3 py-1">
-              <button
-                type="button"
-                className="interactive-feedback px-1 text-base font-semibold text-ink"
-                onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-              >
-                -
-              </button>
-              <span className="text-center text-[13px] font-semibold">{quantity}</span>
-              <button
-                type="button"
-                className="interactive-feedback px-1 text-base font-semibold text-ink"
-                onClick={() => onQuantityChange(quantity + 1)}
-              >
-                +
-              </button>
-            </div>
-            {quantityFeedback ? (
-              <p className="mt-2 text-xs font-semibold text-accent">{quantityFeedback}</p>
-            ) : null}
+        <div className="flex gap-2 items-center mt-2">
+          <div className="flex items-center border border-[#e5d7cc] rounded-md px-2 py-1 bg-white">
+            <button
+              type="button"
+              className="interactive-feedback text-[12px] font-semibold text-ink"
+              onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+            >
+              -
+            </button>
+            <span className="px-2 text-[12px] font-semibold">{quantity}</span>
+            <button
+              type="button"
+              className="interactive-feedback text-[12px] font-semibold text-ink"
+              onClick={() => onQuantityChange(quantity + 1)}
+            >
+              +
+            </button>
           </div>
           <button
             type="button"
             className={clsx(
-              "interactive-feedback btn-secondary w-full sm:w-auto rounded-lg px-3 py-2 text-[13px] font-semibold uppercase tracking-[0.15em]",
+              "interactive-feedback flex-1 bg-black text-white text-[12px] py-1.5 rounded-md transition hover:opacity-90",
               isRouting && "cursor-not-allowed border-[#d9cdc0] text-muted"
             )}
             onClick={handleBuyClick}
@@ -257,22 +252,20 @@ export default function ProductCard({
           </button>
         </div>
 
-        <div className="mt-auto pt-2">
-          <button
-            type="button"
-            className={clsx(
-              "interactive-feedback btn-primary w-full rounded-lg py-2 text-[13px]",
-              addState === "loading" || isRouting
-                ? "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
-                : "",
-              addState === "success" && "border-[var(--brand-accent)] bg-[var(--brand-accent)] text-[#1f1f1f]"
-            )}
-            onClick={handleAddClick}
-            disabled={addState === "loading" || isRouting}
-          >
-            {addLabel}
-          </button>
-        </div>
+        {quantityFeedback ? <p className="text-xs font-semibold text-accent">{quantityFeedback}</p> : null}
+
+        <button
+          type="button"
+          className={clsx(
+            "interactive-feedback w-full border border-black text-black text-[12px] py-1.5 rounded-md mt-2 transition hover:bg-black hover:text-white",
+            addState === "loading" || isRouting ? "cursor-not-allowed border-[#d9cdc0] text-muted" : "",
+            addState === "success" && "border-[var(--brand-accent)] bg-[var(--brand-accent)] text-[#1f1f1f]"
+          )}
+          onClick={handleAddClick}
+          disabled={addState === "loading" || isRouting}
+        >
+          {addLabel}
+        </button>
       </div>
 
       {quickViewProduct ? (
