@@ -211,12 +211,24 @@ export default function HomePage({
   const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const checkoutRef = useRef<HTMLDivElement | null>(null);
 
   const showToast = (nextToast: ToastState) => {
     setToast(nextToast);
   };
 
   const text = copy[language];
+
+  const scrollToCheckout = () => {
+    if (typeof window === "undefined") return;
+
+    window.requestAnimationFrame(() => {
+      checkoutRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
 
   // Lightweight analytics hook (optional dataLayer)
   const logEvent = (eventName: string, payload: Record<string, unknown>) => {
@@ -504,6 +516,7 @@ export default function HomePage({
       setIsSubmitting(false);
       logEvent("begin_checkout", { productId: product.id, quantity: normalized.quantity });
       setShowCheckout(true);
+      scrollToCheckout();
       setIsRouting(false);
     }, 180);
   };
@@ -526,6 +539,7 @@ export default function HomePage({
       setIsSubmitting(false);
       setShowCheckout(true);
       setShowCart(false);
+      scrollToCheckout();
       logEvent("begin_checkout", { items: cartItems.length });
       setIsRouting(false);
     }, 180);
@@ -1403,7 +1417,7 @@ export default function HomePage({
       ) : null}
 
       {showCheckout ? (
-        <div className="z-40 bg-black/40">
+        <div ref={checkoutRef} className="z-40 bg-black/40">
           <div className="animate-fadeIn min-h-[100dvh] flex flex-col bg-white">
             <div className="border-b border-[#f0e4da] px-4 sm:px-6 py-4">
               <div className="mx-auto max-w-4xl flex items-center justify-between">
