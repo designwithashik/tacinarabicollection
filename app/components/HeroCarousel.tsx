@@ -104,7 +104,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
       }}
     >
       <div
-        className="flex transition-transform duration-500 ease-in-out h-full"
+        className="flex transition-transform duration-300 ease-out h-full"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
         {slides.map((product, index) => (
