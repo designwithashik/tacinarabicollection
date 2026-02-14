@@ -89,7 +89,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
     const interval = window.setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5500);
+    }, 5000);
 
     return () => window.clearInterval(interval);
   }, [isPaused, slides.length]);
@@ -98,7 +98,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
   return (
     <div
-      className="relative w-full h-[45vh] sm:h-[50vh] md:h-[60vh] overflow-hidden rounded-xl"
+      className="relative h-[38vh] w-full overflow-hidden rounded-xl sm:h-[45vh] md:h-[55vh]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={(event) => {
@@ -145,7 +145,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
                   <div className="w-full max-w-xs">
                     <button
                       type="button"
-                      className="btn-primary relative z-30 w-full"
+                      className="btn-primary relative z-30 w-full py-3"
                       onClick={(event) => {
                         event.stopPropagation();
                         handleAddToCart(product);

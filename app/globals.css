@@ -315,5 +315,5 @@ a:focus-visible {
 }
 
 .animate-marquee {
-  animation: marquee 10s linear infinite;
+  animation: marquee 8s linear infinite;
 }
