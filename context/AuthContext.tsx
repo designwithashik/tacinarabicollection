@@ -1,0 +1,120 @@
+"use client";
+
+import {
+  User,
+  signInWithPopup,
+  signInWithRedirect,
+  signOut,
+  onAuthStateChanged,
+  type AuthProvider,
+} from "firebase/auth";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import {
+  auth,
+  ensureAuthPersistence,
+  githubProvider,
+  googleProvider,
+} from "../lib/firebase";
+
+type AuthContextValue = {
+  user: User | null;
+  loading: boolean;
+  loginWithGoogle: () => Promise<void>;
+  loginWithGithub: () => Promise<void>;
+  logout: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+function setAdminSessionCookie(hasSession: boolean) {
+  if (typeof document === "undefined") return;
+
+  document.cookie = hasSession
+    ? "firebase-session=1; Path=/; Max-Age=604800; SameSite=Lax"
+    : "firebase-session=; Path=/; Max-Age=0; SameSite=Lax";
+}
+
+async function loginWithProvider(provider: AuthProvider) {
+  if (!auth) {
+    throw new Error("Firebase auth is not configured.");
+  }
+
+  const isMobile =
+    typeof window !== "undefined" && /Mobi|Android|iPhone/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    await signInWithRedirect(auth, provider);
+    return;
+  }
+
+  try {
+    await signInWithPopup(auth, provider);
+  } catch {
+    await signInWithRedirect(auth, provider);
+  }
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      setAdminSessionCookie(false);
+      return;
+    }
+
+    void ensureAuthPersistence();
+
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      setUser(nextUser);
+      setLoading(false);
+      setAdminSessionCookie(Boolean(nextUser));
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const loginWithGoogle = useCallback(async () => {
+    await loginWithProvider(googleProvider);
+  }, []);
+
+  const loginWithGithub = useCallback(async () => {
+    await loginWithProvider(githubProvider);
+  }, []);
+
+  const logout = useCallback(async () => {
+    if (!auth) {
+      setAdminSessionCookie(false);
+      return;
+    }
+
+    await signOut(auth);
+    setAdminSessionCookie(false);
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, loading, loginWithGoogle, loginWithGithub, logout }),
+    [user, loading, loginWithGoogle, loginWithGithub, logout]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+
+  return context;
+}
