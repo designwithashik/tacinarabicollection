@@ -793,7 +793,7 @@ export default function HomePage({
   return (
     <div
       className={clsx(
-        "min-h-screen bg-white pb-24 transition-opacity duration-300 ease-in-out",
+        "min-h-[100dvh] bg-[#F7F6F4] pb-24 transition-opacity duration-300 ease-in-out",
         isRouting && "opacity-80"
       )}
     >
@@ -815,40 +815,42 @@ export default function HomePage({
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 md:px-10 pb-5 pt-4">
+      <section className="relative">
+        <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
           {/* Phase1.8: Componentized dynamic hero carousel with direct add-to-cart action. */}
           <HeroCarousel
             addToCart={handleHeroAddToCart}
             buyNow={handleHeroBuyNow}
             initialProducts={initialAdminProducts.filter((item) => item.heroFeatured).slice(0, 3)}
           />
+        </div>
+        <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-4 md:px-10">
-        <div className="overflow-hidden rounded-xl border border-[var(--brand-secondary)]/15 bg-[var(--brand-surface)] py-2">
-          <div className="flex w-max animate-marquee whitespace-nowrap text-[12px] sm:text-[13px] text-neutral-700">
-            <span className="mx-6">{announcementText}</span>
-            <span className="mx-6">{announcementText}</span>
-            <span className="mx-6">{announcementText}</span>
-            <span className="mx-6">{announcementText}</span>
+      <section className="bg-black py-2 text-white">
+        <div className="mx-auto max-w-6xl overflow-hidden px-4">
+          <div className="whitespace-nowrap text-[13px] font-medium tracking-wide animate-[marquee_20s_linear_infinite]">
+            <span className="mx-6 inline-block">{announcementText}</span>
+            <span className="mx-6 inline-block">{announcementText}</span>
+            <span className="mx-6 inline-block">{announcementText}</span>
+            <span className="mx-6 inline-block">{announcementText}</span>
           </div>
         </div>
       </section>
 
-      {/* Phase1: Place categories above product grid for faster discovery */}
-      <section className="sticky top-0 z-30 border-b border-neutral-200 bg-white">
+      <section className="bg-[#F7F6F4]">
         <AnimatedWrapper className="retail-section-enter" variant="section">
-          <div className="max-w-6xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide">
-            <div className="flex flex-1 items-center gap-2 overflow-x-auto">
+          <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
+            <div className="flex gap-2 overflow-x-auto pb-1">
               {categories.map((category) => (
                 <button
                   key={category}
                   type="button"
                   onClick={() => setSelectedCategory(category)}
                   className={clsx(
-                    "px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white",
+                    "whitespace-nowrap rounded-full border border-neutral-300 px-3 py-1.5 text-[12px] transition hover:bg-neutral-900 hover:text-white",
                     selectedCategory === category
-                      ? "bg-neutral-900 text-white border-neutral-900"
+                      ? "border-neutral-900 bg-neutral-900 text-white"
                       : "text-ink"
                   )}
                 >
@@ -856,26 +858,39 @@ export default function HomePage({
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={() => openSheet("size")}
-              className="px-3 py-1.5 text-[12px] rounded-full border border-neutral-300 whitespace-nowrap transition hover:bg-neutral-900 hover:text-white flex items-center gap-2"
-            >
-              Filters
-              {(filters.size.length || filters.colors.length || filters.price) ? (
-                <span className="rounded-full bg-gold px-2 text-xs text-charcoal">
-                  {filters.size.length + filters.colors.length + (filters.price ? 1 : 0)}
-                </span>
-              ) : null}
-            </button>
+
+            <div className="flex items-center justify-between">
+              <p className="text-[13px] text-neutral-600">
+                {sortOptions.find((option) => option.id === (filters.sort ?? "newest"))?.label ?? "Newest"}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openSheet("sort")}
+                  className="rounded-full border border-neutral-300 px-3 py-1 text-[13px]"
+                >
+                  Sort
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openSheet("size")}
+                  className="flex items-center gap-2 rounded-full border border-neutral-300 px-3 py-1 text-[13px]"
+                >
+                  Filter
+                  {(filters.size.length || filters.colors.length || filters.price) ? (
+                    <span className="rounded-full bg-gold px-2 text-xs text-charcoal">
+                      {filters.size.length + filters.colors.length + (filters.price ? 1 : 0)}
+                    </span>
+                  ) : null}
+                </button>
+              </div>
+            </div>
           </div>
         </AnimatedWrapper>
       </section>
 
-      {/* Phase1.5: Retail Divider */}
-      <hr className="my-5 border-gray-200" />
-
-      <main id="product-grid" className="mx-auto max-w-6xl px-4 pb-10 pt-4">
+      <section id="product-grid" className="mx-auto mt-6 max-w-6xl px-4 pb-24">
+        <h2 className="mb-3 text-[18px] font-semibold">Our Collection</h2>
         {activeChips.length > 0 ? (
           <div className="mb-4 flex flex-wrap gap-2">
             {activeChips.map((chip) => (
@@ -910,7 +925,7 @@ export default function HomePage({
           {visibleProducts.length === 0 ? (
           <div className="rounded-3xl bg-card p-6 text-center shadow-soft">
             <p className="text-base font-semibold text-ink">No products found.</p>
-            <p className="mt-2 text-[12px] text-muted">
+            <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
               Adjust filters or check back soon.
             </p>
           </div>
@@ -1011,35 +1026,35 @@ export default function HomePage({
             </div>
           </section>
         ) : null}
-      </main>
+      </section>
 
-      <footer className="border-t border-[#e6d8ce] bg-white">
-        <div className="mx-auto grid max-w-6xl gap-5 px-4 py-5 md:grid-cols-3">
+      <footer className="mt-16 border-t border-neutral-200 bg-[#F3F2F0]">
+        <div className="mx-auto grid max-w-6xl gap-8 space-y-0 px-4 pb-20 pt-14 md:grid-cols-3">
           <div>
-            <h3 className="font-heading text-lg font-semibold">
+            <h3 className="font-heading text-[20px] font-semibold">
               Tacin Arabi Collection
             </h3>
-            <p className="mt-2 text-[12px] text-muted">
+            <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
               Your trusted online fashion shop in Bangladesh for kurti, modest wear, and ceramic lifestyle picks—powered by WhatsApp-first ordering.
             </p>
-            <p className="mt-3 text-[12px] font-semibold text-ink">
+            <p className="mt-3 text-[13px] font-semibold text-ink">
               WhatsApp: +8801522119189
             </p>
           </div>
           <div>
-            <h4 className="text-[12px] font-semibold text-ink">Store Policies</h4>
-            <ul className="mt-3 space-y-1 text-[12px] text-muted">
+            <h4 className="text-[13px] font-semibold text-ink">Store Policies</h4>
+            <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-neutral-600">
               <li>Cash on Delivery available nationwide</li>
               <li>Delivery confirmation before dispatch</li>
               <li>Support available 10am–10pm daily</li>
             </ul>
           </div>
           <div>
-            <h4 className="text-[12px] font-semibold text-ink">Social Proof</h4>
-            <p className="mt-3 text-[12px] text-muted">
+            <h4 className="text-[13px] font-semibold text-ink">Social Proof</h4>
+            <p className="mt-3 text-[13px] leading-relaxed text-neutral-600">
               Thousands of Bangladesh fashion shoppers trust our WhatsApp checkout for fast confirmation, secure payment guidance, and reliable delivery updates.
             </p>
-            <p className="mt-3 text-[12px] font-semibold text-ink">
+            <p className="mt-3 text-[13px] font-semibold text-ink">
               “Fast replies, quality products, safe delivery.”
             </p>
           </div>
@@ -1094,7 +1109,7 @@ export default function HomePage({
         rel="noreferrer"
         aria-disabled={!isOnline}
         className={clsx(
-          "floating-action interactive-feedback group fixed bottom-6 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] shadow-soft",
+          "floating-action interactive-feedback group fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] shadow-xl ring-2 ring-white",
           !isOnline && "pointer-events-none opacity-60"
         )}
       >
@@ -1389,7 +1404,7 @@ export default function HomePage({
 
       {showCheckout ? (
         <div className="z-40 bg-black/40">
-          <div className="animate-fadeIn min-h-screen flex flex-col bg-white">
+          <div className="animate-fadeIn min-h-[100dvh] flex flex-col bg-white">
             <div className="border-b border-[#f0e4da] px-4 sm:px-6 py-4">
               <div className="mx-auto max-w-4xl flex items-center justify-between">
                 <div>
