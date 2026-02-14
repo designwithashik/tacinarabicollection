@@ -25,6 +25,12 @@ type CreateOrderBody = {
 
 const ORDER_STATUSES = new Set(['pending', 'confirmed', 'shipped', 'delivered', 'failed'])
 
+const resolveLimit = (rawLimit: string | undefined, max = 200) => {
+  const limitParam = Number(rawLimit ?? '50')
+  if (!Number.isInteger(limitParam) || limitParam <= 0) return 50
+  return Math.min(limitParam, max)
+}
+
 const app = new Hono<Bindings>()
 
 app.use('*', async (c, next) => {
@@ -222,11 +228,79 @@ app.put('/admin/orders/:id/status', requireAdmin, async (c) => {
   return c.json({ success: true, id, status })
 })
 
+app.get('/admin/products/low-stock', requireAdmin, async (c) => {
+  const limit = resolveLimit(c.req.query('limit'))
+  const result = await c.env.DB.prepare(
+    `SELECT id, name, stock, low_stock_threshold
+     FROM products
+     WHERE status = 'active' AND stock <= low_stock_threshold
+     ORDER BY stock ASC, id DESC
+     LIMIT ?`
+  )
+    .bind(limit)
+    .all()
+
+  return c.json(result.results ?? [])
+})
+
+app.get('/admin/dashboard/summary', requireAdmin, async (c) => {
+  const [products, orders, pendingOrders, revenue, todayOrders, todayRevenue, lowStock] = await Promise.all([
+    c.env.DB.prepare('SELECT COUNT(*) AS count FROM products').first<{ count: number }>(),
+    c.env.DB.prepare('SELECT COUNT(*) AS count FROM orders').first<{ count: number }>(),
+    c.env.DB.prepare("SELECT COUNT(*) AS count FROM orders WHERE status = 'pending'").first<{ count: number }>(),
+    c.env.DB.prepare("SELECT COALESCE(SUM(total_amount), 0) AS total FROM orders WHERE status != 'failed'").first<{ total: number }>(),
+    c.env.DB.prepare("SELECT COUNT(*) AS count FROM orders WHERE DATE(created_at) = DATE('now')").first<{ count: number }>(),
+    c.env.DB
+      .prepare(
+        "SELECT COALESCE(SUM(total_amount), 0) AS total FROM orders WHERE status != 'failed' AND DATE(created_at) = DATE('now')"
+      )
+      .first<{ total: number }>(),
+    c.env.DB
+      .prepare("SELECT COUNT(*) AS count FROM products WHERE status = 'active' AND stock <= low_stock_threshold")
+      .first<{ count: number }>(),
+  ])
+
+  return c.json({
+    totalProducts: Number(products?.count ?? 0),
+    totalOrders: Number(orders?.count ?? 0),
+    pendingOrders: Number(pendingOrders?.count ?? 0),
+    totalRevenue: Number(revenue?.total ?? 0),
+    todayOrders: Number(todayOrders?.count ?? 0),
+    todayRevenue: Number(todayRevenue?.total ?? 0),
+    lowStockCount: Number(lowStock?.count ?? 0),
+  })
+})
+
+app.get('/admin/dashboard/revenue', requireAdmin, async (c) => {
+  const from = c.req.query('from')
+  const to = c.req.query('to')
+
+  if (!from || !to) {
+    return c.json({ error: 'Validation error' }, 400)
+  }
+
+  const result = await c.env.DB.prepare(
+    `SELECT DATE(created_at) AS date, COALESCE(SUM(total_amount), 0) AS revenue
+     FROM orders
+     WHERE status != 'failed' AND DATE(created_at) BETWEEN DATE(?) AND DATE(?)
+     GROUP BY DATE(created_at)
+     ORDER BY DATE(created_at) ASC`
+  )
+    .bind(from, to)
+    .all<{ date: string; revenue: number }>()
+
+  return c.json(
+    (result.results ?? []).map((row) => ({
+      date: row.date,
+      revenue: Number(row.revenue ?? 0),
+    }))
+  )
+})
+
 app.get('/admin/orders', requireAdmin, async (c) => {
   const status = c.req.query('status')
   const date = c.req.query('date')
-  const limitParam = Number(c.req.query('limit') ?? '50')
-  const limit = Number.isInteger(limitParam) && limitParam > 0 ? Math.min(limitParam, 200) : 50
+  const limit = resolveLimit(c.req.query('limit'))
 
   let sql = 'SELECT id, customer_name, phone, total_amount, status, created_at FROM orders'
   const conditions: string[] = []
@@ -251,6 +325,76 @@ app.get('/admin/orders', requireAdmin, async (c) => {
 
   const result = await c.env.DB.prepare(sql)
     .bind(...bindings)
+    .all()
+
+  return c.json(result.results ?? [])
+})
+
+app.get('/admin/orders/export', requireAdmin, async (c) => {
+  const limit = resolveLimit(c.req.query('limit'), 1000)
+  const orders = await c.env.DB.prepare(
+    `SELECT id, customer_name, phone, total_amount, status, created_at
+     FROM orders
+     ORDER BY created_at DESC
+     LIMIT ?`
+  )
+    .bind(limit)
+    .all<{
+      id: number
+      customer_name: string
+      phone: string
+      total_amount: number
+      status: string
+      created_at: string
+    }>()
+
+  const escapeCsv = (value: unknown) => {
+    const text = String(value ?? '')
+    if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+      return `"${text.replace(/"/g, '""')}"`
+    }
+    return text
+  }
+
+  const header = 'id,customer_name,phone,total_amount,status,created_at'
+  const lines = (orders.results ?? []).map((order) =>
+    [
+      order.id,
+      order.customer_name,
+      order.phone,
+      Number(order.total_amount ?? 0).toFixed(2),
+      order.status,
+      order.created_at,
+    ]
+      .map(escapeCsv)
+      .join(',')
+  )
+
+  c.header('Content-Type', 'text/csv; charset=utf-8')
+  c.header('Content-Disposition', 'attachment; filename="orders.csv"')
+  return c.body([header, ...lines].join('\n'))
+})
+
+app.get('/admin/inventory/logs', requireAdmin, async (c) => {
+  const productId = c.req.query('product_id')
+  const limit = resolveLimit(c.req.query('limit'))
+
+  let sql = 'SELECT change_type, quantity, created_at FROM inventory_logs'
+  const bindings: Array<number> = []
+
+  if (productId !== undefined) {
+    const parsedProductId = Number(productId)
+    if (!Number.isInteger(parsedProductId) || parsedProductId <= 0) {
+      return c.json({ error: 'Validation error' }, 400)
+    }
+    sql += ' WHERE product_id = ?'
+    bindings.push(parsedProductId)
+  }
+
+  sql += ' ORDER BY created_at DESC LIMIT ?'
+
+  const result = await c.env.DB.prepare(sql)
+    .bind(...bindings, limit)
     .all()
 
   return c.json(result.results ?? [])
