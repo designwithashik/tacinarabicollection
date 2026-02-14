@@ -2,10 +2,11 @@
 
 import {
   User,
-  onAuthStateChanged,
   signInWithPopup,
   signInWithRedirect,
   signOut,
+  onAuthStateChanged,
+  type AuthProvider,
 } from "firebase/auth";
 import {
   createContext,
@@ -15,12 +16,18 @@ import {
   useMemo,
   useState,
 } from "react";
-import { auth, ensureAuthPersistence, googleProvider } from "../lib/firebase";
+import {
+  auth,
+  ensureAuthPersistence,
+  githubProvider,
+  googleProvider,
+} from "../lib/firebase";
 
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
   loginWithGoogle: () => Promise<void>;
+  loginWithGithub: () => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -28,9 +35,30 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function setAdminSessionCookie(hasSession: boolean) {
   if (typeof document === "undefined") return;
+
   document.cookie = hasSession
     ? "firebase-session=1; Path=/; Max-Age=604800; SameSite=Lax"
     : "firebase-session=; Path=/; Max-Age=0; SameSite=Lax";
+}
+
+async function loginWithProvider(provider: AuthProvider) {
+  if (!auth) {
+    throw new Error("Firebase auth is not configured.");
+  }
+
+  const isMobile =
+    typeof window !== "undefined" && /Mobi|Android|iPhone/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    await signInWithRedirect(auth, provider);
+    return;
+  }
+
+  try {
+    await signInWithPopup(auth, provider);
+  } catch {
+    await signInWithRedirect(auth, provider);
+  }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -56,23 +84,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const loginWithGoogle = useCallback(async () => {
-    if (!auth) {
-      throw new Error("Firebase auth is not configured.");
-    }
+    await loginWithProvider(googleProvider);
+  }, []);
 
-    const isMobile =
-      typeof window !== "undefined" && /Mobi|Android|iPhone/i.test(navigator.userAgent);
-
-    if (isMobile) {
-      await signInWithRedirect(auth, googleProvider);
-      return;
-    }
-
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch {
-      await signInWithRedirect(auth, googleProvider);
-    }
+  const loginWithGithub = useCallback(async () => {
+    await loginWithProvider(githubProvider);
   }, []);
 
   const logout = useCallback(async () => {
@@ -86,8 +102,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, loginWithGoogle, logout }),
-    [user, loading, loginWithGoogle, logout]
+    () => ({ user, loading, loginWithGoogle, loginWithGithub, logout }),
+    [user, loading, loginWithGoogle, loginWithGithub, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

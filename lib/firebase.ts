@@ -1,5 +1,6 @@
 import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import {
+  GithubAuthProvider,
   GoogleAuthProvider,
   browserLocalPersistence,
   getAuth,
@@ -17,7 +18,14 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const hasFirebaseConfig = Object.values(firebaseConfig).every(Boolean);
+const requiredAuthConfig = {
+  apiKey: firebaseConfig.apiKey,
+  authDomain: firebaseConfig.authDomain,
+  projectId: firebaseConfig.projectId,
+  appId: firebaseConfig.appId,
+};
+
+const hasFirebaseConfig = Object.values(requiredAuthConfig).every(Boolean);
 const isBrowser = typeof window !== "undefined";
 
 const app: FirebaseApp | null =
@@ -30,6 +38,7 @@ const app: FirebaseApp | null =
 export const auth: Auth | null = app ? getAuth(app) : null;
 export const db: Firestore | null = app ? getFirestore(app) : null;
 export const googleProvider = new GoogleAuthProvider();
+export const githubProvider = new GithubAuthProvider();
 
 export async function ensureAuthPersistence() {
   if (!auth || !isBrowser) return;
