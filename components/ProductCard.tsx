@@ -143,12 +143,12 @@ export default function ProductCard({
           )}
         </div>
 
-        <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/30 bg-white/35 p-3 text-left backdrop-blur-sm">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/80">{product.category}</p>
-          <p className="mt-0.5 font-heading text-sm sm:text-base font-semibold text-charcoal transition-transform duration-200 group-hover:translate-y-[-1px] break-words line-clamp-2">
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-lg bg-white/55 p-3 text-left backdrop-blur-sm">
+          <p className="text-[10px] uppercase tracking-wide text-charcoal/80">{product.category}</p>
+          <p className="mt-0.5 break-words font-heading text-[13px] font-medium text-charcoal transition-transform duration-200 group-hover:translate-y-[-1px] line-clamp-2">
             {product.name}
           </p>
-          <p className="mt-0.5 text-xs font-semibold text-charcoal/85 transition-transform duration-200 delay-75 group-hover:translate-y-[-1px]">
+          <p className="mt-0.5 text-[11px] text-neutral-600 transition-transform duration-200 delay-75 group-hover:translate-y-[-1px]">
             {stockLabel}
           </p>
         </div>
@@ -158,7 +158,7 @@ export default function ProductCard({
             {showBadge}
           </span>
         ) : null}
-        <span className="absolute right-3 top-3 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink">
+        <span className="absolute top-2 right-2 rounded-full bg-white px-2 py-1 text-[10px] font-medium shadow-sm">
           {statusLabel}
         </span>
 
@@ -190,11 +190,6 @@ export default function ProductCard({
 
         <div className="flex items-center justify-between gap-2">
           <p className="text-[12px] text-support break-words">{product.category}</p>
-          {typeof stockCount === "number" && stockCount <= 5 ? (
-            <span className="text-[10px] px-2 py-1 rounded-full bg-[var(--brand-secondary)]/15 whitespace-nowrap text-[var(--brand-secondary)]">
-              Limited
-            </span>
-          ) : null}
         </div>
 
         <div>
