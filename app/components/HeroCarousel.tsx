@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
+import Button from "../../components/ui/Button";
 
 export type HeroProduct = {
   id: string;
@@ -98,7 +99,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
   return (
     <div
-      className="relative h-[34vh] w-full overflow-hidden rounded-xl sm:h-[40vh] md:h-[50vh]"
+      className="relative h-[36vh] w-full overflow-hidden rounded-xl sm:h-[42vh] md:h-[52vh]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={(event) => {
@@ -135,35 +136,34 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/45 to-black/20" />
 
             <div className="absolute inset-0 z-20 flex items-end justify-center px-6 pb-8 md:items-center md:pb-0">
-              <div className="max-w-xl space-y-3 text-center text-white">
+              <div className="max-w-[680px] space-y-3 text-center text-white">
                 <h2 className="text-[22px] leading-tight font-medium tracking-wide md:text-4xl">
                   {product.title || product.name}
                 </h2>
-                <p className="text-[13px] text-white/90 md:text-[14px]">{product.subtitle || ""}</p>
+                <p className="text-[13px] text-white/90 md:text-[14px]">{product.subtitle || "Modern modest essentials delivered fast across Bangladesh."}</p>
 
-                <div className="flex justify-center">
-                  <div className="w-full max-w-xs">
-                    <button
-                      type="button"
-                      className="btn-primary relative z-30 w-full"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleAddToCart(product);
-                      }}
-                    >
-                      Add to Cart
-                    </button>
-                    <button
-                      type="button"
-                      className="mt-3 w-full rounded-lg border border-white bg-white/15 py-1.5 font-medium text-white backdrop-blur-sm transition-all duration-300 hover:bg-white hover:text-[var(--brand-primary)]"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleBuyNow(product);
-                      }}
-                    >
-                      Buy Now
-                    </button>
-                  </div>
+                <div className="mx-auto w-full max-w-xs space-y-2">
+                  <Button
+                    type="button"
+                    className="relative z-30 w-full"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleAddToCart(product);
+                    }}
+                  >
+                    Add to Cart
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full border-white bg-white/20 text-white"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleBuyNow(product);
+                    }}
+                  >
+                    Buy Now
+                  </Button>
                 </div>
               </div>
             </div>

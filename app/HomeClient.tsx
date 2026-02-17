@@ -15,6 +15,8 @@ import HeroCarousel, { type HeroProduct } from "./components/HeroCarousel";
 import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import { SlidersHorizontal } from "lucide-react";
+import Button from "../components/ui/Button";
+import Modal from "../components/ui/Modal";
 import type { Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import {
@@ -84,7 +86,7 @@ const storageKeys = {
   language: "tacin-lang",
 };
 
-const statusLabels = ["New", "Hot", "Limited"] as const;
+const statusLabels = ["New", "Popular", "Low Stock"] as const;
 
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
 const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
@@ -161,7 +163,7 @@ const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
 const getStatusLabel = (index: number) =>
   statusLabels[index % statusLabels.length];
 const getStockLabel = (index: number) =>
-  index % 3 === 2 ? "Limited stock" : "In stock";
+  index % 3 === 2 ? "Low stock" : "In stock";
 
 type HomeClientProps = {
   initialAdminProducts?: AdminProduct[];
@@ -369,7 +371,7 @@ export default function HomePage({
   // Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 2000);
+    const timer = setTimeout(() => setToast(null), 3000);
     return () => clearTimeout(timer);
   }, [toast]);
 
@@ -816,15 +818,9 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-40 bg-white">
+      <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white">
         <div className="mx-auto max-w-6xl">
-          <nav className="flex items-center justify-between px-4 py-3 bg-white border-b border-neutral-200">
-            <LanguageToggle language={language} setLanguage={setLanguage} />
-
-            <h1 className="text-[18px] font-semibold tracking-tight">
-              Tacin Arabi
-            </h1>
-
+          <nav className="flex items-center justify-between px-4 py-3">
             <button
               type="button"
               onClick={() => setShowCart(true)}
@@ -840,11 +836,13 @@ export default function HomePage({
                 <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[#eadad0]" />
               ) : null}
             </button>
+            <h1 className="text-[20px] font-semibold leading-[1.3] text-neutral-900">Tacin Arabi</h1>
+            <LanguageToggle language={language} setLanguage={setLanguage} />
           </nav>
         </div>
       </header>
 
-      <section className="relative">
+      <section className="relative py-8">
         <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
           {/* Phase1.8: Componentized dynamic hero carousel with direct add-to-cart action. */}
           <HeroCarousel
@@ -943,7 +941,7 @@ export default function HomePage({
         <SectionLoader
           loading={!hasMounted || isLoading}
           loader={
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {/* Product placeholders prevent blank state flashes during hydration. */}
               {Array.from({ length: 6 }).map((_, index) => (
                 <SkeletonCard key={`skeleton-${index}`} />
@@ -962,7 +960,7 @@ export default function HomePage({
           <motion.div
             key={productBatchKey}
             className={clsx(
-              "grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+              "grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4",
               !prefersReducedMotion && "retail-batch-enter"
             )}
             initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
@@ -1007,10 +1005,10 @@ export default function HomePage({
           )}
         </SectionLoader>
 
-        <section className="mt-5 text-[13px] text-neutral-600 space-y-1 leading-relaxed">
-          <p>✓ Cash on Delivery Available</p>
-          <p>✓ Nationwide Delivery</p>
-          <p>✓ WhatsApp Order Support</p>
+        <section className="mt-6 grid grid-cols-2 gap-4 text-[13px] leading-[1.5] text-neutral-700">
+          <div className="rounded-xl border border-neutral-200 bg-white p-4">🚚 <p className="mt-1 font-medium text-neutral-900">Fast Nationwide Delivery</p><p>Reliable dispatch updates.</p></div>
+          <div className="rounded-xl border border-neutral-200 bg-white p-4">🔒 <p className="mt-1 font-medium text-neutral-900">Secure Order Handling</p><p>Careful packaging and support.</p></div>
+          <div className="rounded-xl border border-neutral-200 bg-white p-4">💬 <p className="mt-1 font-medium text-neutral-900">WhatsApp Support</p><p>Quick confirmation and help.</p></div>
         </section>
 
         {recentlyViewed.length > 0 ? (
@@ -1023,7 +1021,7 @@ export default function HomePage({
                 Last 2 items
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {recentlyViewed.map((product, index) => (
                 <AnimatedWrapper key={product.id} variant="product-card" delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.1)}>
                   <ProductCard
@@ -1277,8 +1275,8 @@ export default function HomePage({
       ) : null}
 
       {showCart ? (
-        <div className="fixed inset-0 z-40 flex items-end bg-black/40">
-          <div className="w-full rounded-t-3xl bg-white p-6">
+        <div className="fixed inset-0 z-40 flex justify-end bg-black/40">
+          <div className="panel-enter h-full w-full max-w-md overflow-y-auto bg-white p-6">
             <div className="flex items-center justify-between">
               <h3
                 ref={cartHeadingRef}
@@ -1394,13 +1392,16 @@ export default function HomePage({
                     )}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCartCheckout}
-                  className="interactive-feedback min-h-[40px] w-full rounded-lg bg-accent px-4 py-2.5 text-[14px] font-semibold text-white"
-                >
-                  {isRouting ? "Redirecting..." : text.checkout}
-                </button>
+                <div className="sticky bottom-0 bg-white py-3">
+                  <Button
+                    type="button"
+                    onClick={handleCartCheckout}
+                    className="w-full"
+                    loading={isRouting}
+                  >
+                    {isRouting ? "Redirecting..." : text.checkout}
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -1411,7 +1412,7 @@ export default function HomePage({
         <div ref={checkoutRef} className="z-40 bg-black/40">
           <div className="animate-fadeIn min-h-[100dvh] flex flex-col bg-white">
             <div className="border-b border-[#f0e4da] px-4 sm:px-6 py-4">
-              <div className="mx-auto max-w-4xl flex items-center justify-between">
+              <div className="mx-auto max-w-[680px] flex items-center justify-between">
                 <div>
                   <p className="text-[12px] font-semibold text-muted">Universal Checkout</p>
                   <h3
@@ -1438,7 +1439,7 @@ export default function HomePage({
 
             <div className="flex-1 overflow-visible px-4 py-6 pb-8 sm:px-6">
               {isOrderConfirmed ? (
-                <div className="max-w-4xl mx-auto px-4 py-5">
+                <div className="max-w-[680px] mx-auto px-4 py-5">
                   <div className="text-center py-16">
                     <h2 className="text-2xl font-semibold mb-4">
                       Order Confirmed
@@ -1449,7 +1450,7 @@ export default function HomePage({
                   </div>
                 </div>
               ) : (
-                <div className="max-w-4xl mx-auto px-4 py-5">
+                <div className="max-w-[680px] mx-auto px-4 py-5">
                   <div className="grid md:grid-cols-2 gap-5">
                     <div className="space-y-4">
                       <h2 className="text-base font-semibold mb-4">
@@ -1639,8 +1640,7 @@ export default function HomePage({
       ) : null}
 
       {showPaymentInfo ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/40">
-          <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
+        <Modal open={showPaymentInfo} onClose={() => { setShowPaymentInfo(false); setIsSubmitting(false); }} title="Payment Info">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[12px] font-semibold text-muted">Payment Info</p>
@@ -1694,8 +1694,7 @@ export default function HomePage({
             >
               {isSubmitting ? "Processing..." : text.confirmWhatsapp}
             </button>
-          </div>
-        </div>
+        </Modal>
       ) : null}
     </div>
   );
