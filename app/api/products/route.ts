@@ -1,10 +1,5 @@
-/*
- * What this file does:
- *   - Exposes public product list from canonical inventory storage.
- */
-
 import { NextResponse } from "next/server";
-import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
+import { fetchStorefrontProducts } from "@/lib/server/storefrontApi";
 
 export const runtime = "edge";
 export const revalidate = 60;
@@ -14,19 +9,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const heroOnly = searchParams.get("hero") === "true";
 
-    const products = await loadInventoryArray();
+    const products = await fetchStorefrontProducts();
     const activeProducts = products.filter((p) => p.active);
 
     if (heroOnly) {
-      return NextResponse.json(
-        activeProducts
-          .filter((p) => p.heroFeatured)
-          .slice(0, 3)
-          .map(toStorefrontProduct)
-      );
+      return NextResponse.json(activeProducts.slice(0, 3));
     }
 
-    return NextResponse.json(activeProducts.map(toStorefrontProduct));
+    return NextResponse.json(activeProducts);
   } catch {
     return NextResponse.json([]);
   }

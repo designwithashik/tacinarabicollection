@@ -134,28 +134,28 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/45 to-black/20" />
 
-            <div className="absolute inset-0 z-20 flex items-end justify-center px-6 pb-8 md:items-center md:pb-0">
-              <div className="max-w-xl space-y-3 text-center text-white">
-                <h2 className="text-[22px] leading-tight font-medium tracking-wide md:text-4xl">
-                  {product.title || product.name}
+            <div className="absolute inset-0 z-20 flex flex-col justify-center space-y-2 px-4 text-center sm:px-8 sm:text-left">
+              <div className="space-y-2 text-white">
+                <h2 className="text-[20px] font-semibold leading-[1.2] text-white sm:text-2xl md:text-3xl">
+                  Elegant modest fashion delivered across Bangladesh.
                 </h2>
-                <p className="text-[13px] text-white/90 md:text-[14px]">{product.subtitle || ""}</p>
+                <p className="mx-auto max-w-[90%] text-[13px] leading-[1.5] text-white/90 sm:mx-0 sm:max-w-[70%] sm:text-[14px]">Shop curated designs with fast support and secure ordering.</p>
 
-                <div className="flex justify-center">
-                  <div className="w-full max-w-xs">
+                <div className="flex justify-center sm:justify-start">
+                  <div className="w-full max-w-xs space-y-2">
                     <button
                       type="button"
-                      className="btn-primary relative z-30 w-full"
+                      className="interactive-feedback min-h-[40px] w-full rounded-lg bg-black px-4 py-2 text-[14px] font-medium leading-[1.4] text-white active:scale-95"
                       onClick={(event) => {
                         event.stopPropagation();
                         handleAddToCart(product);
                       }}
                     >
-                      Add to Cart
+                      Shop Collection
                     </button>
                     <button
                       type="button"
-                      className="mt-3 w-full rounded-lg border border-white bg-white/15 py-1.5 font-medium text-white backdrop-blur-sm transition-all duration-300 hover:bg-white hover:text-[var(--brand-primary)]"
+                      className="interactive-feedback min-h-[40px] w-full rounded-lg border border-white bg-white/10 px-4 py-2 text-[14px] font-medium leading-[1.4] text-white active:scale-95"
                       onClick={(event) => {
                         event.stopPropagation();
                         handleBuyNow(product);

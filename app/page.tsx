@@ -4,7 +4,7 @@ export const revalidate = 0;
 
 import HomeClient from "./HomeClient";
 import type { AdminProduct } from "../lib/inventory";
-import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
+import { fetchStorefrontProducts } from "@/lib/server/storefrontApi";
 import type { Metadata } from "next";
 
 const siteUrl = "https://tacinarabicollection.vercel.app";
@@ -22,8 +22,7 @@ export default async function HomePage() {
   let initialAdminProducts: AdminProduct[] = [];
 
   try {
-    const products = await loadInventoryArray();
-    initialAdminProducts = products.map(toStorefrontProduct) as AdminProduct[];
+    initialAdminProducts = await fetchStorefrontProducts();
   } catch {
     initialAdminProducts = [];
   }
