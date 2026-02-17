@@ -812,12 +812,12 @@ export default function HomePage({
       )}
     >
       {!isOnline ? (
-        <div className="sticky top-0 z-50 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900">
+        <div className="sticky top-0 z-[60] bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-amber-900">
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="border-b border-neutral-200 bg-white">
-        <nav className="sticky top-0 z-50 mx-auto flex max-w-6xl items-center justify-between border-b border-neutral-200 bg-white px-4 py-3 shadow-sm">
+      <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white shadow-sm">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
             <button
               type="button"
               onClick={() => setShowCart(true)}

@@ -103,8 +103,7 @@ export default function AdminProductsPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-      const uploadResponse = await fetch(`${baseUrl}/admin/upload`, {
+      const uploadResponse = await fetch("/api/admin/upload", {
         method: "POST",
         body: formData,
         credentials: "include",
