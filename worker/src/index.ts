@@ -33,6 +33,59 @@ const resolveLimit = (rawLimit: string | undefined, max = 200) => {
   return Math.min(limitParam, max)
 }
 
+
+
+const slugifyName = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+
+const ensureProductsSchema = async (db: D1Database) => {
+  await db
+    .prepare(
+      `CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        slug TEXT UNIQUE NOT NULL,
+        price REAL NOT NULL,
+        stock INTEGER DEFAULT 0,
+        image_url TEXT,
+        description TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`
+    )
+    .run()
+
+  const columnsResult = await db.prepare('PRAGMA table_info(products)').all<{
+    name: string
+  }>()
+  const columns = new Set((columnsResult.results ?? []).map((col) => String(col.name)))
+
+  if (!columns.has('slug')) {
+    await db.prepare("ALTER TABLE products ADD COLUMN slug TEXT").run()
+    await db.prepare("UPDATE products SET slug = LOWER(REPLACE(TRIM(name), ' ', '-')) || '-' || id WHERE slug IS NULL OR slug = ''").run()
+    await db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_products_slug ON products(slug)").run()
+  }
+
+  if (!columns.has('description')) {
+    await db.prepare('ALTER TABLE products ADD COLUMN description TEXT').run()
+  }
+
+  if (!columns.has('is_active')) {
+    await db.prepare('ALTER TABLE products ADD COLUMN is_active INTEGER DEFAULT 1').run()
+    await db.prepare("UPDATE products SET is_active = 1 WHERE is_active IS NULL").run()
+  }
+
+  if (!columns.has('created_at')) {
+    await db.prepare('ALTER TABLE products ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP').run()
+    await db.prepare("UPDATE products SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL OR created_at = ''").run()
+  }
+}
+
 const app = new Hono<Bindings>()
 
 app.use(
@@ -43,7 +96,7 @@ app.use(
       if (origin.endsWith('.tacinarabicollection.pages.dev')) return origin
       return ''
     },
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     exposeHeaders: [],
     credentials: true,
@@ -99,8 +152,7 @@ const decrementStock = async (db: D1Database, productId: number, quantity: numbe
   const result = await db
     .prepare(
       `UPDATE products
-       SET stock = stock - ?,
-           updated_at = CURRENT_TIMESTAMP
+       SET stock = stock - ?
        WHERE id = ? AND stock >= ?`
     )
     .bind(quantity, productId, quantity)
@@ -118,11 +170,33 @@ app.get('/health', (c) => {
 })
 
 app.get('/products', async (c) => {
+  await ensureProductsSchema(c.env.DB)
+
   const products = await c.env.DB.prepare(
-    'SELECT id, name, price, stock, image_url, status, featured, created_at, updated_at FROM products ORDER BY id DESC'
+    'SELECT * FROM products WHERE is_active = 1 ORDER BY created_at DESC'
   ).all()
 
   return c.json(products.results ?? [])
+})
+
+app.get('/products/:slug', async (c) => {
+  await ensureProductsSchema(c.env.DB)
+
+  const slug = String(c.req.param('slug') ?? '').trim()
+  if (!slug) {
+    return c.json({ error: 'Validation error' }, 400)
+  }
+
+  const product = await c.env.DB
+    .prepare('SELECT * FROM products WHERE slug = ? AND is_active = 1 LIMIT 1')
+    .bind(slug)
+    .first()
+
+  if (!product) {
+    return c.json({ error: 'Product not found' }, 404)
+  }
+
+  return c.json(product)
 })
 
 app.post('/orders', async (c) => {
@@ -246,12 +320,130 @@ app.get('/admin/me', requireAdmin, (c) => {
   })
 })
 
+app.get('/admin/products', requireAdmin, async (c) => {
+  await ensureProductsSchema(c.env.DB)
+
+  const result = await c.env.DB.prepare('SELECT * FROM products ORDER BY created_at DESC').all()
+  return c.json(result.results ?? [])
+})
+
+app.post('/admin/products', requireAdmin, async (c) => {
+  await ensureProductsSchema(c.env.DB)
+
+  const payload = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
+  const name = String(payload?.name ?? '').trim()
+  const price = Number(payload?.price)
+  const description = typeof payload?.description === 'string' ? payload.description.trim() : null
+  const image_url = typeof payload?.image_url === 'string' ? payload.image_url.trim() : null
+  const stock = Number.isInteger(Number(payload?.stock)) ? Number(payload?.stock) : 0
+  const is_active = Number(payload?.is_active ?? 1) ? 1 : 0
+
+  if (!name || !Number.isFinite(price)) {
+    return c.json({ error: 'Validation error' }, 400)
+  }
+
+  const baseSlug = slugifyName(name)
+  if (!baseSlug) {
+    return c.json({ error: 'Validation error' }, 400)
+  }
+
+  let slug = baseSlug
+  let suffix = 1
+  while (true) {
+    const existing = await c.env.DB.prepare('SELECT id FROM products WHERE slug = ? LIMIT 1').bind(slug).first<{ id: number }>()
+    if (!existing) break
+    suffix += 1
+    slug = `${baseSlug}-${suffix}`
+  }
+
+  const insert = await c.env.DB
+    .prepare(
+      `INSERT INTO products (name, slug, price, stock, image_url, description, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .bind(name, slug, price, stock, image_url, description, is_active)
+    .run()
+
+  const id = Number(insert.meta.last_row_id ?? 0)
+  const product = await c.env.DB.prepare('SELECT * FROM products WHERE id = ? LIMIT 1').bind(id).first()
+  return c.json(product, 201)
+})
+
+app.put('/admin/products/:id', requireAdmin, async (c) => {
+  await ensureProductsSchema(c.env.DB)
+
+  const id = Number(c.req.param('id'))
+  const payload = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
+
+  const name = String(payload?.name ?? '').trim()
+  const price = Number(payload?.price)
+  const description = typeof payload?.description === 'string' ? payload.description.trim() : null
+  const image_url = typeof payload?.image_url === 'string' ? payload.image_url.trim() : null
+  const is_active = Number(payload?.is_active ?? 1) ? 1 : 0
+
+  if (!Number.isInteger(id) || id <= 0 || !name || !Number.isFinite(price)) {
+    return c.json({ error: 'Validation error' }, 400)
+  }
+
+  const update = await c.env.DB
+    .prepare('UPDATE products SET name = ?, price = ?, description = ?, image_url = ?, is_active = ? WHERE id = ?')
+    .bind(name, price, description, image_url, is_active, id)
+    .run()
+
+  if ((update.meta.changes ?? 0) === 0) {
+    return c.json({ error: 'Product not found' }, 404)
+  }
+
+  const product = await c.env.DB.prepare('SELECT * FROM products WHERE id = ? LIMIT 1').bind(id).first()
+  return c.json(product)
+})
+
+app.patch('/admin/products/:id/stock', requireAdmin, async (c) => {
+  await ensureProductsSchema(c.env.DB)
+
+  const id = Number(c.req.param('id'))
+  const payload = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
+  const stock = Number(payload?.stock)
+
+  if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(stock) || stock < 0) {
+    return c.json({ error: 'Validation error' }, 400)
+  }
+
+  const update = await c.env.DB.prepare('UPDATE products SET stock = ? WHERE id = ?').bind(stock, id).run()
+
+  if ((update.meta.changes ?? 0) === 0) {
+    return c.json({ error: 'Product not found' }, 404)
+  }
+
+  const product = await c.env.DB.prepare('SELECT * FROM products WHERE id = ? LIMIT 1').bind(id).first()
+  return c.json(product)
+})
+
+app.delete('/admin/products/:id', requireAdmin, async (c) => {
+  await ensureProductsSchema(c.env.DB)
+
+  const id = Number(c.req.param('id'))
+  if (!Number.isInteger(id) || id <= 0) {
+    return c.json({ error: 'Validation error' }, 400)
+  }
+
+  const update = await c.env.DB.prepare('UPDATE products SET is_active = 0 WHERE id = ?').bind(id).run()
+
+  if ((update.meta.changes ?? 0) === 0) {
+    return c.json({ error: 'Product not found' }, 404)
+  }
+
+  return c.json({ success: true, id })
+})
+
 app.get('/admin/products/low-stock', requireAdmin, async (c) => {
+  await ensureProductsSchema(c.env.DB)
+
   const limit = resolveLimit(c.req.query('limit'))
   const result = await c.env.DB.prepare(
-    `SELECT id, name, stock, low_stock_threshold
+    `SELECT id, name, stock
      FROM products
-     WHERE status = 'active' AND stock <= low_stock_threshold
+     WHERE is_active = 1 AND stock <= 5
      ORDER BY stock ASC, id DESC
      LIMIT ?`
   )
@@ -274,7 +466,7 @@ app.get('/admin/dashboard/summary', requireAdmin, async (c) => {
       )
       .first<{ total: number }>(),
     c.env.DB
-      .prepare("SELECT COUNT(*) AS count FROM products WHERE status = 'active' AND stock <= low_stock_threshold")
+      .prepare("SELECT COUNT(*) AS count FROM products WHERE is_active = 1 AND stock <= 5")
       .first<{ count: number }>(),
   ])
 
@@ -391,31 +583,6 @@ app.get('/admin/orders/export', requireAdmin, async (c) => {
   c.header('Content-Type', 'text/csv; charset=utf-8')
   c.header('Content-Disposition', 'attachment; filename="orders.csv"')
   return c.body([header, ...lines].join('\n'))
-})
-
-app.get('/admin/inventory/logs', requireAdmin, async (c) => {
-  const productId = c.req.query('product_id')
-  const limit = resolveLimit(c.req.query('limit'))
-
-  let sql = 'SELECT change_type, quantity, created_at FROM inventory_logs'
-  const bindings: Array<number> = []
-
-  if (productId !== undefined) {
-    const parsedProductId = Number(productId)
-    if (!Number.isInteger(parsedProductId) || parsedProductId <= 0) {
-      return c.json({ error: 'Validation error' }, 400)
-    }
-    sql += ' WHERE product_id = ?'
-    bindings.push(parsedProductId)
-  }
-
-  sql += ' ORDER BY created_at DESC LIMIT ?'
-
-  const result = await c.env.DB.prepare(sql)
-    .bind(...bindings, limit)
-    .all()
-
-  return c.json(result.results ?? [])
 })
 
 app.get('/admin/orders/:id', requireAdmin, async (c) => {
