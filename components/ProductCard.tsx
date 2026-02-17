@@ -6,6 +6,8 @@ import clsx from "clsx";
 import { useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/products";
 import QuickView from "./QuickView";
+import Button from "./ui/Button";
+import Badge from "./ui/Badge";
 
 const sizes = ["M", "L", "XL"] as const;
 
@@ -70,7 +72,6 @@ export default function ProductCard({
     return product.image;
   }, [product.image]);
 
-  const sizeMissing = !selectedSize;
   const addLabel =
     addState === "loading"
       ? addingLabel
@@ -109,7 +110,7 @@ export default function ProductCard({
     (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--brand-secondary)]/10 bg-[var(--brand-surface)] transition-all duration-200 ease-out md:hover:-translate-y-1 md:hover:shadow-md">
+    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition-all duration-200 ease-out hover:shadow-md">
       <div
         role="button"
         tabIndex={0}
@@ -154,13 +155,10 @@ export default function ProductCard({
         </div>
 
         {showBadge ? (
-          <span className="absolute left-3 top-3 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white">
-            {showBadge}
-          </span>
+          <Badge variant="popular" className="absolute left-3 top-3" />
         ) : null}
-        <span className="absolute right-3 top-3 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink">
-          {statusLabel}
-        </span>
+        <Badge variant="new" className="absolute right-3 top-3" />
+        <span className="sr-only">{statusLabel}</span>
 
         <button
           type="button"
@@ -174,12 +172,12 @@ export default function ProductCard({
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col p-3 space-y-2">
+      <div className="flex flex-1 flex-col space-y-3 p-4">
         <div className="flex justify-between items-start gap-2">
-          <h3 className="text-[13px] font-medium leading-snug line-clamp-2 text-[var(--brand-primary)] break-words">
+          <h3 className="line-clamp-2 break-words text-[16px] font-medium leading-[1.4] text-neutral-900">
             {product.name}
           </h3>
-          <span className="text-[14px] font-semibold whitespace-nowrap text-neutral-900">
+          <span className="whitespace-nowrap text-[16px] font-medium leading-[1.4] text-neutral-900">
             ৳{product.price.toLocaleString()}
           </span>
         </div>
@@ -189,16 +187,14 @@ export default function ProductCard({
         ) : null}
 
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[12px] text-support break-words">{product.category}</p>
+          <p className="break-words text-[13px] leading-[1.5] text-neutral-700">{product.category}</p>
           {typeof stockCount === "number" && stockCount <= 5 ? (
-            <span className="text-[10px] px-2 py-1 rounded-full bg-[var(--brand-secondary)]/15 whitespace-nowrap text-[var(--brand-secondary)]">
-              Limited
-            </span>
+            <Badge variant="low-stock" className="whitespace-nowrap" />
           ) : null}
         </div>
 
         <div>
-          <p className="text-[13px] font-medium text-ink">Select Size</p>
+          <p className="text-[13px] font-medium leading-[1.5] text-neutral-900">Select Size</p>
           <div className="flex gap-1 flex-wrap mt-1">
             {sizes.map((size) => (
               <button
@@ -217,7 +213,7 @@ export default function ProductCard({
             ))}
           </div>
           {showSizeError ? (
-            <p className="text-red-600 text-[12px] mt-1 transition-opacity duration-200">{sizeErrorLabel}</p>
+            <p className="mt-1 text-[12px] leading-[1.4] text-rose-600 transition-opacity duration-200">{sizeErrorLabel}</p>
           ) : null}
         </div>
 
@@ -239,33 +235,28 @@ export default function ProductCard({
               +
             </button>
           </div>
-          <button
+          <Button
             type="button"
-            className={clsx(
-              "interactive-feedback flex-1 bg-black text-white text-[12px] py-1.5 rounded-md transition hover:opacity-90",
-              isRouting && "cursor-not-allowed border-[#d9cdc0] text-muted"
-            )}
+            className="flex-1 text-[13px]"
             onClick={handleBuyClick}
             disabled={isRouting}
           >
             {isRouting ? "Redirecting..." : buyNowLabel}
-          </button>
+          </Button>
         </div>
 
         {quantityFeedback ? <p className="text-xs font-semibold text-accent">{quantityFeedback}</p> : null}
 
-        <button
+        <Button
           type="button"
-          className={clsx(
-            "interactive-feedback w-full border border-black text-black text-[12px] py-1.5 rounded-md mt-2 transition hover:bg-black hover:text-white",
-            addState === "loading" || isRouting ? "cursor-not-allowed border-[#d9cdc0] text-muted" : "",
-            addState === "success" && "border-[var(--brand-accent)] bg-[var(--brand-accent)] text-[#1f1f1f]"
-          )}
+          variant={addState === "success" ? "success" : "secondary"}
+          className="mt-1 w-full text-[13px]"
           onClick={handleAddClick}
           disabled={addState === "loading" || isRouting}
+          loading={addState === "loading"}
         >
           {addLabel}
-        </button>
+        </Button>
       </div>
 
       {quickViewProduct ? (
