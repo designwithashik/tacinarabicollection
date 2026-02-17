@@ -4,10 +4,8 @@ import type { MiddlewareHandler } from 'hono'
 
 export type Env = {
   DB: D1Database
-  IMAGES?: R2Bucket
-  R2_PUBLIC_BASE_URL?: string
-  IMAGEKIT_PRIVATE_KEY?: string
-  IMAGEKIT_URL_ENDPOINT?: string
+  BUCKET?: R2Bucket
+  R2_PUBLIC_URL?: string
   ADMIN_API_TOKEN?: string
   JWT_SECRET: string
 }
@@ -141,39 +139,6 @@ const ensureProductsSchema = async (db: D1Database) => {
   }
 }
 
-
-const uploadToImageKit = async (file: File, env: Env): Promise<string | null> => {
-  if (!env.IMAGEKIT_PRIVATE_KEY || !env.IMAGEKIT_URL_ENDPOINT) return null
-
-  const form = new FormData()
-  form.append('file', file)
-  form.append('fileName', `${Date.now()}-${file.name}`)
-
-  const response = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${btoa(`${env.IMAGEKIT_PRIVATE_KEY}:`)}`,
-    },
-    body: form,
-  })
-
-  if (!response.ok) return null
-  const payload = (await response.json()) as { url?: string }
-  return payload.url ?? null
-}
-
-const uploadToR2 = async (file: File, env: Env): Promise<string | null> => {
-  if (!env.IMAGES || !env.R2_PUBLIC_BASE_URL) return null
-
-  const key = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
-  await env.IMAGES.put(key, await file.arrayBuffer(), {
-    httpMetadata: {
-      contentType: file.type || 'application/octet-stream',
-    },
-  })
-
-  return `${env.R2_PUBLIC_BASE_URL.replace(/\/$/, '')}/${key}`
-}
 
 const decrementStock = async (db: D1Database, productId: number, quantity: number) => {
   const result = await db
@@ -340,24 +305,26 @@ app.delete('/admin/products/:id', requireAdmin, async (c) => {
 
 
 app.post('/admin/upload', requireAdmin, async (c) => {
-  const form = await c.req.formData().catch(() => null)
-  const file = form?.get('file')
+  const formData = await c.req.formData()
+  const file = formData.get('file')
 
-  if (!(file instanceof File)) {
-    return c.json({ error: 'File is required' }, 400)
+  if (!file || typeof file === 'string') {
+    return c.json({ error: 'No file uploaded' }, 400)
   }
 
-  const r2Url = await uploadToR2(file, c.env)
-  if (r2Url) {
-    return c.json({ image_url: r2Url })
+  if (!c.env.BUCKET || !c.env.R2_PUBLIC_URL) {
+    return c.json({ error: 'Storage not configured' }, 500)
   }
 
-  const imageKitUrl = await uploadToImageKit(file, c.env)
-  if (imageKitUrl) {
-    return c.json({ image_url: imageKitUrl })
-  }
+  const arrayBuffer = await file.arrayBuffer()
+  const fileName = `${Date.now()}-${file.name}`
 
-  return c.json({ error: 'No upload provider configured' }, 500)
+  await c.env.BUCKET.put(fileName, arrayBuffer, {
+    httpMetadata: { contentType: file.type },
+  })
+
+  const imageUrl = `${c.env.R2_PUBLIC_URL.replace(/\/$/, '')}/${fileName}`
+  return c.json({ image_url: imageUrl })
 })
 
 app.post('/orders', async (c) => {

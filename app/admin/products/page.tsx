@@ -103,17 +103,20 @@ export default function AdminProductsPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await apiFetch<{ image_url: string }>("/admin/upload", {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+      const uploadResponse = await fetch(`${baseUrl}/admin/upload`, {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
 
-      if (!response?.image_url) {
-        throw new Error("Upload failed.");
+      const uploadPayload = (await uploadResponse.json()) as { image_url?: string; error?: string };
+      if (!uploadResponse.ok || !uploadPayload.image_url) {
+        throw new Error(uploadPayload.error || "Upload failed.");
       }
 
-      setDraft((prev) => ({ ...prev, image_url: response.image_url }));
-      setPreviewUrl(response.image_url);
+      setDraft((prev) => ({ ...prev, image_url: uploadPayload.image_url ?? "" }));
+      setPreviewUrl(uploadPayload.image_url ?? "");
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Image upload failed.");
     } finally {
