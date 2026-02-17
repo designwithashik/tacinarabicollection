@@ -816,8 +816,8 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-neutral-200 bg-white shadow-sm">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <header className="border-b border-neutral-200 bg-white">
+        <nav className="sticky top-0 z-50 mx-auto flex max-w-6xl items-center justify-between border-b border-neutral-200 bg-white px-4 py-3 shadow-sm">
             <button
               type="button"
               onClick={() => setShowCart(true)}
