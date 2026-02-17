@@ -6,6 +6,11 @@ export type Env = {
   DB: D1Database
   ADMIN_API_TOKEN?: string
   JWT_SECRET: string
+  IMAGES?: R2Bucket
+  R2_PUBLIC_BASE_URL?: string
+  IMAGEKIT_URL_ENDPOINT?: string
+  IMAGEKIT_PUBLIC_KEY?: string
+  IMAGEKIT_PRIVATE_KEY?: string
 }
 
 type Bindings = { Bindings: Env }
@@ -150,6 +155,34 @@ const decrementStock = async (db: D1Database, productId: number, quantity: numbe
   return (result.meta.changes ?? 0) > 0
 }
 
+
+const toArrayBuffer = async (file: File) => {
+  const buffer = await file.arrayBuffer()
+  return buffer
+}
+
+const uploadToImageKit = async (env: Env, file: File) => {
+  if (!env.IMAGEKIT_PRIVATE_KEY || !env.IMAGEKIT_PUBLIC_KEY || !env.IMAGEKIT_URL_ENDPOINT) return null
+
+  const form = new FormData()
+  form.set('file', file)
+  form.set('fileName', `${Date.now()}-${file.name}`)
+  form.set('useUniqueFileName', 'true')
+
+  const auth = btoa(`${env.IMAGEKIT_PRIVATE_KEY}:`)
+  const response = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${auth}`,
+    },
+    body: form,
+  })
+
+  if (!response.ok) return null
+  const payload = (await response.json()) as { url?: string }
+  return payload.url ?? null
+}
+
 const generateUniqueSlug = async (db: D1Database, name: string) => {
   const base = slugify(name) || `product-${Date.now()}`
   let candidate = base
@@ -202,6 +235,35 @@ app.get('/admin/products', requireAdmin, async (c) => {
     .all()
 
   return c.json(products.results ?? [])
+})
+
+
+app.post('/admin/upload', requireAdmin, async (c) => {
+  const form = await c.req.formData().catch(() => null)
+  if (!form) return c.json({ error: 'Validation error' }, 400)
+
+  const entry = form.get('image')
+  if (!(entry instanceof File)) {
+    return c.json({ error: 'Image file is required' }, 400)
+  }
+
+  if (c.env.IMAGES && c.env.R2_PUBLIC_BASE_URL) {
+    const key = `products/${Date.now()}-${entry.name.replace(/\s+/g, '-')}`
+    const body = await toArrayBuffer(entry)
+    await c.env.IMAGES.put(key, body, {
+      httpMetadata: {
+        contentType: entry.type || 'application/octet-stream',
+      },
+    })
+    return c.json({ image_url: `${c.env.R2_PUBLIC_BASE_URL.replace(/\/$/, '')}/${key}` })
+  }
+
+  const imageKitUrl = await uploadToImageKit(c.env, entry)
+  if (imageKitUrl) {
+    return c.json({ image_url: imageKitUrl })
+  }
+
+  return c.json({ error: 'Upload is not configured. Add R2 or ImageKit credentials.' }, 500)
 })
 
 app.post('/admin/products', requireAdmin, async (c) => {
