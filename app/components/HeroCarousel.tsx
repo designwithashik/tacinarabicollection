@@ -134,14 +134,14 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/45 to-black/20" />
 
-            <div className="absolute inset-0 z-20 flex items-end justify-center px-6 pb-8 md:items-center md:pb-0">
-              <div className="max-w-xl space-y-3 text-center text-white">
-                <h2 className="text-[20px] font-semibold leading-[1.3] text-white md:text-[26px] md:leading-[1.2]">
+            <div className="absolute inset-0 z-20 flex flex-col justify-center space-y-2 px-4 text-center sm:px-8 sm:text-left">
+              <div className="space-y-2 text-white">
+                <h2 className="text-[20px] font-semibold leading-[1.2] text-white sm:text-2xl md:text-3xl">
                   Elegant modest fashion delivered across Bangladesh.
                 </h2>
-                <p className="mx-auto max-w-[680px] text-[13px] leading-[1.5] text-white/90">Shop curated designs with fast support and secure ordering.</p>
+                <p className="mx-auto max-w-[90%] text-[13px] leading-[1.5] text-white/90 sm:mx-0 sm:max-w-[70%] sm:text-[14px]">Shop curated designs with fast support and secure ordering.</p>
 
-                <div className="flex justify-center">
+                <div className="flex justify-center sm:justify-start">
                   <div className="w-full max-w-xs space-y-2">
                     <button
                       type="button"

@@ -82,6 +82,14 @@ a:focus-visible {
 @keyframes panel-slide-up { from { opacity:0; transform:translateY(16px);} to {opacity:1;transform:translateY(0);} }
 @keyframes subtle-shimmer { 0% { background-position:-240px 0;} 100% { background-position:calc(240px + 100%) 0;} }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
 
 .animate-cart-bounce { animation: cart-bounce 0.45s ease-out; }
 .interactive-feedback { transition: transform 220ms ease-out, box-shadow 220ms ease-out, opacity 220ms ease-out, background-color 220ms ease-out, border-color 220ms ease-out; }
@@ -91,6 +99,7 @@ a:focus-visible {
 .panel-enter { animation: panel-slide-up 260ms ease-out; }
 .fade-enter, .retail-section-enter, .retail-batch-enter { animation: retail-enter 240ms ease-out both; }
 .animate-fadeIn { animation: fadeIn 0.35s ease-out; }
+.animate-marquee { animation: marquee 18s linear infinite; }
 .skeleton-shimmer { background: linear-gradient(90deg, #efe5dc 25%, #f6ede6 45%, #efe5dc 65%); background-size: 240px 100%; animation: subtle-shimmer 1.2s ease-in-out infinite; }
 
 .btn-primary {
@@ -123,6 +132,6 @@ a:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .interactive-feedback:active { transform: none; }
   .skeleton-shimmer { animation: none; background: #efe5dc; }
-  .toast-enter, .panel-enter, .fade-enter, .retail-section-enter, .retail-batch-enter, .animate-fadeIn, .animate-cart-bounce { animation: none; transform: none; }
+  .toast-enter, .panel-enter, .fade-enter, .retail-section-enter, .retail-batch-enter, .animate-fadeIn, .animate-cart-bounce, .animate-marquee { animation: none; transform: none; }
   * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }

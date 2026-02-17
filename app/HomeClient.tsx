@@ -14,7 +14,7 @@ import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import HeroCarousel, { type HeroProduct } from "./components/HeroCarousel";
 import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
-import { SlidersHorizontal } from "lucide-react";
+import { Facebook, Instagram, SlidersHorizontal } from "lucide-react";
 import type { Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import {
@@ -816,9 +816,8 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white">
-        <div className="mx-auto max-w-6xl">
-          <nav className="flex items-center justify-between px-4 py-3">
+      <header className="border-b border-neutral-200 bg-white">
+        <nav className="sticky top-0 z-50 mx-auto flex max-w-6xl items-center justify-between border-b border-neutral-200 bg-white px-4 py-3 shadow-sm">
             <button
               type="button"
               onClick={() => setShowCart(true)}
@@ -839,7 +838,6 @@ export default function HomePage({
 
             <LanguageToggle language={language} setLanguage={setLanguage} />
           </nav>
-        </div>
       </header>
 
       <section className="relative">
@@ -855,12 +853,11 @@ export default function HomePage({
       </section>
 
       <section className="bg-black py-2 text-white">
-        <div className="mx-auto max-w-6xl overflow-hidden px-4">
-          <div className="whitespace-nowrap text-[13px] font-medium tracking-wide animate-[marquee_20s_linear_infinite]">
-            <span className="mx-6 inline-block">{announcementText}</span>
-            <span className="mx-6 inline-block">{announcementText}</span>
-            <span className="mx-6 inline-block">{announcementText}</span>
-            <span className="mx-6 inline-block">{announcementText}</span>
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="relative overflow-hidden whitespace-nowrap">
+            <div className="inline-block min-w-full animate-marquee text-[13px] font-medium tracking-wide">
+              {announcementText} &nbsp;&nbsp;&nbsp; {announcementText}
+            </div>
           </div>
         </div>
       </section>
@@ -1089,14 +1086,38 @@ export default function HomePage({
               <li>Support available 10am–10pm daily</li>
             </ul>
           </div>
-          <div>
-            <h4 className="text-[13px] font-semibold text-ink">Social Proof</h4>
-            <p className="mt-3 text-[13px] leading-relaxed text-neutral-600">
-              Thousands of Bangladesh fashion shoppers trust our WhatsApp checkout for fast confirmation, secure payment guidance, and reliable delivery updates.
-            </p>
-            <p className="mt-3 text-[13px] font-semibold text-ink">
-              “Fast replies, quality products, safe delivery.”
-            </p>
+          <div className="mt-8 space-y-4">
+            <h3 className="text-[15px] font-semibold leading-[1.4] text-neutral-900">Connect With Us</h3>
+            <div className="flex items-center gap-4 text-neutral-800">
+              <a
+                href="https://www.facebook.com/tacinarabicollection"
+                target="_blank"
+                rel="noreferrer"
+                className="interactive-feedback hover:opacity-80"
+                aria-label="Facebook"
+              >
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a
+                href="https://www.instagram.com/tacinarabi"
+                target="_blank"
+                rel="noreferrer"
+                className="interactive-feedback hover:opacity-80"
+                aria-label="Instagram"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a
+                href="https://pin.it/5Om9YG8GY"
+                target="_blank"
+                rel="noreferrer"
+                className="interactive-feedback hover:opacity-80"
+                aria-label="Pinterest"
+              >
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-neutral-800 text-[11px] font-semibold leading-none">P</span>
+              </a>
+            </div>
+            <div className="text-[14px] font-medium leading-[1.6] text-neutral-800">📞 +8801522119189</div>
           </div>
         </div>
       </footer>
