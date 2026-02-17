@@ -9,15 +9,13 @@ CREATE TABLE IF NOT EXISTS admins (
 CREATE TABLE IF NOT EXISTS products (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
   price REAL NOT NULL,
   stock INTEGER DEFAULT 0,
-  low_stock_threshold INTEGER DEFAULT 5,
   image_url TEXT,
-  image_folder TEXT,
-  status TEXT DEFAULT 'active',
-  featured INTEGER DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  description TEXT,
+  is_active INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -42,13 +40,4 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity INTEGER NOT NULL,
   price REAL NOT NULL,
   FOREIGN KEY(order_id) REFERENCES orders(id)
-);
-
-CREATE TABLE IF NOT EXISTS inventory_logs (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  product_id INTEGER NOT NULL,
-  change_type TEXT NOT NULL,
-  quantity INTEGER NOT NULL,
-  admin_id INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

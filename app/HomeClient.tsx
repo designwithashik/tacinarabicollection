@@ -14,7 +14,7 @@ import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import HeroCarousel, { type HeroProduct } from "./components/HeroCarousel";
 import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
-import { SlidersHorizontal } from "lucide-react";
+import { Facebook, Instagram, SlidersHorizontal } from "lucide-react";
 import type { Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import {
@@ -84,7 +84,7 @@ const storageKeys = {
   language: "tacin-lang",
 };
 
-const statusLabels = ["New", "Hot", "Limited"] as const;
+const statusLabels = ["New", "Popular", "Low Stock"] as const;
 
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
 const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
@@ -369,7 +369,7 @@ export default function HomePage({
   // Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 2000);
+    const timer = setTimeout(() => setToast(null), 3000);
     return () => clearTimeout(timer);
   }, [toast]);
 
@@ -816,15 +816,8 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-40 bg-white">
-        <div className="mx-auto max-w-6xl">
-          <nav className="flex items-center justify-between px-4 py-3 bg-white border-b border-neutral-200">
-            <LanguageToggle language={language} setLanguage={setLanguage} />
-
-            <h1 className="text-[18px] font-semibold tracking-tight">
-              Tacin Arabi
-            </h1>
-
+      <header className="border-b border-neutral-200 bg-white">
+        <nav className="sticky top-0 z-50 mx-auto flex max-w-6xl items-center justify-between border-b border-neutral-200 bg-white px-4 py-3 shadow-sm">
             <button
               type="button"
               onClick={() => setShowCart(true)}
@@ -840,8 +833,11 @@ export default function HomePage({
                 <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[#eadad0]" />
               ) : null}
             </button>
+
+            <p className="text-[16px] font-semibold leading-[1.4] text-neutral-900">Tacin Arabi</p>
+
+            <LanguageToggle language={language} setLanguage={setLanguage} />
           </nav>
-        </div>
       </header>
 
       <section className="relative">
@@ -857,12 +853,11 @@ export default function HomePage({
       </section>
 
       <section className="bg-black py-2 text-white">
-        <div className="mx-auto max-w-6xl overflow-hidden px-4">
-          <div className="whitespace-nowrap text-[13px] font-medium tracking-wide animate-[marquee_20s_linear_infinite]">
-            <span className="mx-6 inline-block">{announcementText}</span>
-            <span className="mx-6 inline-block">{announcementText}</span>
-            <span className="mx-6 inline-block">{announcementText}</span>
-            <span className="mx-6 inline-block">{announcementText}</span>
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="relative overflow-hidden whitespace-nowrap">
+            <div className="inline-block min-w-full animate-marquee text-[13px] font-medium tracking-wide">
+              {announcementText} &nbsp;&nbsp;&nbsp; {announcementText}
+            </div>
           </div>
         </div>
       </section>
@@ -943,7 +938,7 @@ export default function HomePage({
         <SectionLoader
           loading={!hasMounted || isLoading}
           loader={
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {/* Product placeholders prevent blank state flashes during hydration. */}
               {Array.from({ length: 6 }).map((_, index) => (
                 <SkeletonCard key={`skeleton-${index}`} />
@@ -962,7 +957,7 @@ export default function HomePage({
           <motion.div
             key={productBatchKey}
             className={clsx(
-              "grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+              "grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
               !prefersReducedMotion && "retail-batch-enter"
             )}
             initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
@@ -1007,10 +1002,23 @@ export default function HomePage({
           )}
         </SectionLoader>
 
-        <section className="mt-5 text-[13px] text-neutral-600 space-y-1 leading-relaxed">
-          <p>✓ Cash on Delivery Available</p>
-          <p>✓ Nationwide Delivery</p>
-          <p>✓ WhatsApp Order Support</p>
+        <section className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-neutral-200 bg-white p-4">
+          <div className="space-y-1">
+            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">🚚 Fast Nationwide Delivery</p>
+            <p className="text-[12px] leading-[1.4] text-neutral-700">Reliable delivery across Bangladesh.</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">🔒 Secure Order Handling</p>
+            <p className="text-[12px] leading-[1.4] text-neutral-700">Safe data and verified order process.</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">💬 WhatsApp Order Support</p>
+            <p className="text-[12px] leading-[1.4] text-neutral-700">Quick support from real agents.</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">💵 Cash on Delivery</p>
+            <p className="text-[12px] leading-[1.4] text-neutral-700">Pay after delivery confirmation.</p>
+          </div>
         </section>
 
         {recentlyViewed.length > 0 ? (
@@ -1023,7 +1031,7 @@ export default function HomePage({
                 Last 2 items
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {recentlyViewed.map((product, index) => (
                 <AnimatedWrapper key={product.id} variant="product-card" delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.1)}>
                   <ProductCard
@@ -1078,14 +1086,38 @@ export default function HomePage({
               <li>Support available 10am–10pm daily</li>
             </ul>
           </div>
-          <div>
-            <h4 className="text-[13px] font-semibold text-ink">Social Proof</h4>
-            <p className="mt-3 text-[13px] leading-relaxed text-neutral-600">
-              Thousands of Bangladesh fashion shoppers trust our WhatsApp checkout for fast confirmation, secure payment guidance, and reliable delivery updates.
-            </p>
-            <p className="mt-3 text-[13px] font-semibold text-ink">
-              “Fast replies, quality products, safe delivery.”
-            </p>
+          <div className="mt-8 space-y-4">
+            <h3 className="text-[15px] font-semibold leading-[1.4] text-neutral-900">Connect With Us</h3>
+            <div className="flex items-center gap-4 text-neutral-800">
+              <a
+                href="https://www.facebook.com/tacinarabicollection"
+                target="_blank"
+                rel="noreferrer"
+                className="interactive-feedback hover:opacity-80"
+                aria-label="Facebook"
+              >
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a
+                href="https://www.instagram.com/tacinarabi"
+                target="_blank"
+                rel="noreferrer"
+                className="interactive-feedback hover:opacity-80"
+                aria-label="Instagram"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a
+                href="https://pin.it/5Om9YG8GY"
+                target="_blank"
+                rel="noreferrer"
+                className="interactive-feedback hover:opacity-80"
+                aria-label="Pinterest"
+              >
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-neutral-800 text-[11px] font-semibold leading-none">P</span>
+              </a>
+            </div>
+            <div className="text-[14px] font-medium leading-[1.6] text-neutral-800">📞 +8801522119189</div>
           </div>
         </div>
       </footer>
@@ -1277,8 +1309,8 @@ export default function HomePage({
       ) : null}
 
       {showCart ? (
-        <div className="fixed inset-0 z-40 flex items-end bg-black/40">
-          <div className="w-full rounded-t-3xl bg-white p-6">
+        <div className="fixed inset-0 z-40 flex justify-end bg-black/40">
+          <div className="panel-enter h-full w-full max-w-md overflow-y-auto bg-white p-6" style={{ animationDuration: "250ms" }}>
             <div className="flex items-center justify-between">
               <h3
                 ref={cartHeadingRef}
@@ -1394,13 +1426,15 @@ export default function HomePage({
                     )}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCartCheckout}
-                  className="interactive-feedback min-h-[40px] w-full rounded-lg bg-accent px-4 py-2.5 text-[14px] font-semibold text-white"
-                >
-                  {isRouting ? "Redirecting..." : text.checkout}
-                </button>
+                <div className="sticky bottom-0 bg-white pt-3">
+                  <button
+                    type="button"
+                    onClick={handleCartCheckout}
+                    className="interactive-feedback min-h-[40px] w-full rounded-lg bg-black px-4 py-2.5 text-[14px] font-medium leading-[1.4] text-white active:scale-95"
+                  >
+                    {isRouting ? "Redirecting..." : text.checkout}
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1438,7 +1472,7 @@ export default function HomePage({
 
             <div className="flex-1 overflow-visible px-4 py-6 pb-8 sm:px-6">
               {isOrderConfirmed ? (
-                <div className="max-w-4xl mx-auto px-4 py-5">
+                <div className="mx-auto max-w-4xl px-4 py-5">
                   <div className="text-center py-16">
                     <h2 className="text-2xl font-semibold mb-4">
                       Order Confirmed
@@ -1449,9 +1483,9 @@ export default function HomePage({
                   </div>
                 </div>
               ) : (
-                <div className="max-w-4xl mx-auto px-4 py-5">
+                <div className="mx-auto max-w-4xl px-4 py-5">
                   <div className="grid md:grid-cols-2 gap-5">
-                    <div className="space-y-4">
+                    <div className="max-w-[680px] space-y-4">
                       <h2 className="text-base font-semibold mb-4">
                         Order Summary
                       </h2>
@@ -1582,7 +1616,7 @@ export default function HomePage({
                         />
                       </div>
 
-                      <div className="text-xs text-neutral-500 mt-4">
+                      <div className="text-xs text-neutral-700 mt-4">
                         🔒 Your information is secure and will not be shared.
                       </div>
 
@@ -1608,7 +1642,7 @@ export default function HomePage({
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleWhatsappRedirect("COD")}
+                          onClick={() => handleWhatsappRedirect("Cash on Delivery")}
                           disabled={
                             isSubmitting ||
                             !isCustomerInfoValid ||
