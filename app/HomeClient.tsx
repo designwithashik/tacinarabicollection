@@ -816,7 +816,7 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white shadow-sm">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-neutral-200 bg-white shadow-sm">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
             <button
               type="button"
@@ -839,6 +839,7 @@ export default function HomePage({
             <LanguageToggle language={language} setLanguage={setLanguage} />
           </nav>
       </header>
+      <div className="h-[56px]" aria-hidden="true" />
 
       <section className="relative">
         <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">

@@ -3,12 +3,12 @@ import { NextResponse } from "next/server";
 export const runtime = "edge";
 
 export async function POST(request: Request) {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!baseUrl) {
-      return NextResponse.json({ error: "Missing NEXT_PUBLIC_API_URL" }, { status: 500 });
-    }
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!baseUrl) {
+    return NextResponse.json({ error: "Missing NEXT_PUBLIC_API_URL" }, { status: 500 });
+  }
 
+  try {
     const formData = await request.formData();
     const file = formData.get("file");
 
@@ -17,8 +17,8 @@ export async function POST(request: Request) {
     }
 
     const payload = new FormData();
-    const fileName = file instanceof File ? file.name : `upload-${Date.now()}.bin`;
-    payload.append("file", file, fileName);
+    const inferredName = (file as Blob & { name?: string }).name || `upload-${Date.now()}.bin`;
+    payload.append("file", file, inferredName);
 
     const response = await fetch(`${baseUrl.replace(/\/$/, "")}/admin/upload`, {
       method: "POST",
@@ -27,18 +27,29 @@ export async function POST(request: Request) {
       cache: "no-store",
     });
 
-    const text = await response.text();
-    if (!text) {
-      return NextResponse.json({ error: "Empty upload response" }, { status: 502 });
-    }
+    const raw = await response.text();
+    const parsed = raw
+      ? ((): { image_url?: string; error?: string } => {
+          try {
+            return JSON.parse(raw) as { image_url?: string; error?: string };
+          } catch {
+            return { error: raw };
+          }
+        })()
+      : { error: "Empty upload response" };
 
-    const data = JSON.parse(text) as { image_url?: string; error?: string };
     if (!response.ok) {
-      return NextResponse.json({ error: data.error || "Upload failed" }, { status: response.status });
+      return NextResponse.json(
+        { error: parsed.error || "Upload failed" },
+        { status: response.status || 500 }
+      );
     }
 
-    return NextResponse.json({ image_url: data.image_url ?? null });
-  } catch {
-    return NextResponse.json({ error: "Upload proxy failed" }, { status: 500 });
+    return NextResponse.json({ image_url: parsed.image_url ?? null });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Upload proxy failed" },
+      { status: 500 }
+    );
   }
 }
