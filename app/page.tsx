@@ -1,77 +1,39 @@
-export const runtime = 'edge';
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+"use client";
 
-import HomeClient from "./HomeClient";
-import type { AdminProduct } from "../lib/inventory";
-import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
-import type { Metadata } from "next";
+import { useEffect, useState } from "react";
 
-const siteUrl = "https://tacinarabicollection.vercel.app";
-
-export const metadata: Metadata = {
-  title: "Buy Kurti & Women Fashion Online in Bangladesh",
-  description:
-    "Shop premium kurti collections, modest fashion essentials, and ceramics with fast WhatsApp ordering, nationwide Bangladesh delivery, and secure COD/bKash/Nagad payments.",
-  alternates: {
-    canonical: "/",
-  },
+type Product = {
+  id: number;
+  name: string;
+  price: string | number;
+  image_url: string;
 };
 
-export default async function HomePage() {
-  let initialAdminProducts: AdminProduct[] = [];
+export default function HomePage() {
+  const [products, setProducts] = useState<Product[]>([]);
 
-  try {
-    const products = await loadInventoryArray();
-    initialAdminProducts = products.map(toStorefrontProduct) as AdminProduct[];
-  } catch {
-    initialAdminProducts = [];
-  }
+  useEffect(() => {
+    const loadProducts = async () => {
+      const res = await fetch("/api/products");
+      const data = (await res.json()) as Product[];
+      setProducts(Array.isArray(data) ? data : []);
+    };
 
-  const organizationSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "Tacin Arabi Collection",
-    url: siteUrl,
-    logo: `${siteUrl}/icons/icon-192.svg`,
-    sameAs: [
-      "https://wa.me/8801522119189",
-    ],
-    contactPoint: [
-      {
-        "@type": "ContactPoint",
-        telephone: "+8801522119189",
-        contactType: "customer service",
-        areaServed: "BD",
-        availableLanguage: ["en", "bn"],
-      },
-    ],
-  };
-
-  const websiteSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "Tacin Arabi Collection",
-    url: siteUrl,
-    inLanguage: ["en-BD", "bn-BD"],
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${siteUrl}/?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
-  };
+    void loadProducts();
+  }, []);
 
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
-      />
-      <HomeClient initialAdminProducts={initialAdminProducts} />
-    </>
+    <main className="mx-auto max-w-5xl px-4 py-10">
+      <h1 className="mb-6 text-3xl font-bold">Products</h1>
+      <div id="product-container" className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+        {products.map((product) => (
+          <div key={product.id} className="product-card rounded-xl border p-4 shadow-sm">
+            <img src={product.image_url} alt={product.name} className="h-56 w-full rounded-md object-cover" />
+            <h3 className="mt-3 text-lg font-semibold">{product.name}</h3>
+            <p className="text-sm text-gray-700">{product.price}</p>
+          </div>
+        ))}
+      </div>
+    </main>
   );
 }

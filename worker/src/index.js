@@ -3,28 +3,20 @@ export default {
     const url = new URL(request.url)
     const method = request.method
 
-    // ============================
-    // GET PRODUCTS
-    // ============================
     if (url.pathname === "/api/products" && method === "GET") {
       try {
         const { results } = await env.DB
           .prepare("SELECT * FROM products ORDER BY id DESC")
           .all()
-
         return json(results)
-      } catch (err) {
-        return json({ error: "Failed to fetch products" }, 500)
+      } catch {
+        return json({ error: "Fetch failed" }, 500)
       }
     }
 
-    // ============================
-    // ADD PRODUCT
-    // ============================
     if (url.pathname === "/api/admin/add-product" && method === "POST") {
       try {
         const formData = await request.formData()
-
         const name = formData.get("name")
         const price = formData.get("price")
         const imageFile = formData.get("image")
@@ -70,14 +62,11 @@ export default {
           .run()
 
         return json({ success: true })
-      } catch (err) {
+      } catch {
         return json({ error: "Add failed" }, 500)
       }
     }
 
-    // ============================
-    // DELETE PRODUCT
-    // ============================
     if (
       url.pathname.startsWith("/api/admin/delete-product/") &&
       method === "DELETE"
@@ -113,7 +102,7 @@ export default {
           .run()
 
         return json({ success: true })
-      } catch (err) {
+      } catch {
         return json({ error: "Delete failed" }, 500)
       }
     }
@@ -122,14 +111,9 @@ export default {
   }
 }
 
-// ============================
-// Helper
-// ============================
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      "Content-Type": "application/json"
-    }
+    headers: { "Content-Type": "application/json" }
   })
 }
