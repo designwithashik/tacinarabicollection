@@ -53,6 +53,7 @@ const ensureProductsSchema = async (db: D1Database) => {
         price REAL NOT NULL,
         stock INTEGER DEFAULT 0,
         image_url TEXT,
+        image_file_id TEXT,
         description TEXT,
         is_active INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -83,6 +84,10 @@ const ensureProductsSchema = async (db: D1Database) => {
   if (!columns.has('created_at')) {
     await db.prepare('ALTER TABLE products ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP').run()
     await db.prepare("UPDATE products SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL OR created_at = ''").run()
+  }
+
+  if (!columns.has('image_file_id')) {
+    await db.prepare('ALTER TABLE products ADD COLUMN image_file_id TEXT').run()
   }
 }
 
@@ -335,6 +340,7 @@ app.post('/admin/products', requireAdmin, async (c) => {
   const price = Number(payload?.price)
   const description = typeof payload?.description === 'string' ? payload.description.trim() : null
   const image_url = typeof payload?.image_url === 'string' ? payload.image_url.trim() : null
+  const image_file_id = typeof payload?.image_file_id === 'string' ? payload.image_file_id.trim() : null
   const stock = Number.isInteger(Number(payload?.stock)) ? Number(payload?.stock) : 0
   const is_active = Number(payload?.is_active ?? 1) ? 1 : 0
 
@@ -358,10 +364,10 @@ app.post('/admin/products', requireAdmin, async (c) => {
 
   const insert = await c.env.DB
     .prepare(
-      `INSERT INTO products (name, slug, price, stock, image_url, description, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO products (name, slug, price, stock, image_url, image_file_id, description, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .bind(name, slug, price, stock, image_url, description, is_active)
+    .bind(name, slug, price, stock, image_url, image_file_id, description, is_active)
     .run()
 
   const id = Number(insert.meta.last_row_id ?? 0)
@@ -379,6 +385,7 @@ app.put('/admin/products/:id', requireAdmin, async (c) => {
   const price = Number(payload?.price)
   const description = typeof payload?.description === 'string' ? payload.description.trim() : null
   const image_url = typeof payload?.image_url === 'string' ? payload.image_url.trim() : null
+  const image_file_id = typeof payload?.image_file_id === 'string' ? payload.image_file_id.trim() : null
   const is_active = Number(payload?.is_active ?? 1) ? 1 : 0
 
   if (!Number.isInteger(id) || id <= 0 || !name || !Number.isFinite(price)) {
@@ -386,8 +393,8 @@ app.put('/admin/products/:id', requireAdmin, async (c) => {
   }
 
   const update = await c.env.DB
-    .prepare('UPDATE products SET name = ?, price = ?, description = ?, image_url = ?, is_active = ? WHERE id = ?')
-    .bind(name, price, description, image_url, is_active, id)
+    .prepare('UPDATE products SET name = ?, price = ?, description = ?, image_url = ?, image_file_id = ?, is_active = ? WHERE id = ?')
+    .bind(name, price, description, image_url, image_file_id, is_active, id)
     .run()
 
   if ((update.meta.changes ?? 0) === 0) {
@@ -395,6 +402,22 @@ app.put('/admin/products/:id', requireAdmin, async (c) => {
   }
 
   const product = await c.env.DB.prepare('SELECT * FROM products WHERE id = ? LIMIT 1').bind(id).first()
+  return c.json(product)
+})
+
+app.get('/admin/products/:id', requireAdmin, async (c) => {
+  await ensureProductsSchema(c.env.DB)
+
+  const id = Number(c.req.param('id'))
+  if (!Number.isInteger(id) || id <= 0) {
+    return c.json({ error: 'Validation error' }, 400)
+  }
+
+  const product = await c.env.DB.prepare('SELECT * FROM products WHERE id = ? LIMIT 1').bind(id).first()
+  if (!product) {
+    return c.json({ error: 'Product not found' }, 404)
+  }
+
   return c.json(product)
 })
 
@@ -427,7 +450,7 @@ app.delete('/admin/products/:id', requireAdmin, async (c) => {
     return c.json({ error: 'Validation error' }, 400)
   }
 
-  const update = await c.env.DB.prepare('UPDATE products SET is_active = 0 WHERE id = ?').bind(id).run()
+  const update = await c.env.DB.prepare('DELETE FROM products WHERE id = ?').bind(id).run()
 
   if ((update.meta.changes ?? 0) === 0) {
     return c.json({ error: 'Product not found' }, 404)

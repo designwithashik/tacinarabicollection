@@ -1,31 +1,50 @@
-/*
- * What this file does:
- *   - Deletes a product from KV collection storage.
- */
-
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
-import { loadInventoryArray, saveInventoryArray } from "@/lib/server/inventoryStore";
+import { workerApiFetch } from "@/lib/server/workerApi";
 
 export const runtime = "edge";
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+type WorkerProduct = {
+  id: number;
+  image_file_id?: string | null;
+};
+
+const deleteImageFromImageKit = async (fileId: string) => {
+  const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error("IMAGEKIT_PRIVATE_KEY is missing.");
+  }
+
+  const auth = `Basic ${btoa(`${privateKey}:`)}`;
+  const res = await fetch(`https://api.imagekit.io/v1/files/${encodeURIComponent(fileId)}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: auth,
+    },
+  });
+
+  if (!res.ok) {
+    const message = await res.text();
+    throw new Error(message || "Failed to delete asset from ImageKit.");
+  }
+};
+
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   try {
-    const existing = await loadInventoryArray();
-    const updated = existing.filter((item) => item.id !== params.id);
+    const detailsRes = await workerApiFetch(`/admin/products/${encodeURIComponent(params.id)}`);
+    const product = (await detailsRes.json()) as WorkerProduct;
 
-    await saveInventoryArray(updated);
+    if (product.image_file_id) {
+      await deleteImageFromImageKit(product.image_file_id);
+    }
 
-    revalidatePath("/");
-    revalidatePath("/admin/inventory");
+    await workerApiFetch(`/admin/products/${encodeURIComponent(params.id)}`, {
+      method: "DELETE",
+    });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { error: error instanceof Error ? error.message : "Internal Server Error" },
       { status: 500 }
     );
   }

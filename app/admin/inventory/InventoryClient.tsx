@@ -22,6 +22,7 @@ const defaultDraft: AdminProduct = {
   heroFeatured: false,
   title: "",
   subtitle: "",
+  imageFileId: null,
   updatedAt: new Date().toISOString(),
 };
 
@@ -58,7 +59,7 @@ export default function AdminInventory() {
       const shaped = Array.isArray(data) ? data.flat() : (data ? [data] : []);
       setItems(shaped as AdminProduct[]);
     } catch {
-      setError("Failed to load inventory from KV.");
+      setError("Failed to load inventory from D1 API.");
       setItems([]);
     }
   };
@@ -98,9 +99,9 @@ export default function AdminInventory() {
       });
 
       if (!uploadRes.ok) throw new Error("Upload failed");
-      const result = (await uploadRes.json()) as { url?: string };
-      if (!result.url) throw new Error("Upload missing URL");
-      return result.url; // This is the final image/video link
+      const result = (await uploadRes.json()) as { url?: string; fileId?: string };
+      if (!result.url || !result.fileId) throw new Error("Upload missing URL or fileId");
+      return { imageUrl: result.url, imageFileId: result.fileId };
     } catch {
       alert("Media upload failed. Please try again.");
       return null;
@@ -108,7 +109,9 @@ export default function AdminInventory() {
   };
 
   const uploadImageIfNeeded = async () => {
-    if (!selectedFile) return draft.image;
+    if (!selectedFile) {
+      return { imageUrl: draft.image, imageFileId: draft.imageFileId ?? null };
+    }
 
     if (!hasImageKitConfig) {
       throw new Error(
@@ -138,9 +141,13 @@ export default function AdminInventory() {
     try {
       // If a new file is selected, upload it first via ImageKit.
       let imageUrl = draft.image;
+      let imageFileId = draft.imageFileId ?? null;
       if (selectedFile) {
         const uploadedUrl = await uploadImageIfNeeded();
-        if (uploadedUrl) imageUrl = uploadedUrl;
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl.imageUrl;
+          imageFileId = uploadedUrl.imageFileId;
+        }
       }
 
       if (!validateImageUrl(imageUrl)) {
@@ -148,12 +155,13 @@ export default function AdminInventory() {
         return;
       }
 
-      const payload: Partial<AdminProduct> & { imageUrl?: string } = {
+      const payload: Partial<AdminProduct> & { imageUrl?: string; imageFileId?: string | null } = {
         name: draft.name,
         price: Number(draft.price),
         image: imageUrl,
         // Alias for compatibility with imageUrl-based payload handlers.
         imageUrl,
+        imageFileId,
         category: draft.category,
         colors: draft.colors,
         sizes: draft.sizes,

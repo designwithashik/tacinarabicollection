@@ -4,6 +4,7 @@ export type AdminProduct = Product & {
   active: boolean;
   updatedAt: string;
   heroFeatured?: boolean;
+  imageFileId?: string | null;
 };
 
 const INVENTORY_KEY = "tacin-admin-products";

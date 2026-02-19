@@ -1,33 +1,40 @@
-/*
- * What this file does:
- *   - Exposes public product list from canonical inventory storage.
- */
-
 import { NextResponse } from "next/server";
-import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
+import { workerApiFetch } from "@/lib/server/workerApi";
 
 export const runtime = "edge";
-export const revalidate = 60;
+export const revalidate = 0;
 
-export async function GET(request: Request) {
+type WorkerProduct = {
+  id: number;
+  name: string;
+  price: number;
+  image_url: string | null;
+  is_active: number;
+};
+
+const toStorefrontProduct = (item: WorkerProduct) => ({
+  id: String(item.id),
+  name: item.name,
+  price: Number(item.price),
+  image: item.image_url ?? "",
+  imageUrl: item.image_url,
+  category: "Clothing" as const,
+  colors: ["Beige"],
+  sizes: ["M", "L", "XL"],
+  active: Number(item.is_active ?? 1) === 1,
+  updatedAt: new Date().toISOString(),
+  createdAt: new Date().toISOString(),
+  heroFeatured: false,
+  title: item.name,
+  subtitle: "",
+});
+
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const heroOnly = searchParams.get("hero") === "true";
-
-    const products = await loadInventoryArray();
-    const activeProducts = products.filter((p) => p.active);
-
-    if (heroOnly) {
-      return NextResponse.json(
-        activeProducts
-          .filter((p) => p.heroFeatured)
-          .slice(0, 3)
-          .map(toStorefrontProduct)
-      );
-    }
-
-    return NextResponse.json(activeProducts.map(toStorefrontProduct));
+    const res = await workerApiFetch("/products");
+    const products = ((await res.json()) as WorkerProduct[]) ?? [];
+    return NextResponse.json(products.map(toStorefrontProduct));
   } catch {
-    return NextResponse.json([]);
+    return NextResponse.json([], { status: 200 });
   }
 }
