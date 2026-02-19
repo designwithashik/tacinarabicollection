@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { AdminProduct } from "../../../lib/inventory";
-import { validateImageUrl } from "../../../lib/images";
 
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
 const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
@@ -36,29 +35,30 @@ export default function AdminInventory() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const isEditing = Boolean(draft.id);
 
-  const hasImageKitConfig = useMemo(
-    () =>
-      Boolean(
-        process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT &&
-          process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY
-      ),
-    []
-  );
 
   const loadProducts = async () => {
     setError(null);
     try {
       const res = await fetch("/api/admin/products", {
         cache: "no-store",
-        next: { revalidate: 0 },
         credentials: "include",
       });
       if (!res.ok) throw new Error();
-      const data = (await res.json()) as unknown;
-      const shaped = Array.isArray(data) ? data.flat() : (data ? [data] : []);
+      const data = (await res.json()) as Array<Record<string, unknown>>;
+      const shaped = (Array.isArray(data) ? data : []).map((item) => ({
+        id: String(item.id ?? ""),
+        name: String(item.name ?? ""),
+        price: Number(item.price ?? 0),
+        image: String(item.image_url ?? ""),
+        category: "Clothing" as const,
+        colors: ["Beige"],
+        sizes: ["M", "L", "XL"],
+        active: Number(item.is_active ?? 1) === 1,
+        updatedAt: String(item.updated_at ?? item.created_at ?? new Date().toISOString()),
+      }));
       setItems(shaped as AdminProduct[]);
     } catch {
-      setError("Failed to load inventory from KV.");
+      setError("Failed to load inventory from D1.");
       setItems([]);
     }
   };
@@ -66,63 +66,6 @@ export default function AdminInventory() {
   useEffect(() => {
     void loadProducts();
   }, []);
-
-  const uploadToImageKit = async (file: File) => {
-    try {
-      // 1. Get the signature from the working API
-      const authRes = await fetch("/api/auth/imagekit");
-      const authData = (await authRes.json()) as {
-        signature?: string;
-        expire?: number;
-        token?: string;
-      };
-      if (!authRes.ok || !authData.signature || !authData.expire || !authData.token) {
-        throw new Error("Auth failed");
-      }
-
-      // 2. Prepare the form data for ImageKit
-      const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
-      if (!publicKey) throw new Error("ImageKit public key missing");
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("fileName", file.name);
-      formData.append("publicKey", publicKey);
-      formData.append("signature", authData.signature);
-      formData.append("expire", String(authData.expire));
-      formData.append("token", authData.token);
-
-      // 3. Post directly to ImageKit
-      const uploadRes = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!uploadRes.ok) throw new Error("Upload failed");
-      const result = (await uploadRes.json()) as { url?: string };
-      if (!result.url) throw new Error("Upload missing URL");
-      return result.url; // This is the final image/video link
-    } catch {
-      alert("Media upload failed. Please try again.");
-      return null;
-    }
-  };
-
-  const uploadImageIfNeeded = async () => {
-    if (!selectedFile) return draft.image;
-
-    if (!hasImageKitConfig) {
-      throw new Error(
-        "ImageKit env is missing. Set NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT and NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY."
-      );
-    }
-
-    setUploading(true);
-    try {
-      return await uploadToImageKit(selectedFile);
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleSave = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -136,44 +79,42 @@ export default function AdminInventory() {
     setError(null);
 
     try {
-      // If a new file is selected, upload it first via ImageKit.
-      let imageUrl = draft.image;
-      if (selectedFile) {
-        const uploadedUrl = await uploadImageIfNeeded();
-        if (uploadedUrl) imageUrl = uploadedUrl;
-      }
-
-      if (!validateImageUrl(imageUrl)) {
-        setError("Please provide a valid image URL.");
-        return;
-      }
-
-      const payload: Partial<AdminProduct> & { imageUrl?: string } = {
-        name: draft.name,
-        price: Number(draft.price),
-        image: imageUrl,
-        // Alias for compatibility with imageUrl-based payload handlers.
-        imageUrl,
-        category: draft.category,
-        colors: draft.colors,
-        sizes: draft.sizes,
-        active: draft.active,
-        heroFeatured: draft.heroFeatured === true,
-        title: draft.title?.trim() || draft.name,
-        subtitle: draft.subtitle?.trim() || "",
-      };
-
       const endpoint = isEditing
         ? `/api/admin/products/${encodeURIComponent(draft.id)}`
         : "/api/admin/products";
       const method = isEditing ? "PUT" : "POST";
 
-      const res = await fetch(endpoint, {
-        method,
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      let res: Response;
+      if (isEditing) {
+        const payload: Partial<AdminProduct> = {
+          name: draft.name,
+          price: Number(draft.price),
+          active: draft.active,
+        };
+
+        res = await fetch(endpoint, {
+          method,
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        if (!selectedFile) {
+          setError("Please select an image file.");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.set("name", draft.name);
+        formData.set("price", String(draft.price));
+        formData.set("image", selectedFile);
+
+        res = await fetch(endpoint, {
+          method,
+          credentials: "include",
+          body: formData,
+        });
+      }
 
       if (!res.ok) {
         const json = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -235,10 +176,10 @@ export default function AdminInventory() {
       <div>
         <h2 className="font-heading text-2xl font-semibold">Inventory</h2>
         <p className="mt-1 text-sm text-muted">
-          Manage products, pricing, and visibility (KV persistence).
+          Manage products, pricing, and visibility (D1 persistence).
         </p>
         <p className="mt-1 text-xs text-muted">
-          ImageKit upload requires URL endpoint + public key + server auth route.
+          Image uploads and deletes are handled by the Worker via ImageKit.
         </p>
       </div>
 
@@ -339,14 +280,7 @@ export default function AdminInventory() {
         </div>
 
         <div className="mt-4 space-y-2">
-          <label className="text-xs font-semibold">Image URL (manual fallback)</label>
-          <input
-            className="w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-            value={draft.image}
-            onChange={(event) =>
-              setDraft((prev) => ({ ...prev, image: event.target.value }))
-            }
-          />
+          <label className="text-xs font-semibold">Image</label>
           <div className="flex items-center gap-2">
             <input
               type="file"

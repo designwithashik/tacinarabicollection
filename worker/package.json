@@ -11,9 +11,7 @@
     "assert:cors-config": "node ./scripts/assert-cors-config.mjs"
   },
   "dependencies": {
-    "@cloudflare/workers-types": "^4.20260204.0",
-    "hono": "^4.7.2",
-    "bcryptjs": "^2.4.3"
+    "@cloudflare/workers-types": "^4.20260204.0"
   },
   "devDependencies": {
     "typescript": "^5.9.2",

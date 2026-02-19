@@ -1,68 +1,34 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
-import {
-  loadInventoryArray,
-  saveInventoryArray,
-  toStorefrontProduct,
-} from "@/lib/server/inventoryStore";
+import { buildWorkerHeaders, buildWorkerUrl } from "@/lib/server/workerApi";
 
 export const runtime = "edge";
 
 export async function GET() {
   try {
-    const items = await loadInventoryArray();
-    return NextResponse.json(items.map(toStorefrontProduct));
-  } catch {
-    return NextResponse.json([]);
+    const response = await fetch(buildWorkerUrl("/api/admin/products"), {
+      headers: buildWorkerHeaders(),
+      cache: "no-store",
+    });
+    const payload = await response.json().catch(() => []);
+    return NextResponse.json(payload, { status: response.status });
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const {
-      name,
-      price,
-      description,
-      category,
-      imageUrl,
-      whatsappNumber,
-      heroFeatured,
-      title,
-      subtitle,
-    } = body;
+    const formData = await request.formData();
 
-    const existing = await loadInventoryArray();
+    const response = await fetch(buildWorkerUrl("/api/admin/products"), {
+      method: "POST",
+      headers: buildWorkerHeaders(),
+      body: formData,
+    });
 
-    const newProduct = {
-      id: crypto.randomUUID(),
-      name: String(name ?? "").trim(),
-      price: Number(price),
-      imageUrl: typeof imageUrl === "string" && imageUrl.startsWith("http") ? imageUrl : null,
-      active: true,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      category: typeof category === "string" ? category : "Clothing",
-      description: typeof description === "string" ? description : "",
-      whatsappNumber: typeof whatsappNumber === "string" ? whatsappNumber : "",
-      colors: ["Beige"],
-      sizes: ["M", "L", "XL"],
-      heroFeatured: heroFeatured === true,
-      title: typeof title === "string" ? title.trim() : String(name ?? "").trim(),
-      subtitle: typeof subtitle === "string" ? subtitle.trim() : "",
-    };
-
-    const updated = [...existing, newProduct];
-    await saveInventoryArray(updated);
-
-    revalidatePath("/");
-    revalidatePath("/admin/inventory");
-
-    return NextResponse.json({ success: true, id: newProduct.id });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message || "Unable to save product." },
-      { status: 500 }
-    );
+    const payload = await response.json().catch(() => ({}));
+    return NextResponse.json(payload, { status: response.status });
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

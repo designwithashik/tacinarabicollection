@@ -13,9 +13,11 @@ CREATE TABLE IF NOT EXISTS products (
   price REAL NOT NULL,
   stock INTEGER DEFAULT 0,
   image_url TEXT,
+  image_file_id TEXT,
   description TEXT,
   is_active INTEGER DEFAULT 1,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS orders (
