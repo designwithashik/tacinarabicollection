@@ -58,7 +58,11 @@ export async function POST(request: Request) {
     revalidatePath("/");
     revalidatePath("/admin/inventory");
 
-    return NextResponse.json({ success: true, id: newProduct.id });
+    return NextResponse.json({
+      success: true,
+      id: newProduct.id,
+      items: updated.map(toStorefrontProduct),
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Unable to save product." },

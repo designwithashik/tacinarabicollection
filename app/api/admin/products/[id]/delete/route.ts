@@ -5,7 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { loadInventoryArray, saveInventoryArray } from "@/lib/server/inventoryStore";
+import { loadInventoryArray, saveInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
 
 export const runtime = "edge";
 
@@ -22,7 +22,10 @@ export async function DELETE(
     revalidatePath("/");
     revalidatePath("/admin/inventory");
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      items: updated.map(toStorefrontProduct),
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },
