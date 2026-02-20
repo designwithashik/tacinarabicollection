@@ -164,7 +164,7 @@ export async function loadInventoryArray(): Promise<InventoryProduct[]> {
 
   if (typeof canonicalRaw === "string") {
     const parsed = safeJsonParse<unknown>(canonicalRaw);
-    if (!parsed) {
+    if (!parsed || !Array.isArray(parsed)) {
       return [];
     }
 
@@ -185,7 +185,8 @@ export async function loadInventoryArray(): Promise<InventoryProduct[]> {
 }
 
 export async function saveInventoryArray(items: InventoryProduct[]) {
-  await redisSet(INVENTORY_PRODUCTS_KEY, items);
+  const normalizedItems = normalizeInventoryCollection(items);
+  await redisSet(INVENTORY_PRODUCTS_KEY, normalizedItems);
 }
 
 export type StorefrontProduct = {
