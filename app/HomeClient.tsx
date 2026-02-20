@@ -612,6 +612,7 @@ export default function HomePage({
   const productSource = adminProducts.filter((item) => item.active !== false);
 
   const announcementText = announcement.text.trim() || defaultAnnouncement.text;
+  const announcementDuration = announcementText.length < 90 ? "15s" : announcementText.length > 180 ? "28s" : "20s";
 
   const filteredProducts = useMemo(() => {
     let result = [...productSource];
@@ -817,10 +818,16 @@ export default function HomePage({
               isTrustBarInView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
             )}
           >
-            <div className="relative overflow-hidden whitespace-nowrap">
-              <div className="inline-block min-w-full animate-announcement-glide text-[13px] font-medium tracking-wide">
-                {announcementText} &nbsp;&nbsp;&nbsp; {announcementText}
+            <div className="relative overflow-hidden w-full bg-black text-white">
+              <div
+                className="whitespace-nowrap flex animate-announcement-scroll text-[13px] font-medium tracking-wide"
+                style={{ "--announcement-duration": announcementDuration } as Record<string, string>}
+              >
+                <span className="px-8">{announcementText}</span>
+                <span className="px-8">{announcementText}</span>
               </div>
+              <div className="absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-black to-transparent pointer-events-none" />
+              <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-black to-transparent pointer-events-none" />
             </div>
           </div>
         </section>

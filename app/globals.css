@@ -252,21 +252,22 @@ a:focus-visible {
 }
 
 
-@keyframes announcement-glide {
+@keyframes announcement-scroll {
   0% {
-    transform: translateX(0%);
-  }
-  50% {
-    transform: translateX(-2%);
+    transform: translate3d(0%, 0, 0);
   }
   100% {
-    transform: translateX(0%);
+    transform: translate3d(-50%, 0, 0);
   }
 }
 
-.animate-announcement-glide {
-  animation: announcement-glide 14s ease-in-out infinite;
+.animate-announcement-scroll {
+  animation: announcement-scroll var(--announcement-duration, 20s) linear infinite;
   will-change: transform;
+}
+
+.animate-announcement-scroll:hover {
+  animation-play-state: paused;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -278,7 +279,7 @@ a:focus-visible {
     transform: none;
   }
 
-  .animate-announcement-glide {
+  .animate-announcement-scroll {
     animation: none;
   }
 
