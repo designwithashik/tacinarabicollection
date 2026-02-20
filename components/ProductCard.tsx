@@ -108,7 +108,7 @@ export default function ProductCard({
     (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition-all duration-200 ease-out hover:shadow-md">
+    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-2xl bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
       <div
         role="button"
         tabIndex={0}
@@ -121,7 +121,7 @@ export default function ProductCard({
           }
         }}
       >
-        <div className="relative w-full aspect-[3/4] overflow-hidden">
+        <div className="relative aspect-square w-full overflow-hidden">
           {imageSrc && !imageFailed ? (
             <Image
               src={imageSrc}
@@ -172,10 +172,10 @@ export default function ProductCard({
 
       <div className="flex flex-1 flex-col space-y-3 p-4">
         <div className="flex justify-between items-start gap-2">
-          <h3 className="line-clamp-2 break-words text-[16px] font-medium leading-[1.4] text-neutral-900">
+          <h3 className="mt-4 line-clamp-2 break-words text-base font-medium leading-[1.4] text-neutral-900">
             {product.name}
           </h3>
-          <span className="whitespace-nowrap text-[16px] font-medium leading-[1.4] text-neutral-900">
+          <span className="mt-1 whitespace-nowrap text-[16px] font-semibold leading-[1.4] text-neutral-900">
             ৳{product.price.toLocaleString()}
           </span>
         </div>
@@ -235,7 +235,7 @@ export default function ProductCard({
           </div>
           <button
             type="button"
-            className="interactive-feedback flex-1 min-h-[40px] rounded-lg bg-black px-4 py-2.5 text-[13px] font-semibold text-white disabled:opacity-60"
+            className="interactive-feedback flex-1 min-h-[40px] rounded-full bg-black px-6 py-3 text-[13px] font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 disabled:opacity-60"
             onClick={handleBuyClick}
             disabled={isRouting}
           >
@@ -248,8 +248,8 @@ export default function ProductCard({
         <button
           type="button"
           className={clsx(
-            "interactive-feedback mt-1 w-full min-h-[40px] rounded-lg border px-4 py-2.5 text-[13px] font-semibold",
-            addState === "success" ? "border-emerald-600 bg-emerald-600 text-white" : "border-neutral-300 bg-white text-neutral-900",
+            "interactive-feedback mt-1 w-full min-h-[40px] rounded-full px-6 py-3 text-[13px] font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95",
+            addState === "success" ? "bg-black text-white" : "bg-black text-white",
           )}
           onClick={handleAddClick}
           disabled={addState === "loading" || isRouting}

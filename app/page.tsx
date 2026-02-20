@@ -91,11 +91,15 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
       />
-      <HomeClient
-        initialAdminProducts={initialAdminProducts}
-        initialCarouselSlides={initialCarouselSlides}
-        initialAnnouncement={initialAnnouncement}
-      />
+      <div className="bg-white text-black">
+        <main className="mx-auto max-w-7xl px-4 md:px-8">
+          <HomeClient
+            initialAdminProducts={initialAdminProducts}
+            initialCarouselSlides={initialCarouselSlides}
+            initialAnnouncement={initialAnnouncement}
+          />
+        </main>
+      </div>
     </>
   );
 }
