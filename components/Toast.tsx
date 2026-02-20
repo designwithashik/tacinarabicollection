@@ -24,13 +24,13 @@ export default function Toast({
       role="status"
       aria-live={type === "error" ? "assertive" : "polite"}
       className={clsx(
-        "toast-enter fixed bottom-24 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-full px-4 py-2 text-xs font-semibold text-white shadow-soft",
-        type === "success" && "bg-emerald-700",
-        type === "error" && "bg-rose-700",
-        type === "info" && "bg-ink"
+        "toast-enter fixed right-4 top-4 z-50 flex max-w-[320px] items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-medium shadow-soft",
+        type === "success" && "bg-emerald-600 text-white",
+        type === "error" && "bg-rose-600 text-white",
+        type === "info" && "bg-neutral-900 text-white",
       )}
     >
-      <span>{message}</span>
+      <span className="leading-[1.5]">{message}</span>
       {onRetry ? (
         <button
           type="button"
@@ -40,7 +40,7 @@ export default function Toast({
           {retryLabel}
         </button>
       ) : null}
-      <button type="button" onClick={onClose} className="interactive-feedback">
+      <button type="button" onClick={onClose} className="interactive-feedback text-xs">
         ✕
       </button>
     </div>

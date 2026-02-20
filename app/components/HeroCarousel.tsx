@@ -14,10 +14,11 @@ export type HeroProduct = {
 
 type HeroCarouselProps = {
   addToCart: (product: HeroProduct) => void;
+  buyNow?: (product: HeroProduct) => void;
   initialProducts?: HeroProduct[];
 };
 
-export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCarouselProps) {
+export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }: HeroCarouselProps) {
   const handleAddToCart = useCallback((product: HeroProduct) => {
     addToCart(product);
   }, [addToCart]);
@@ -115,6 +116,16 @@ export default function HeroCarousel({ addToCart, initialProducts = [] }: HeroCa
           </div>
         ))}
       </motion.div>
+
+      {buyNow ? (
+        <button
+          type="button"
+          className="absolute right-6 top-6 rounded-full border border-white/50 bg-black/30 px-3 py-1 text-xs text-white"
+          onClick={() => buyNow(heroProducts[currentIndex])}
+        >
+          Buy Now
+        </button>
+      ) : null}
 
       {/* Phase1.8: Subtle navigation dots. */}
       <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">

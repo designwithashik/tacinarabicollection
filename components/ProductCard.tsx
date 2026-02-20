@@ -30,6 +30,8 @@ type Props = {
   quantityFeedback?: string | null;
   statusLabel: string;
   stockLabel: string;
+  sizeErrorLabel: string;
+  isRouting?: boolean;
 };
 
 export default function ProductCard({
@@ -51,12 +53,16 @@ export default function ProductCard({
   quantityFeedback,
   statusLabel,
   stockLabel,
+  sizeErrorLabel,
+  isRouting = false,
 }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [showSizeError, setShowSizeError] = useState(false);
 
   useEffect(() => {
     setImageFailed(false);
+    setShowSizeError(false);
   }, [product.id, product.image]);
 
   const imageSrc = useMemo(() => {
@@ -64,7 +70,6 @@ export default function ProductCard({
     return product.image;
   }, [product.image]);
 
-  const sizeMissing = !selectedSize;
   const addLabel =
     addState === "loading"
       ? addingLabel
@@ -72,14 +77,39 @@ export default function ProductCard({
         ? addedLabel
         : addToCartLabel;
 
+  const handleSizeChange = (size: string) => {
+    setShowSizeError(false);
+    onSizeChange(size);
+  };
+
+  const handleAddClick = () => {
+    if (!product.id) return;
+    if (!selectedSize) {
+      setShowSizeError(true);
+      return;
+    }
+    setShowSizeError(false);
+    onAddToCart();
+  };
+
+  const handleBuyClick = () => {
+    if (!product.id) return;
+    if (!selectedSize) {
+      setShowSizeError(true);
+      return;
+    }
+    setShowSizeError(false);
+    onBuyNow();
+  };
+
   const stockCount = (product as Product & { stock?: number }).stock;
-  const originalPrice = (product as Product & { originalPrice?: number; compareAtPrice?: number }).originalPrice
-    ?? (product as Product & { compareAtPrice?: number }).compareAtPrice;
+  const originalPrice =
+    (product as Product & { originalPrice?: number; compareAtPrice?: number }).originalPrice ??
+    (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group relative flex min-h-[620px] h-full flex-col overflow-hidden rounded-3xl border border-[var(--brand-secondary)]/10 bg-[var(--brand-surface)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)]">
-      <div className="relative overflow-hidden rounded-t-3xl">
-        <div
+    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition-all duration-200 ease-out hover:shadow-md">
+      <div
         role="button"
         tabIndex={0}
         className="interactive-feedback relative w-full overflow-hidden bg-base"
@@ -90,18 +120,19 @@ export default function ProductCard({
             onOpenDetails();
           }
         }}
-        >
+      >
+        <div className="relative w-full aspect-[3/4] overflow-hidden">
           {imageSrc && !imageFailed ? (
             <Image
               src={imageSrc}
               alt={product.name}
-              width={520}
-              height={650}
-              className="h-[360px] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
               onError={() => setImageFailed(true)}
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             />
           ) : (
-            <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-b from-[#f6efe3] via-[#f2e6d3] to-[#e8dcc6]">
+            <div className="relative h-full w-full overflow-hidden bg-gradient-to-b from-[#f6efe3] via-[#f2e6d3] to-[#e8dcc6]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.65),transparent_45%),radial-gradient(circle_at_70%_75%,rgba(200,169,107,0.3),transparent_42%)]" />
               <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-white/40 bg-white/45 p-3 text-left backdrop-blur-sm">
                 <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/70">Tacin Arabi</p>
@@ -109,25 +140,23 @@ export default function ProductCard({
               </div>
             </div>
           )}
+        </div>
 
         <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/30 bg-white/35 p-3 text-left backdrop-blur-sm">
           <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/80">{product.category}</p>
-          <p className="mt-1 font-heading text-base font-semibold text-charcoal transition-transform duration-[240ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
+          <p className="mt-0.5 font-heading text-sm sm:text-base font-semibold text-charcoal transition-transform duration-200 group-hover:translate-y-[-1px] break-words line-clamp-2">
             {product.name}
           </p>
-          <p className="mt-1 text-xs font-semibold text-charcoal/85 transition-transform duration-[240ms] delay-75 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-[-1px]">
+          <p className="mt-0.5 text-xs font-semibold text-charcoal/85 transition-transform duration-200 delay-75 group-hover:translate-y-[-1px]">
             {stockLabel}
           </p>
         </div>
 
         {showBadge ? (
-          <span className="absolute left-3 top-3 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white">
-            {showBadge}
-          </span>
+          <span className="absolute left-3 top-3 rounded-full bg-accent px-2.5 py-1 text-[10px] font-semibold text-white">Popular</span>
         ) : null}
-        <span className="absolute right-3 top-3 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-ink">
-          {statusLabel}
-        </span>
+        <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold text-ink">New</span>
+        <span className="sr-only">{statusLabel}</span>
 
         <button
           type="button"
@@ -135,114 +164,100 @@ export default function ProductCard({
             event.stopPropagation();
             setQuickViewProduct(product);
           }}
-          className="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1.5 text-xs opacity-0 backdrop-blur-sm transition duration-300 group-hover:opacity-100"
+          className="absolute right-3 top-12 rounded-full bg-white/90 px-2.5 py-1 text-[10px] opacity-0 backdrop-blur-sm transition duration-300 group-hover:opacity-100 sm:text-xs"
         >
           Quick View
         </button>
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
-        </div>
       </div>
 
-      <div className="p-6 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-medium leading-snug tracking-wide text-[var(--brand-primary)]">
-              {product.name}
-            </h3>
-            <p className="mt-1 text-sm text-support">{product.category}</p>
-            <p className="mt-1 text-xs font-semibold text-accent">{stockLabel}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-[0.2em] text-support">{priceLabel}</p>
-            {typeof stockCount === "number" && stockCount <= 5 ? (
-              <span className="mt-1 inline-flex rounded-full bg-[var(--brand-secondary)]/15 px-3 py-1 text-xs uppercase tracking-wider text-[var(--brand-secondary)]">
-                Limited
-              </span>
-            ) : null}
-            {typeof originalPrice === "number" && originalPrice > product.price ? (
-              <p className="text-sm line-through text-[var(--brand-muted)]">৳ {originalPrice.toLocaleString()}</p>
-            ) : null}
-            <p className="mt-2 text-xl font-semibold text-[var(--brand-primary)]">৳ {product.price.toLocaleString()}</p>
-          </div>
+      <div className="flex flex-1 flex-col space-y-3 p-4">
+        <div className="flex justify-between items-start gap-2">
+          <h3 className="line-clamp-2 break-words text-[16px] font-medium leading-[1.4] text-neutral-900">
+            {product.name}
+          </h3>
+          <span className="whitespace-nowrap text-[16px] font-medium leading-[1.4] text-neutral-900">
+            ৳{product.price.toLocaleString()}
+          </span>
         </div>
 
-      <div>
-        <p className="text-sm font-medium text-ink">Select Size</p>
-        <div className="mt-2 flex gap-2">
-          {sizes.map((size) => (
-            <button
-              key={size}
-              type="button"
-              className={clsx(
-                "interactive-feedback min-h-[44px] rounded-full border px-4 py-1 text-sm font-medium transition",
-                selectedSize === size
-                  ? "border-accent bg-accent text-white"
-                  : "border-[#e5d7cc] bg-white text-ink"
-              )}
-              onClick={() => onSizeChange(size)}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-        {sizeMissing ? (
-          <p className="mt-2 text-xs text-accent">Select a size to continue.</p>
+        {typeof originalPrice === "number" && originalPrice > product.price ? (
+          <p className="text-[11px] text-[var(--brand-muted)] line-through">৳{originalPrice.toLocaleString()}</p>
         ) : null}
-      </div>
 
-      <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
+          <p className="break-words text-[13px] leading-[1.5] text-neutral-700">{product.category}</p>
+          {typeof stockCount === "number" && stockCount <= 5 ? (
+            <span className="whitespace-nowrap rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold text-amber-800">Low Stock</span>
+          ) : null}
+        </div>
+
         <div>
-          <p className="text-sm font-medium text-ink">Qty</p>
-          <div className="mt-2 flex items-center gap-2 rounded-full border border-[#e5d7cc] bg-white px-3 py-1">
+          <p className="text-[13px] font-medium leading-[1.5] text-neutral-900">Select Size</p>
+          <div className="flex gap-1 flex-wrap mt-1">
+            {sizes.map((size) => (
+              <button
+                key={size}
+                type="button"
+                className={clsx(
+                  "interactive-feedback text-[11px] px-2 py-1 rounded-md border transition",
+                  selectedSize === size
+                    ? "border-accent bg-accent text-white"
+                    : "border-[#e5d7cc] bg-white text-ink",
+                )}
+                onClick={() => handleSizeChange(size)}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+          {showSizeError ? (
+            <p className="mt-1 text-[12px] leading-[1.4] text-rose-600 transition-opacity duration-200">{sizeErrorLabel}</p>
+          ) : null}
+        </div>
+
+        <div className="flex gap-2 items-center mt-2">
+          <div className="flex items-center border border-[#e5d7cc] rounded-md px-2 py-1 bg-white">
             <button
               type="button"
-              className="interactive-feedback min-h-[28px] min-w-[28px] text-base font-semibold text-ink"
+              className="interactive-feedback text-[12px] font-semibold text-ink"
               onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
             >
               -
             </button>
-            <span className="min-w-[1.5rem] text-center text-sm font-semibold">{quantity}</span>
+            <span className="px-2 text-[12px] font-semibold">{quantity}</span>
             <button
               type="button"
-              className="interactive-feedback min-h-[28px] min-w-[28px] text-base font-semibold text-ink"
+              className="interactive-feedback text-[12px] font-semibold text-ink"
               onClick={() => onQuantityChange(quantity + 1)}
             >
               +
             </button>
           </div>
-          {quantityFeedback ? (
-            <p className="mt-2 text-xs font-semibold text-accent">{quantityFeedback}</p>
-          ) : null}
-        </div>
-        <div className="mt-2 flex flex-col gap-2 pt-2">
           <button
             type="button"
-            className={clsx(
-              "interactive-feedback btn-secondary min-h-[44px] w-full text-[10px] font-semibold uppercase tracking-[0.2em]",
-              sizeMissing && "cursor-not-allowed border-[#d9cdc0] text-muted"
-            )}
-            onClick={onBuyNow}
-            disabled={sizeMissing}
+            className="interactive-feedback flex-1 min-h-[40px] rounded-lg bg-black px-4 py-2.5 text-[13px] font-semibold text-white disabled:opacity-60"
+            onClick={handleBuyClick}
+            disabled={isRouting}
           >
-            {buyNowLabel}
-          </button>
-          <button
-            type="button"
-            className={clsx(
-              "interactive-feedback btn-primary mt-2 w-full min-h-[44px]",
-              sizeMissing || addState === "loading"
-                ? "cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted"
-                : "",
-              addState === "success" && "border-[var(--brand-accent)] bg-[var(--brand-accent)] text-[#1f1f1f]"
-            )}
-            onClick={onAddToCart}
-            disabled={sizeMissing || addState === "loading"}
-          >
-            {addLabel}
+            {isRouting ? "Redirecting..." : buyNowLabel}
           </button>
         </div>
+
+        {quantityFeedback ? <p className="text-xs font-semibold text-accent">{quantityFeedback}</p> : null}
+
+        <button
+          type="button"
+          className={clsx(
+            "interactive-feedback mt-1 w-full min-h-[40px] rounded-lg border px-4 py-2.5 text-[13px] font-semibold",
+            addState === "success" ? "border-emerald-600 bg-emerald-600 text-white" : "border-neutral-300 bg-white text-neutral-900",
+          )}
+          onClick={handleAddClick}
+          disabled={addState === "loading" || isRouting}
+        >
+          {addState === "loading" ? "Loading..." : addLabel}
+        </button>
       </div>
-      </div>
+
       {quickViewProduct ? (
         <QuickView
           product={quickViewProduct}
@@ -250,7 +265,7 @@ export default function ProductCard({
           onSizeChange={onSizeChange}
           onClose={() => setQuickViewProduct(null)}
           onAddToCart={(size) => {
-            onSizeChange(size);
+            handleSizeChange(size);
             onAddToCart();
           }}
           addToCartLabel={addToCartLabel}
