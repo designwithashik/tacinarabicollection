@@ -11,6 +11,7 @@ const orderStatuses: OrderStatus[] = [
   "sent",
   "failed",
 ];
+import { getStoredOrders } from "../../../lib/orders";
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -210,6 +211,13 @@ export default function AdminOrders() {
                             Delete
                           </button>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOrder(order)}
+                          className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                        >
+                          View
+                        </button>
                       </td>
                     </tr>
                   ))}
