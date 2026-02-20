@@ -13,11 +13,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "ucarecdn.com",
-      },
-      {
-        protocol: "https",
-        hostname: "upload.wikimedia.org",
+        hostname: "**",
       },
     ],
   },

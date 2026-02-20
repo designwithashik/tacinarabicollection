@@ -25,6 +25,7 @@ import type { CustomerInfo } from "../lib/orders";
 import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
 import type { AdminProduct } from "../lib/inventory";
+import { supabase } from "../lib/supabase";
 import useCart from "../hooks/useCart";
 
 // Contact numbers
@@ -89,27 +90,35 @@ const statusLabels = ["New", "Popular", "Low Stock"] as const;
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
 const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
 
-const normalizeInventoryResponse = (payload: unknown): AdminProduct[] => {
-  if (Array.isArray(payload)) {
-    return payload.filter(
-      (item): item is AdminProduct => Boolean(item && typeof item === "object")
-    );
-  }
-
-  if (payload && typeof payload === "object") {
-    const objectPayload = payload as Record<string, unknown>;
-
-    if ("id" in objectPayload) {
-      return [objectPayload as AdminProduct];
-    }
-
-    return Object.values(objectPayload).filter(
-      (item): item is AdminProduct => Boolean(item && typeof item === "object")
-    );
-  }
-
-  return [];
+type SupabaseProductRow = {
+  id: string | number;
+  name: string;
+  price: number;
+  image_url: string | null;
+  category?: "Clothing" | "Ceramic";
+  colors?: string[];
+  sizes?: string[];
+  active?: boolean;
+  hero_featured?: boolean;
+  title?: string | null;
+  subtitle?: string | null;
+  created_at?: string;
 };
+
+const mapSupabaseProduct = (item: SupabaseProductRow): AdminProduct => ({
+  id: String(item.id),
+  name: item.name,
+  price: Number(item.price ?? 0),
+  image: item.image_url ?? "/images/product-1.svg",
+  category: item.category ?? "Clothing",
+  colors: item.colors?.length ? item.colors : ["Beige"],
+  sizes: item.sizes?.length ? item.sizes : ["M", "L", "XL"],
+  active: item.active !== false,
+  heroFeatured: item.hero_featured === true,
+  title: item.title ?? item.name,
+  subtitle: item.subtitle ?? "",
+  updatedAt: item.created_at ?? new Date().toISOString(),
+});
 
 // Minimal EN/BN labels used for critical UI only
 const copy = {
@@ -261,15 +270,19 @@ export default function HomePage({
 
   const loadPublicInventory = useCallback(async () => {
     try {
-      const res = await fetch("/api/products", {
-        cache: "no-store",
-        next: { revalidate: 0 },
-      });
-      if (!res.ok) return;
-      const data = (await res.json()) as unknown;
-      const shaped = Array.isArray(data) ? data.flat() : (data ? [data] : []);
-      setAdminProducts(normalizeInventoryResponse(shaped));
-    } catch {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Failed to fetch products from Supabase", error);
+        return;
+      }
+
+      setAdminProducts((data ?? []).map((item) => mapSupabaseProduct(item as SupabaseProductRow)));
+    } catch (error) {
+      console.error("Failed to load public inventory", error);
       // Keep existing state if live inventory fetch fails.
       setAdminProducts((current) => current);
     }
