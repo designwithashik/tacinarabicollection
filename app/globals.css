@@ -4,6 +4,8 @@
 
 :root {
   color-scheme: light;
+  --font-heading: "Playfair Display", "Times New Roman", serif;
+  --font-body: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --brand-primary: #2e2a27;
   --brand-secondary: #8c7a5b;
   --brand-accent: #c6a96b;

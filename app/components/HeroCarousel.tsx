@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 
 export type HeroProduct = {
@@ -19,15 +18,18 @@ type HeroCarouselProps = {
 };
 
 export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }: HeroCarouselProps) {
-  const handleAddToCart = useCallback((product: HeroProduct) => {
-    addToCart(product);
-  }, [addToCart]);
-  // Phase1.8: State for dynamic hero products and active slide index.
+  const handleAddToCart = useCallback(
+    (product: HeroProduct) => {
+      addToCart(product);
+    },
+    [addToCart],
+  );
+
   const [heroProducts, setHeroProducts] = useState<HeroProduct[]>(initialProducts.slice(0, 3));
   const [currentIndex, setCurrentIndex] = useState(0);
-  const prefersReducedMotion = useReducedMotion();
+  const [isPaused, setIsPaused] = useState(false);
+  const intervalRef = useRef<number | null>(null);
 
-  // Phase1.8: Fetch admin-controlled featured products.
   useEffect(() => {
     const loadHeroProducts = async () => {
       try {
@@ -45,17 +47,6 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
     void loadHeroProducts();
   }, []);
 
-  // Phase1.8: Auto-scroll slides every 6 seconds for calmer pacing.
-  useEffect(() => {
-    if (heroProducts.length < 2 || prefersReducedMotion) return;
-
-    const interval = window.setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % heroProducts.length);
-    }, 6000);
-
-    return () => window.clearInterval(interval);
-  }, [heroProducts.length, prefersReducedMotion]);
-
   useEffect(() => {
     setCurrentIndex((prev) => {
       if (heroProducts.length === 0) return 0;
@@ -63,46 +54,72 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
     });
   }, [heroProducts.length]);
 
+  useEffect(() => {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    if (heroProducts.length < 2 || isPaused) return;
+
+    const interval = window.setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % heroProducts.length);
+    }, 6000);
+
+    intervalRef.current = interval;
+
+    return () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [heroProducts.length, isPaused]);
+
   if (heroProducts.length === 0) {
     return null;
   }
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl md:rounded-3xl">
-      {/* Phase1.8: Horizontal slide animation wrapper. */}
-      <motion.div
-        className="flex"
-        animate={{ x: `-${currentIndex * 100}%` }}
-        transition={{ type: "tween", duration: prefersReducedMotion ? 0 : 0.7, ease: "easeInOut" }}
+    <div
+      className="relative w-full overflow-hidden rounded-2xl md:rounded-3xl"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      <div
+        className="flex will-change-transform"
+        style={{
+          transform: `translate3d(-${currentIndex * 100}%, 0, 0)`,
+          transition: "transform 900ms cubic-bezier(.22,1,.36,1)",
+        }}
       >
-        {heroProducts.map((product) => (
+        {heroProducts.map((product, index) => (
           <div
             key={product.id}
-            className="relative min-w-full overflow-hidden"
+            className={clsx(
+              "relative w-full flex-shrink-0 aspect-[16/9] md:aspect-[21/9] overflow-hidden transition-transform duration-900",
+              index === currentIndex ? "scale-100" : "scale-[0.985]",
+            )}
           >
-            <div className="aspect-[16/7] md:aspect-[21/8] pointer-events-none">
-              <img
-                src={product.imageUrl || product.image || "/images/product-1.svg"}
-                alt={product.name}
-                className="w-full h-auto md:h-full object-cover"
-              />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent pointer-events-none" />
+            <img
+              src={product.imageUrl || product.image || "/images/product-1.svg"}
+              alt={product.name}
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
 
-            <div className="absolute inset-0 z-20 flex items-end md:items-center justify-center px-6 pb-10 md:pb-0">
-              <div className="text-center text-white max-w-xl">
-                <h2 className="text-2xl md:text-4xl font-medium tracking-wide">
-                  {product.name}
-                </h2>
+            <div className="absolute inset-0 z-20 flex items-end justify-center px-6 pb-10 md:items-center md:pb-0">
+              <div className="max-w-xl text-center text-white">
+                <h2 className="text-2xl font-medium tracking-wide md:text-4xl">{product.name}</h2>
 
-                <p className="mt-3 text-sm md:text-base text-white/80">
+                <p className="mt-3 text-sm text-white/80 md:text-base">
                   A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living.
                 </p>
 
                 <div className="mt-5 flex justify-center">
                   <button
                     type="button"
-                    className="btn-primary relative z-30"
+                    className="inline-flex items-center justify-center px-7 py-3 rounded-full bg-white text-black font-semibold shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAddToCart(product);
@@ -115,7 +132,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
             </div>
           </div>
         ))}
-      </motion.div>
+      </div>
 
       {buyNow ? (
         <button
@@ -127,7 +144,29 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
         </button>
       ) : null}
 
-      {/* Phase1.8: Subtle navigation dots. */}
+      {heroProducts.length > 1 ? (
+        <>
+          <button
+            type="button"
+            aria-label="Previous slide"
+            className="absolute top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:bg-black/50 hover:scale-110 left-3 md:left-4"
+            onClick={() =>
+              setCurrentIndex((prev) => (prev - 1 + heroProducts.length) % heroProducts.length)
+            }
+          >
+            <span aria-hidden>‹</span>
+          </button>
+          <button
+            type="button"
+            aria-label="Next slide"
+            className="absolute top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:bg-black/50 hover:scale-110 right-3 md:right-4"
+            onClick={() => setCurrentIndex((prev) => (prev + 1) % heroProducts.length)}
+          >
+            <span aria-hidden>›</span>
+          </button>
+        </>
+      ) : null}
+
       <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
         {heroProducts.map((product, index) => (
           <button
@@ -135,10 +174,10 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
             type="button"
             aria-label={`Go to slide ${index + 1}`}
             className={clsx(
-              "h-2.5 w-2.5 rounded-full transition-opacity duration-300",
+              "transition-all duration-300",
               index === currentIndex
-                ? "bg-[var(--brand-primary)]/70"
-                : "bg-[var(--brand-secondary)]/35 hover:opacity-100 opacity-60"
+                ? "w-6 h-2 rounded-full bg-white"
+                : "w-2 h-2 rounded-full bg-white/50",
             )}
             onClick={() => setCurrentIndex(index)}
           />
