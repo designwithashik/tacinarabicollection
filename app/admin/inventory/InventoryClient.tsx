@@ -100,6 +100,9 @@ export default function AdminInventory() {
       if (!uploadRes.ok) throw new Error("Upload failed");
       const result = (await uploadRes.json()) as { url?: string };
       if (!result.url) throw new Error("Upload missing URL");
+      if (!result.url.startsWith("https://ik.imagekit.io/")) {
+        throw new Error("Unexpected upload URL");
+      }
       return result.url; // This is the final image/video link
     } catch {
       alert("Media upload failed. Please try again.");
