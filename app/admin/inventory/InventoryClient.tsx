@@ -228,27 +228,39 @@ export default function AdminInventory() {
   return (
     <section className="space-y-6">
       <div>
-        <h2 className="font-heading text-2xl font-semibold">Inventory</h2>
+        <h2 className="border-b pb-3 text-xl font-semibold">Inventory</h2>
         <p className="mt-1 text-sm text-muted">
-          Manage products, pricing, and visibility (KV persistence).
+          Manage products, pricing, and visibility.
         </p>
         <p className="mt-1 text-xs text-muted">
           ImageKit upload requires URL endpoint + public key + server auth route.
         </p>
       </div>
 
-      <form className="rounded-3xl bg-white p-6 shadow-soft" onSubmit={handleSave}>
-        <h3 className="text-lg font-semibold">
+      <div className="fixed right-6 top-6 z-[70] space-y-2">
+        {saving || uploading ? (
+          <p className="rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-700 shadow-md">
+            Saving inventory changes...
+          </p>
+        ) : null}
+        {error ? (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 shadow-md">{error}</p>
+        ) : null}
+        {notice ? (
+          <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 shadow-md">{notice}</p>
+        ) : null}
+      </div>
+
+      <form className="rounded-2xl bg-white p-6 shadow-md space-y-6" onSubmit={handleSave}>
+        <h3 className="border-b pb-3 text-xl font-semibold">
           {isEditing ? "Update Product" : "Create Product"}
         </h3>
-        {error ? <p className="mt-2 text-xs text-red-600">{error}</p> : null}
-        {notice ? <p className="mt-2 text-xs text-emerald-700">{notice}</p> : null}
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <label className="text-xs font-semibold">
             Name
             <input
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={draft.name}
               onChange={(event) =>
                 setDraft((prev) => ({ ...prev, name: event.target.value }))
@@ -260,7 +272,7 @@ export default function AdminInventory() {
             <input
               type="number"
               min={0}
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={draft.price}
               onChange={(event) =>
                 setDraft((prev) => ({ ...prev, price: Number(event.target.value) }))
@@ -270,7 +282,7 @@ export default function AdminInventory() {
           <label className="text-xs font-semibold">
             Category
             <select
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={draft.category}
               onChange={(event) =>
                 setDraft((prev) => ({
@@ -286,7 +298,7 @@ export default function AdminInventory() {
           <label className="text-xs font-semibold">
             Active
             <select
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={draft.active ? "true" : "false"}
               onChange={(event) =>
                 setDraft((prev) => ({ ...prev, active: event.target.value === "true" }))
@@ -299,7 +311,7 @@ export default function AdminInventory() {
           <label className="text-xs font-semibold">
             Hero Featured
             <select
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={draft.heroFeatured ? "true" : "false"}
               onChange={(event) =>
                 setDraft((prev) => ({ ...prev, heroFeatured: event.target.value === "true" }))
@@ -314,7 +326,7 @@ export default function AdminInventory() {
         <div className="mt-4 space-y-2">
           <label className="text-xs font-semibold">Image URL (manual fallback)</label>
           <input
-            className="w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
             value={draft.image}
             onChange={(event) =>
               setDraft((prev) => ({ ...prev, image: event.target.value }))
@@ -346,7 +358,7 @@ export default function AdminInventory() {
           <button
             type="submit"
             disabled={saving || uploading}
-            className="min-h-[44px] rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className="min-h-[44px] rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-60"
           >
             {uploading
               ? "Uploading..."
@@ -363,53 +375,72 @@ export default function AdminInventory() {
               setSelectedFile(null);
               setError(null);
             }}
-            className="min-h-[44px] rounded-full border border-[#e6d8ce] px-5 py-2 text-sm font-semibold"
+            className="min-h-[44px] rounded-full border border-black px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
           >
             Clear
           </button>
         </div>
       </form>
 
-      <div className="rounded-3xl bg-white p-6 shadow-soft">
-        <h3 className="text-lg font-semibold">Inventory List</h3>
+      <div className="rounded-2xl bg-white p-6 shadow-md space-y-6">
+        <h3 className="border-b pb-3 text-xl font-semibold">Inventory List</h3>
         {items.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">No products yet.</p>
+          <p className="text-sm text-muted">No products yet.</p>
         ) : (
-          <div className="mt-4 space-y-3">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col gap-3 rounded-2xl border border-[#f0e4da] p-3 md:flex-row md:items-center md:justify-between"
-              >
-                <div>
-                  <p className="font-semibold">{item.name}</p>
-                  <p className="text-xs text-muted">{item.id}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold">৳{item.price}</span>
-                  <span className="text-xs font-semibold text-muted">
-                    {item.active ? "Active" : "Hidden"} {item.heroFeatured ? "• Hero" : ""}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraft(item);
-                      setSelectedFile(null);
-                    }}
-                    className="min-h-[36px] rounded-full border border-[#e6d8ce] px-3 text-xs font-semibold"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete(item.id)}
-                    className="min-h-[36px] rounded-full border border-red-200 px-3 text-xs font-semibold text-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="overflow-hidden rounded-xl border border-gray-200">
+            <div className="max-h-[520px] overflow-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="sticky top-0 z-10 bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Product</th>
+                    <th className="px-4 py-3 font-semibold">ID</th>
+                    <th className="px-4 py-3 font-semibold">Price</th>
+                    <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, index) => (
+                    <tr
+                      key={item.id}
+                      className={
+                        index % 2 === 0
+                          ? "bg-white transition-colors hover:bg-gray-50"
+                          : "bg-gray-50/60 transition-colors hover:bg-gray-100/70"
+                      }
+                    >
+                      <td className="px-4 py-3 font-medium">{item.name}</td>
+                      <td className="px-4 py-3 text-xs text-muted">{item.id}</td>
+                      <td className="px-4 py-3 font-semibold">৳{item.price}</td>
+                      <td className="px-4 py-3 text-xs font-semibold text-muted">
+                        {item.active ? "Active" : "Hidden"} {item.heroFeatured ? "• Hero" : ""}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDraft(item);
+                              setSelectedFile(null);
+                            }}
+                            className="min-h-[36px] rounded-full border border-black px-3 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleDelete(item.id)}
+                            className="min-h-[36px] rounded-full bg-red-600 px-3 text-xs font-semibold text-white transition-all duration-200 hover:scale-105 active:scale-95"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

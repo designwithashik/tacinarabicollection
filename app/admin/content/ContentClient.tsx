@@ -151,16 +151,27 @@ export default function ContentClient() {
   };
 
   return (
-    <section className="rounded-xl bg-white shadow-md p-6 space-y-6">
-      <div>
-        <h2 className="font-heading text-xl font-semibold text-ink">Homepage Carousel Content</h2>
-        <p className="mt-1 text-sm text-muted">Manage slides visually with preview, safe delete, and ordered save.</p>
+    <section className="space-y-6">
+      <div className="rounded-2xl bg-white p-6 shadow-md">
+        <h2 className="border-b pb-3 text-xl font-semibold text-ink">Homepage Carousel Content</h2>
+        <p className="mt-3 text-sm text-muted">Manage slides visually with preview, safe delete, and ordered save.</p>
       </div>
 
-      {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
-      {notice ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</p> : null}
+            <div className="fixed right-6 top-6 z-[70] space-y-2">
+        {saving || savingAnnouncement ? (
+          <p className="rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-700 shadow-md">
+            Saving updates...
+          </p>
+        ) : null}
+        {error ? (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 shadow-md">{error}</p>
+        ) : null}
+        {notice ? (
+          <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 shadow-md">{notice}</p>
+        ) : null}
+      </div>
 
-      <section className="rounded-xl bg-white shadow-md p-6 space-y-6 border border-[#e6d8ce]">
+      <section className="rounded-2xl bg-white shadow-md p-6 space-y-6">
         <div>
           <h3 className="text-xl font-semibold mb-2 text-ink">Text Bar Under Carousel</h3>
           <p className="text-sm text-muted">Control the animated announcement shown below the hero.</p>
@@ -220,10 +231,11 @@ export default function ContentClient() {
         </div>
       </section>
 
-      <form className="space-y-6" onSubmit={handleSave}>
+      <form className="rounded-2xl bg-white p-6 shadow-md space-y-6" onSubmit={handleSave}>
+        <h3 className="border-b pb-3 text-xl font-semibold">Carousel Slides</h3>
         <div className="grid gap-6">
           {items.map((item, index) => (
-            <article key={item.id} className="grid gap-6 rounded-xl border border-[#e6d8ce] p-6 shadow-md lg:grid-cols-[220px_1fr]">
+            <article key={item.id} className="grid gap-6 rounded-2xl bg-white p-6 shadow-md lg:grid-cols-[220px_1fr]">
               <div className="space-y-3">
                 <div className="relative h-36 w-full overflow-hidden rounded-lg border border-[#e6d8ce] bg-[#f6f1ed]">
                   {item.imageUrl ? (
@@ -235,7 +247,7 @@ export default function ContentClient() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="rounded-full border border-[#e6d8ce] px-3 py-1 text-xs"
+                    className="rounded-full border border-black px-3 py-1 text-xs transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50"
                     disabled={index === 0}
                     onClick={() => moveSlide(index, -1)}
                   >
@@ -243,7 +255,7 @@ export default function ContentClient() {
                   </button>
                   <button
                     type="button"
-                    className="rounded-full border border-[#e6d8ce] px-3 py-1 text-xs"
+                    className="rounded-full border border-black px-3 py-1 text-xs transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50"
                     disabled={index === items.length - 1}
                     onClick={() => moveSlide(index, 1)}
                   >
@@ -274,7 +286,7 @@ export default function ContentClient() {
                     </button>
                     <button
                       type="button"
-                      className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600"
+                      className="rounded-full bg-red-600 px-3 py-1 text-xs text-white transition-all duration-200 hover:scale-105 active:scale-95"
                       onClick={() => setDeleteCandidateId(item.id)}
                     >
                       Delete
@@ -284,31 +296,31 @@ export default function ContentClient() {
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <input
-                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm md:col-span-2"
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm md:col-span-2"
                     placeholder="Image URL"
                     value={item.imageUrl}
                     onChange={(e) => updateSlide(item.id, { imageUrl: e.target.value })}
                   />
                   <input
-                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
                     placeholder="Title"
                     value={item.title}
                     onChange={(e) => updateSlide(item.id, { title: e.target.value })}
                   />
                   <input
-                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
                     placeholder="Button text"
                     value={item.buttonText}
                     onChange={(e) => updateSlide(item.id, { buttonText: e.target.value })}
                   />
                   <input
-                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm md:col-span-2"
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm md:col-span-2"
                     placeholder="Subtitle"
                     value={item.subtitle}
                     onChange={(e) => updateSlide(item.id, { subtitle: e.target.value })}
                   />
                   <input
-                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm md:col-span-2"
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm md:col-span-2"
                     placeholder="Button link"
                     value={item.buttonLink}
                     onChange={(e) => updateSlide(item.id, { buttonLink: e.target.value })}
@@ -322,7 +334,7 @@ export default function ContentClient() {
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
-            className="rounded-full border border-[#e6d8ce] px-4 py-2 text-sm font-semibold"
+            className="rounded-full border border-black px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
             onClick={() => setItems((prev) => [...prev, createBlankSlide(prev.length + 1)])}
           >
             Add New Slide
@@ -330,7 +342,7 @@ export default function ContentClient() {
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-60"
           >
             {saving ? (
               <>
@@ -345,21 +357,21 @@ export default function ContentClient() {
       </form>
 
       {deleteCandidate ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl transition-all duration-200 animate-[fade-enter_200ms_ease-out]">
             <h4 className="text-base font-semibold text-ink">Delete this slide?</h4>
             <p className="mt-2 text-sm text-muted">This removes the slide from the current draft list.</p>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
-                className="rounded-full border border-[#e6d8ce] px-4 py-2 text-sm"
+                className="rounded-full border border-black px-4 py-2 text-sm transition-all duration-200 hover:scale-105 active:scale-95"
                 onClick={() => setDeleteCandidateId(null)}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white"
+                className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 active:scale-95"
                 onClick={confirmDelete}
               >
                 Delete

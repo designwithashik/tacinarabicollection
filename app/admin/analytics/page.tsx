@@ -18,13 +18,15 @@ export default function AdminAnalytics() {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h2 className="font-heading text-2xl font-semibold">Analytics</h2>
+      <div className="rounded-2xl bg-white p-6 shadow-md">
+        <h2 className="border-b pb-3 text-xl font-semibold">Analytics</h2>
         <p className="mt-1 text-sm text-muted">
           Client-side revenue insights and payment mix.
         </p>
       </div>
-      <AnalyticsCharts orders={orders} />
+      <div className="rounded-2xl bg-white p-6 shadow-md">
+        <AnalyticsCharts orders={orders} />
+      </div>
     </section>
   );
 }

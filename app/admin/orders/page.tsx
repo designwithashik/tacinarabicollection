@@ -13,31 +13,24 @@ export default function AdminOrders() {
   }, []);
 
   const filteredOrders = orders.filter((order) => {
-    const paymentMatch =
-      paymentFilter === "all" || order.paymentMethod === paymentFilter;
-    const deliveryMatch =
-      deliveryFilter === "all" || order.deliveryZone === deliveryFilter;
+    const paymentMatch = paymentFilter === "all" || order.paymentMethod === paymentFilter;
+    const deliveryMatch = deliveryFilter === "all" || order.deliveryZone === deliveryFilter;
     return paymentMatch && deliveryMatch;
   });
 
-  const deliveryLabel = (value: string) =>
-    value === "inside" ? "Inside Dhaka" : "Outside Dhaka";
+  const deliveryLabel = (value: string) => (value === "inside" ? "Inside Dhaka" : "Outside Dhaka");
 
   return (
     <section className="space-y-6">
-      <div>
-        <h2 className="font-heading text-2xl font-semibold">Orders</h2>
-        <p className="mt-1 text-sm text-muted">
-          Review and filter incoming orders.
-        </p>
-      </div>
+      <div className="rounded-2xl bg-white p-6 shadow-md">
+        <h2 className="border-b pb-3 text-xl font-semibold">Orders</h2>
+        <p className="mt-3 text-sm text-muted">Review and filter incoming orders.</p>
 
-      <div className="rounded-3xl bg-white p-6 shadow-soft">
-        <div className="flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-wrap gap-3">
           <label className="text-xs font-semibold">
             Payment
             <select
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={paymentFilter}
               onChange={(event) => setPaymentFilter(event.target.value)}
             >
@@ -49,7 +42,7 @@ export default function AdminOrders() {
           <label className="text-xs font-semibold">
             Delivery Zone
             <select
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               value={deliveryFilter}
               onChange={(event) => setDeliveryFilter(event.target.value)}
             >
@@ -61,46 +54,46 @@ export default function AdminOrders() {
         </div>
       </div>
 
-      <div className="rounded-3xl bg-white p-6 shadow-soft">
+      <div className="rounded-2xl bg-white p-6 shadow-md space-y-4">
+        <h3 className="border-b pb-3 text-xl font-semibold">Orders Table</h3>
         {filteredOrders.length === 0 ? (
           <p className="text-sm text-muted">No orders found.</p>
         ) : (
-          <div className="space-y-4">
-            {filteredOrders.map((order) => (
-              <details
-                key={order.id}
-                className="rounded-2xl border border-[#f0e4da] p-4"
-              >
-                <summary className="cursor-pointer list-none">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">{order.id}</span>
-                    <span className="text-xs text-muted">
-                      {new Date(order.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-sm">
-                    <span className="text-muted">
-                      {deliveryLabel(order.deliveryZone)}
-                    </span>
-                    <span className="font-semibold">৳{order.total}</span>
-                  </div>
-                </summary>
-                <div className="mt-3 space-y-2 text-sm">
-                  <p>
-                    <span className="font-semibold">Customer:</span>{" "}
-                    {order.customer.name} · {order.customer.phone}
-                  </p>
-                  <p className="text-muted">{order.customer.address}</p>
-                  <ul className="space-y-1">
-                    {order.items.map((item) => (
-                      <li key={`${order.id}-${item.id}`}>
-                        {item.name} · {item.size} · Qty {item.quantity}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </details>
-            ))}
+          <div className="overflow-hidden rounded-xl border border-gray-200">
+            <div className="max-h-[520px] overflow-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="sticky top-0 z-10 bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Order ID</th>
+                    <th className="px-4 py-3 font-semibold">Date</th>
+                    <th className="px-4 py-3 font-semibold">Customer</th>
+                    <th className="px-4 py-3 font-semibold">Delivery</th>
+                    <th className="px-4 py-3 font-semibold">Payment</th>
+                    <th className="px-4 py-3 font-semibold">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders.map((order, index) => (
+                    <tr
+                      key={order.id}
+                      className={index % 2 === 0 ? "bg-white transition-colors hover:bg-gray-50" : "bg-gray-50/60 transition-colors hover:bg-gray-100/70"}
+                    >
+                      <td className="px-4 py-3 font-semibold">{order.id}</td>
+                      <td className="px-4 py-3 text-xs text-muted">
+                        {new Date(order.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium">{order.customer.name}</p>
+                        <p className="text-xs text-muted">{order.customer.phone}</p>
+                      </td>
+                      <td className="px-4 py-3">{deliveryLabel(order.deliveryZone)}</td>
+                      <td className="px-4 py-3">{order.paymentMethod}</td>
+                      <td className="px-4 py-3 font-semibold">৳{order.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
