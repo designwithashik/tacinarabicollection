@@ -1,24 +1,33 @@
 export const runtime = "edge";
 import { notFound } from "next/navigation";
 import { products, type Product } from "../../../lib/products";
-import { loadInventoryArray, toStorefrontProduct } from "../../../lib/server/inventoryStore";
 import ProductDetailClient from "./ProductDetailClient";
+import { createClient } from "@supabase/supabase-js";
 
 type Params = { id: string };
 
-type InventoryProduct = Product & {
-  active?: boolean;
-};
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+);
 
 const getProductById = async (id: string): Promise<Product | null> => {
   try {
-    const inventory = await loadInventoryArray();
-    const fromInventory = inventory.find((item) => item.id === id && item.active !== false);
-    if (fromInventory) {
-      return toStorefrontProduct(fromInventory) as InventoryProduct;
+    const { data } = await supabase.from("products").select("*").eq("id", id).maybeSingle();
+    if (data) {
+      return {
+        id: String(data.id),
+        name: data.name,
+        price: Number(data.price ?? 0),
+        image: data.image_url ?? "/images/product-1.svg",
+        imageUrl: data.image_url,
+        category: data.category === "Ceramic" ? "Ceramic" : "Clothing",
+        colors: Array.isArray(data.colors) ? data.colors : ["Beige"],
+        sizes: Array.isArray(data.sizes) ? data.sizes : ["M", "L", "XL"],
+      };
     }
-  } catch {
-    // fallback to local products
+  } catch (error) {
+    console.error(error);
   }
 
   return products.find((item) => item.id === id) ?? null;
@@ -31,33 +40,5 @@ export default async function ProductPage({ params }: { params: Params }) {
     notFound();
   }
 
-  const productStructuredData = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.name,
-    image: [product.image],
-    description: `${product.name} from Tacin Arabi Collection with elegant modest styling and nationwide delivery.`,
-    sku: product.id,
-    brand: {
-      "@type": "Brand",
-      name: "Tacin Arabi Collection",
-    },
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "BDT",
-      price: product.price,
-      availability: "https://schema.org/InStock",
-      url: `https://tacinarabicollection.pages.dev/products/${product.id}`,
-    },
-  };
-
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productStructuredData) }}
-      />
-      <ProductDetailClient product={product} />
-    </>
-  );
+  return <ProductDetailClient product={product} />;
 }

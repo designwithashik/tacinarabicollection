@@ -26,6 +26,7 @@ import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
 import type { AdminProduct } from "../lib/inventory";
 import useCart from "../hooks/useCart";
+import { supabase } from "@/lib/supabase";
 
 // Contact numbers
 const whatsappNumber = "+8801522119189";
@@ -90,25 +91,27 @@ const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
 const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
 
 const normalizeInventoryResponse = (payload: unknown): AdminProduct[] => {
-  if (Array.isArray(payload)) {
-    return payload.filter(
-      (item): item is AdminProduct => Boolean(item && typeof item === "object")
-    );
-  }
+  if (!Array.isArray(payload)) return [];
 
-  if (payload && typeof payload === "object") {
-    const objectPayload = payload as Record<string, unknown>;
-
-    if ("id" in objectPayload) {
-      return [objectPayload as AdminProduct];
-    }
-
-    return Object.values(objectPayload).filter(
-      (item): item is AdminProduct => Boolean(item && typeof item === "object")
-    );
-  }
-
-  return [];
+  return payload
+    .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
+    .map((item) => ({
+      id: String(item.id ?? ""),
+      name: typeof item.name === "string" ? item.name : "",
+      price: Number(item.price ?? 0),
+      image: typeof item.image_url === "string" ? item.image_url : "/images/product-1.svg",
+      imageUrl: typeof item.image_url === "string" ? item.image_url : null,
+      category: item.category === "Ceramic" ? "Ceramic" : "Clothing",
+      colors: Array.isArray(item.colors) ? item.colors.filter((v): v is string => typeof v === "string") : ["Beige"],
+      sizes: Array.isArray(item.sizes) ? item.sizes.filter((v): v is string => typeof v === "string") : ["M", "L", "XL"],
+      active: item.active !== false,
+      updatedAt: typeof item.updated_at === "string" ? item.updated_at : new Date().toISOString(),
+      createdAt: typeof item.created_at === "string" ? item.created_at : new Date().toISOString(),
+      heroFeatured: item.hero_featured === true,
+      title: typeof item.title === "string" ? item.title : undefined,
+      subtitle: typeof item.subtitle === "string" ? item.subtitle : undefined,
+    }))
+    .filter((item) => Boolean(item.id && item.name));
 };
 
 // Minimal EN/BN labels used for critical UI only
@@ -261,16 +264,19 @@ export default function HomePage({
 
   const loadPublicInventory = useCallback(async () => {
     try {
-      const res = await fetch("/api/products", {
-        cache: "no-store",
-        next: { revalidate: 0 },
-      });
-      if (!res.ok) return;
-      const data = (await res.json()) as unknown;
-      const shaped = Array.isArray(data) ? data.flat() : (data ? [data] : []);
-      setAdminProducts(normalizeInventoryResponse(shaped));
-    } catch {
-      // Keep existing state if live inventory fetch fails.
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Failed to load products", error);
+        return;
+      }
+
+      setAdminProducts(normalizeInventoryResponse(data));
+    } catch (error) {
+      console.error("Failed to load products", error);
       setAdminProducts((current) => current);
     }
   }, []);

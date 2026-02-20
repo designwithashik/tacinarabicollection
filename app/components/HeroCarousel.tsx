@@ -60,22 +60,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
     [addToCart, getDefaultSize]
   );
 
-  useEffect(() => {
-    const loadHeroProducts = async () => {
-      try {
-        const res = await fetch("/api/products?hero=true", { cache: "default" });
-        if (!res.ok) return;
-        const data = (await res.json()) as HeroProduct[];
-        if (Array.isArray(data) && data.length > 0) {
-          setHeroProducts(data.slice(0, 3));
-        }
-      } catch {
-        setHeroProducts((current) => current);
-      }
-    };
 
-    void loadHeroProducts();
-  }, []);
 
   useEffect(() => {
     setCurrentSlide((prev) => {

@@ -1,16 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 type DashboardSummary = {
   totalProducts: number;
   totalOrders: number;
-  pendingOrders: number;
-  totalRevenue: number;
-  todayOrders: number;
-  todayRevenue: number;
-  lowStockCount: number;
 };
 
 type LowStockProduct = {
@@ -20,16 +15,9 @@ type LowStockProduct = {
   low_stock_threshold: number;
 };
 
-const currency = (value: number) => `৳${Number(value ?? 0).toLocaleString("en-BD")}`;
-
 const summaryCards = (summary: DashboardSummary) => [
   { label: "Total Products", value: summary.totalProducts },
   { label: "Total Orders", value: summary.totalOrders },
-  { label: "Pending Orders", value: summary.pendingOrders },
-  { label: "Total Revenue", value: currency(summary.totalRevenue) },
-  { label: "Today Orders", value: summary.todayOrders },
-  { label: "Today Revenue", value: currency(summary.todayRevenue) },
-  { label: "Low Stock Count", value: summary.lowStockCount },
 ];
 
 export default function AdminDashboardPage() {
@@ -45,23 +33,28 @@ export default function AdminDashboardPage() {
       setLoading(true);
       setError(null);
       try {
-        const [summaryData, lowStockData] = await Promise.all([
-          apiFetch<DashboardSummary>("/admin/dashboard/summary"),
-          apiFetch<LowStockProduct[]>("/admin/products/low-stock"),
-        ]);
+        const [{ count: productsCount }, { count: ordersCount }, { data: lowStockData, error: lowStockError }] =
+          await Promise.all([
+            supabase.from("products").select("id", { count: "exact", head: true }),
+            supabase.from("orders").select("id", { count: "exact", head: true }),
+            supabase.from("products").select("id,name,stock,low_stock_threshold").lte("stock", 5),
+          ]);
 
+        if (lowStockError) throw lowStockError;
         if (!mounted) return;
-        setSummary(summaryData);
-        setLowStockItems(lowStockData ?? []);
+
+        setSummary({ totalProducts: productsCount ?? 0, totalOrders: ordersCount ?? 0 });
+        setLowStockItems((lowStockData ?? []) as LowStockProduct[]);
       } catch (loadError) {
         if (!mounted) return;
+        console.error(loadError);
         setError(loadError instanceof Error ? loadError.message : "Failed to load dashboard.");
       } finally {
         if (mounted) setLoading(false);
       }
     };
 
-    loadDashboard();
+    void loadDashboard();
 
     return () => {
       mounted = false;
@@ -79,7 +72,7 @@ export default function AdminDashboardPage() {
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 7 }).map((_, index) => (
+          {Array.from({ length: 2 }).map((_, index) => (
             <div key={index} className="h-24 animate-pulse rounded-2xl bg-white shadow-soft" />
           ))}
         </div>
