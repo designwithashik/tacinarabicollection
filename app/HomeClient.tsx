@@ -19,7 +19,6 @@ import type { Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import { getSafeCartSubtotal, normalizeCartItem } from "../lib/cart";
 import type { CustomerInfo } from "../lib/orders";
-import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
 import type { AdminProduct } from "../lib/inventory";
 import type {
@@ -689,16 +688,19 @@ export default function HomePage({
     });
     const url = `https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${message}`;
     window.open(url, "_blank", "noopener,noreferrer");
-    await addOrder({
-      id: `ORD-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      items: checkoutItems,
-      total,
-      paymentMethod,
-      deliveryZone,
-      customer,
-      status: "pending",
+    await fetch("/api/admin/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: checkoutItems,
+        customerName: customer.name,
+        phone: customer.phone,
+        address: customer.address,
+        total,
+      }),
     });
+    localStorage.setItem("orders-updated", Date.now().toString());
+    window.dispatchEvent(new Event("orders-updated"));
     logEvent("purchase", {
       total,
       paymentMethod,
