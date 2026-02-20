@@ -259,8 +259,10 @@ export default function HomePage({
   }, []);
 
   useEffect(() => {
-    void loadPublicInventory();
-  }, [loadPublicInventory]);
+    if (initialAdminProducts.length === 0) {
+      void loadPublicInventory();
+    }
+  }, [initialAdminProducts.length, loadPublicInventory]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
