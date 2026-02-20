@@ -136,11 +136,11 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
             <div className="absolute inset-0 z-20 flex items-center justify-center md:justify-start">
               <div className="flex flex-col gap-4 max-w-xl px-6 md:px-16 text-center md:text-left text-white">
                 <p className="text-xs md:text-sm uppercase tracking-[0.2em] text-white/80">Featured Collection</p>
-                <h2 className="text-3xl md:text-5xl font-bold leading-tight">{slide.title}</h2>
-                <p className="text-base md:text-lg opacity-90">{slide.subtitle}</p>
+                <h2 className="text-2xl md:text-4xl font-bold leading-tight">{slide.title}</h2>
+                <p className="text-sm md:text-base opacity-90">{slide.subtitle}</p>
                 <div>
                   <a
-                    className="inline-flex items-center justify-center px-7 py-3 rounded-full bg-white text-black font-semibold shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
+                    className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-7 py-3 rounded-full bg-white text-black font-semibold shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
                     href={slide.buttonLink || "/"}
                   >
                     {slide.buttonText || "Shop Now"}
@@ -157,7 +157,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <button
             type="button"
             aria-label="Previous slide"
-            className="absolute top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:bg-black/50 hover:scale-110 left-3"
+            className="absolute top-1/2 -translate-y-1/2 h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:bg-black/50 hover:scale-110 left-3"
             onClick={goPrev}
           >
             ‹
@@ -165,7 +165,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <button
             type="button"
             aria-label="Next slide"
-            className="absolute top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:bg-black/50 hover:scale-110 right-3"
+            className="absolute top-1/2 -translate-y-1/2 h-11 w-11 min-h-[44px] min-w-[44px] rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:bg-black/50 hover:scale-110 right-3"
             onClick={goNext}
           >
             ›
@@ -173,18 +173,22 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
         </>
       ) : null}
 
-      <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2">
+      <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1">
         {slides.map((slide, index) => (
           <button
             key={`dot-${slide.id}`}
             type="button"
             aria-label={`Go to slide ${index + 1}`}
-            className={clsx(
-              "transition-all duration-300 rounded-full",
-              index === currentIndex ? "w-6 h-2 bg-white" : "w-2 h-2 bg-white/50"
-            )}
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center"
             onClick={() => goTo(index)}
-          />
+          >
+            <span
+              className={clsx(
+                "rounded-full transition-all duration-300",
+                index === currentIndex ? "h-2 w-6 bg-white" : "h-2 w-2 bg-white/50"
+              )}
+            />
+          </button>
         ))}
       </div>
     </div>

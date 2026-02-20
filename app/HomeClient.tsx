@@ -799,7 +799,7 @@ export default function HomePage({
         </div>
       ) : null}
       <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur">
-        <nav className="mx-auto w-full max-w-6xl px-4 py-3">
+        <nav className="mx-auto w-full max-w-6xl px-4 py-3 md:px-8">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-h-10 min-w-[104px] items-center justify-start">
               <LanguageToggle language={language} setLanguage={setLanguage} />
@@ -812,10 +812,10 @@ export default function HomePage({
             <button
               type="button"
               onClick={() => setShowCart(true)}
-              className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
+              className="interactive-feedback relative flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-xl text-ink"
               aria-label="Open cart"
             >
-              <span className={clsx(cartBump && "animate-cart-bounce")}>🛍️</span>
+              <span className={clsx("inline-flex h-6 w-6 items-center justify-center text-2xl leading-none", cartBump && "animate-cart-bounce")}>🛍️</span>
               {hasMounted && cartItems.length > 0 ? (
                 <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
                   {cartItems.length}
@@ -829,7 +829,7 @@ export default function HomePage({
       </header>
 
       <section className="relative">
-        <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
+        <div className="mx-auto max-w-6xl px-4 pt-4 md:px-8">
           <HeroCarousel initialSlides={initialCarouselSlides} />
         </div>
         <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
@@ -840,7 +840,7 @@ export default function HomePage({
           <div
             ref={trustBarRef}
             className={clsx(
-              "mx-auto max-w-6xl px-4 transition-all duration-700 ease-out",
+              "mx-auto max-w-6xl px-4 md:px-8 transition-all duration-700 ease-out",
               isTrustBarInView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
             )}
           >
@@ -860,9 +860,9 @@ export default function HomePage({
         </section>
       ) : null}
 
-      <section className="bg-[#F7F6F4]">
+      <section className="bg-[#F7F6F4] py-10 md:py-16">
         <AnimatedWrapper className="retail-section-enter" variant="section">
-          <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
+          <div className="mx-auto max-w-6xl space-y-3 px-4 py-6 md:px-8">
             <div className="flex gap-2 overflow-x-auto pb-1">
               {categories.map((category) => (
                 <button
@@ -912,7 +912,7 @@ export default function HomePage({
         </AnimatedWrapper>
       </section>
 
-      <section id="product-grid" className="mx-auto mt-6 max-w-6xl px-4 pb-24">
+      <section id="product-grid" className="mx-auto max-w-6xl px-4 py-10 md:px-8 md:py-16">
         <h2 className="mb-3 text-[18px] font-semibold">Our Collection</h2>
         {activeChips.length > 0 ? (
           <div className="mb-4 flex flex-wrap gap-2">
@@ -937,7 +937,7 @@ export default function HomePage({
         <SectionLoader
           loading={!hasMounted || isLoading}
           loader={
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
               {Array.from({ length: 6 }).map((_, index) => (
                 <SkeletonCard key={`skeleton-${index}`} />
               ))}
@@ -955,7 +955,7 @@ export default function HomePage({
             <motion.div
               key={productBatchKey}
               className={clsx(
-                "grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+                "grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-6 lg:grid-cols-4",
                 !prefersReducedMotion && "retail-batch-enter",
               )}
               initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
@@ -1001,29 +1001,29 @@ export default function HomePage({
         <section className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-neutral-200 bg-white p-4">
           <div className="space-y-1">
             <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">🚚 Fast Nationwide Delivery</p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">Reliable delivery across Bangladesh.</p>
+            <p className="text-sm md:text-base leading-[1.4] text-neutral-700">Reliable delivery across Bangladesh.</p>
           </div>
           <div className="space-y-1">
             <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">🔒 Secure Order Handling</p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">Safe data and verified order process.</p>
+            <p className="text-sm md:text-base leading-[1.4] text-neutral-700">Safe data and verified order process.</p>
           </div>
           <div className="space-y-1">
             <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">💬 WhatsApp Order Support</p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">Quick support from real agents.</p>
+            <p className="text-sm md:text-base leading-[1.4] text-neutral-700">Quick support from real agents.</p>
           </div>
           <div className="space-y-1">
             <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">💵 Cash on Delivery</p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">Pay after delivery confirmation.</p>
+            <p className="text-sm md:text-base leading-[1.4] text-neutral-700">Pay after delivery confirmation.</p>
           </div>
         </section>
 
         {recentlyViewed.length > 0 ? (
           <section className="mt-6">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-heading text-2xl font-semibold">Recently Viewed</h2>
+              <h2 className="font-heading text-2xl font-semibold md:text-4xl">Recently Viewed</h2>
               <span className="text-[12px] font-semibold text-muted">Last 2 items</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
               {recentlyViewed.map((product, index) => (
                 <AnimatedWrapper
                   key={product.id}
@@ -1060,7 +1060,7 @@ export default function HomePage({
       </section>
 
       <footer className="mt-16 border-t border-neutral-200 bg-[#F3F2F0]">
-        <div className="mx-auto grid max-w-6xl gap-8 space-y-0 px-4 pb-20 pt-14 md:grid-cols-3">
+        <div className="mx-auto grid max-w-6xl gap-8 space-y-0 px-4 pb-20 pt-14 md:grid-cols-3 md:px-8">
           <div>
             <h3 className="font-heading text-[20px] font-semibold">Tacin Arabi Collection</h3>
             <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
@@ -1321,7 +1321,7 @@ export default function HomePage({
                 <button
                   type="button"
                   onClick={() => setShowCart(false)}
-                  className="interactive-feedback mt-3 rounded-full border border-[#e6d8ce] px-4 py-2 text-[12px] font-semibold text-ink"
+                  className="interactive-feedback mt-3 min-h-[44px] min-w-[44px] rounded-full border border-[#e6d8ce] px-4 py-2 text-[12px] font-semibold text-ink"
                 >
                   Browse products
                 </button>
@@ -1357,7 +1357,7 @@ export default function HomePage({
                           type="button"
                           disabled={cartActionLoading[index]}
                           onClick={() => void updateCartQuantity(index, item.quantity - 1)}
-                          className="interactive-feedback h-7 w-7 rounded-full border border-[#e6d8ce] text-sm hover:scale-105 active:scale-95"
+                          className="interactive-feedback h-11 w-11 min-h-[44px] min-w-[44px] rounded-full border border-[#e6d8ce] text-sm hover:scale-105 active:scale-95"
                         >
                           -
                         </button>
@@ -1366,7 +1366,7 @@ export default function HomePage({
                           type="button"
                           disabled={cartActionLoading[index]}
                           onClick={() => void updateCartQuantity(index, item.quantity + 1)}
-                          className="interactive-feedback h-7 w-7 rounded-full border border-[#e6d8ce] text-sm hover:scale-105 active:scale-95"
+                          className="interactive-feedback h-11 w-11 min-h-[44px] min-w-[44px] rounded-full border border-[#e6d8ce] text-sm hover:scale-105 active:scale-95"
                         >
                           +
                         </button>
@@ -1396,7 +1396,7 @@ export default function HomePage({
                   <button
                     type="button"
                     onClick={handleCartCheckout}
-                    className="interactive-feedback min-h-[40px] w-full rounded-lg bg-black px-4 py-2.5 text-[14px] font-medium leading-[1.4] text-white active:scale-95"
+                    className="interactive-feedback min-h-[44px] w-full rounded-lg bg-black px-4 py-2.5 text-[14px] font-medium leading-[1.4] text-white active:scale-95"
                   >
                     {isRouting ? "Redirecting..." : text.checkout}
                   </button>
