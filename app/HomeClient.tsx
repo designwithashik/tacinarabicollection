@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, useInView } from "framer-motion";
+import { useInView } from "framer-motion";
 import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
@@ -211,6 +211,7 @@ export default function HomePage({
   const [isLoading, setIsLoading] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [gridVisible, setGridVisible] = useState(false);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>(initialAdminProducts);
   const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
   const [announcement, setAnnouncement] = useState<AnnouncementContent>(initialAnnouncement);
@@ -410,6 +411,11 @@ export default function HomePage({
 
   useEffect(() => {
     const timer = window.setTimeout(() => setIsLoading(false), 220);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setGridVisible(true), 60);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -763,7 +769,7 @@ export default function HomePage({
   return (
     <div
       className={clsx(
-        "min-h-[100dvh] bg-[#F7F6F4] pb-24 transition-opacity duration-300 ease-in-out",
+        "min-h-[100dvh] bg-white pb-24 text-black transition-opacity duration-300 ease-in-out",
         isRouting && "opacity-80",
       )}
     >
@@ -772,8 +778,8 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur">
-        <nav className="mx-auto w-full max-w-6xl px-4 py-3">
+      <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/90 backdrop-blur">
+        <nav className="mx-auto w-full max-w-7xl px-4 py-3 md:px-8">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-h-10 min-w-[104px] items-center justify-start">
               <LanguageToggle language={language} setLanguage={setLanguage} />
@@ -802,19 +808,21 @@ export default function HomePage({
         </nav>
       </header>
 
-      <section className="relative">
-        <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
+      <main className="mx-auto w-full max-w-7xl px-4 md:px-8">
+      <section className="relative py-12 md:py-20">
+        <div className="overflow-hidden rounded-3xl">
           <HeroCarousel initialSlides={initialCarouselSlides} />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/20 to-transparent" />
         </div>
-        <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
+        <div className="mt-6 h-6 bg-gradient-to-b from-transparent to-gray-50 md:mt-10" />
       </section>
 
       {announcement.active ? (
-        <section className="bg-black py-2 text-white">
+        <section className="-mx-4 border-t border-gray-100 bg-black py-3 text-white md:-mx-8">
           <div
             ref={trustBarRef}
             className={clsx(
-              "mx-auto max-w-6xl px-4 transition-all duration-700 ease-out",
+              "mx-auto max-w-7xl px-4 transition-all duration-700 ease-out md:px-8",
               isTrustBarInView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
             )}
           >
@@ -834,9 +842,13 @@ export default function HomePage({
         </section>
       ) : null}
 
-      <section className="bg-[#F7F6F4]">
+      <section className="-mx-4 border-t border-gray-100 bg-gray-50 py-12 md:-mx-8 md:py-20">
         <AnimatedWrapper className="retail-section-enter" variant="section">
-          <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
+          <div className="mx-auto max-w-7xl space-y-4 px-4 md:px-8">
+            <div>
+              <h2 className="mb-6 text-2xl font-bold tracking-tight md:mb-10 md:text-4xl">Categories</h2>
+              <p className="mt-2 text-sm text-gray-600 md:text-base">Browse by collection type to find your perfect fit faster.</p>
+            </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {categories.map((category) => (
                 <button
@@ -886,10 +898,11 @@ export default function HomePage({
         </AnimatedWrapper>
       </section>
 
-      <section id="product-grid" className="mx-auto mt-6 max-w-6xl px-4 pb-24">
-        <h2 className="mb-3 text-[18px] font-semibold">Our Collection</h2>
+      <section id="product-grid" className="py-12 md:py-20">
+        <h2 className="text-2xl font-bold tracking-tight md:text-4xl">Featured Products</h2>
+        <p className="mt-2 text-sm text-gray-600 md:text-base">Discover premium picks curated for everyday elegance.</p>
         {activeChips.length > 0 ? (
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-6 mt-6 flex flex-wrap gap-2 md:mb-10">
             {activeChips.map((chip) => (
               <button
                 key={`${chip.type}-${chip.value}`}
@@ -911,7 +924,7 @@ export default function HomePage({
         <SectionLoader
           loading={!hasMounted || isLoading}
           loader={
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-8 lg:grid-cols-4">
               {Array.from({ length: 6 }).map((_, index) => (
                 <SkeletonCard key={`skeleton-${index}`} />
               ))}
@@ -926,15 +939,13 @@ export default function HomePage({
               </p>
             </div>
           ) : (
-            <motion.div
+            <div
               key={productBatchKey}
               className={clsx(
-                "grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+                "grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-8 lg:grid-cols-4 transition-all duration-700 ease-[cubic-bezier(.22,1,.36,1)]",
                 !prefersReducedMotion && "retail-batch-enter",
+                gridVisible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
               )}
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: prefersReducedMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
             >
               {visibleProducts.map((product, index) => (
                 <AnimatedWrapper
@@ -968,11 +979,11 @@ export default function HomePage({
                   />
                 </AnimatedWrapper>
               ))}
-            </motion.div>
+            </div>
           )}
         </SectionLoader>
 
-        <section className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-neutral-200 bg-white p-4">
+        <section className="mt-12 grid grid-cols-2 gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-6 md:mt-16 md:gap-8">
           <div className="space-y-1">
             <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">🚚 Fast Nationwide Delivery</p>
             <p className="text-[12px] leading-[1.4] text-neutral-700">Reliable delivery across Bangladesh.</p>
@@ -992,12 +1003,12 @@ export default function HomePage({
         </section>
 
         {recentlyViewed.length > 0 ? (
-          <section className="mt-6">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-heading text-2xl font-semibold">Recently Viewed</h2>
+          <section className="mt-12 border-t border-gray-100 pt-12 md:mt-16 md:pt-16">
+            <div className="mb-6 flex items-center justify-between md:mb-10">
+              <h2 className="text-2xl font-bold tracking-tight md:text-4xl">Recently Viewed</h2>
               <span className="text-[12px] font-semibold text-muted">Last 2 items</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-8 lg:grid-cols-4">
               {recentlyViewed.map((product, index) => (
                 <AnimatedWrapper
                   key={product.id}
@@ -1033,8 +1044,8 @@ export default function HomePage({
         ) : null}
       </section>
 
-      <footer className="mt-16 border-t border-neutral-200 bg-[#F3F2F0]">
-        <div className="mx-auto grid max-w-6xl gap-8 space-y-0 px-4 pb-20 pt-14 md:grid-cols-3">
+      <footer className="-mx-4 mt-16 border-t border-gray-100 bg-gray-50 pt-16 pb-10 text-sm text-gray-600 md:-mx-8">
+        <div className="mx-auto grid max-w-7xl gap-8 space-y-0 px-4 md:grid-cols-3 md:px-8">
           <div>
             <h3 className="font-heading text-[20px] font-semibold">Tacin Arabi Collection</h3>
             <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
@@ -1087,6 +1098,7 @@ export default function HomePage({
           </div>
         </div>
       </footer>
+      </main>
 
       {toast ? (
         <Toast
