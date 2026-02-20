@@ -10,9 +10,77 @@ export default function AdminOrders() {
   const [deliveryFilter, setDeliveryFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  useEffect(() => {
-    setOrders(getStoredOrders());
+  const loadOrders = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/orders", { cache: "no-store" });
+      if (!response.ok) return;
+      const data = (await response.json()) as Order[];
+      setOrders(Array.isArray(data) ? data : []);
+    } catch {
+      setOrders([]);
+    }
   }, []);
+
+  const emitOrdersUpdated = () => {
+    const stamp = Date.now().toString();
+    localStorage.setItem("orders-updated", stamp);
+    window.dispatchEvent(new Event("orders-updated"));
+  };
+
+  useEffect(() => {
+    void loadOrders();
+
+    const handler = () => {
+      void loadOrders();
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        handler();
+      }
+    };
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "orders-updated") {
+        handler();
+      }
+    };
+
+    window.addEventListener("focus", handler);
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("orders-updated", handler);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("focus", handler);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("orders-updated", handler);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [loadOrders]);
+
+  const updateStatus = async (id: string, status: OrderStatus) => {
+    await fetch("/api/admin/orders", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
+
+    emitOrdersUpdated();
+    await loadOrders();
+  };
+
+  const deleteOrder = async (id: string) => {
+    await fetch(`/api/admin/orders?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+
+    if (selectedOrder?.id === id) {
+      setSelectedOrder(null);
+    }
+    emitOrdersUpdated();
+    await loadOrders();
+  };
 
   const filteredOrders = orders.filter((order) => {
     const paymentMatch =

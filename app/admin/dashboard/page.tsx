@@ -9,7 +9,12 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    setOrders(getStoredOrders());
+    const loadOrders = async () => {
+      const next = await getStoredOrders();
+      setOrders(next);
+    };
+
+    void loadOrders();
   }, []);
 
   const totalRevenue = useMemo(
