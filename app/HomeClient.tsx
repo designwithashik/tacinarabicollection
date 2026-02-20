@@ -774,27 +774,33 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="border-b border-neutral-200 bg-white">
-        <nav className="sticky top-0 z-50 mx-auto flex max-w-6xl items-center justify-between border-b border-neutral-200 bg-white px-4 py-3 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setShowCart(true)}
-            className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
-            aria-label="Open cart"
-          >
-            <span className={clsx(cartBump && "animate-cart-bounce")}>🛍️</span>
-            {hasMounted && cartItems.length > 0 ? (
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
-                {cartItems.length}
-              </span>
-            ) : !hasMounted ? (
-              <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[#eadad0]" />
-            ) : null}
-          </button>
+      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur">
+        <nav className="mx-auto w-full max-w-6xl px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-h-10 min-w-[104px] items-center justify-start">
+              <LanguageToggle language={language} setLanguage={setLanguage} />
+            </div>
 
-          <p className="text-[16px] font-semibold leading-[1.4] text-neutral-900">Tacin Arabi</p>
+            <p className="text-center text-[16px] font-semibold leading-[1.4] text-neutral-900">
+              Tacin Arabi
+            </p>
 
-          <LanguageToggle language={language} setLanguage={setLanguage} />
+            <button
+              type="button"
+              onClick={() => setShowCart(true)}
+              className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
+              aria-label="Open cart"
+            >
+              <span className={clsx(cartBump && "animate-cart-bounce")}>🛍️</span>
+              {hasMounted && cartItems.length > 0 ? (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
+                  {cartItems.length}
+                </span>
+              ) : !hasMounted ? (
+                <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[#eadad0]" />
+              ) : null}
+            </button>
+          </div>
         </nav>
       </header>
 
