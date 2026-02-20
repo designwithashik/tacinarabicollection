@@ -25,6 +25,22 @@ export type InventoryProduct = {
 const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
 const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 
+const safeJsonParse = <T>(value: string): T | null => {
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
+};
+
+const safeJsonStringify = (value: unknown): string | null => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return null;
+  }
+};
+
 const callRedis = async <T>(command: string, ...args: RedisScalar[]): Promise<T | null> => {
   if (!redisUrl || !redisToken) return null;
 
@@ -42,7 +58,9 @@ const callRedis = async <T>(command: string, ...args: RedisScalar[]): Promise<T 
 
 const redisGet = <T>(key: string) => callRedis<T>("get", key);
 const redisSet = async (key: string, value: unknown) => {
-  await callRedis("set", key, JSON.stringify(value));
+  const serialized = safeJsonStringify(value);
+  if (!serialized) return;
+  await callRedis("set", key, serialized);
 };
 const redisHGetAll = <T>(key: string) => callRedis<T>("hgetall", key);
 
@@ -128,11 +146,7 @@ async function tryLegacyMigration(): Promise<InventoryProduct[] | null> {
     const normalized = Object.values(legacy)
       .map((value) => {
         if (typeof value === "string") {
-          try {
-            return JSON.parse(value) as unknown;
-          } catch {
-            return value as unknown;
-          }
+          return safeJsonParse<unknown>(value) ?? (value as unknown);
         }
         return value;
       })
@@ -149,12 +163,12 @@ export async function loadInventoryArray(): Promise<InventoryProduct[]> {
   const canonicalRaw = await redisGet<InventoryProduct[] | string | unknown>(INVENTORY_PRODUCTS_KEY);
 
   if (typeof canonicalRaw === "string") {
-    try {
-      const parsed = JSON.parse(canonicalRaw) as unknown;
-      return normalizeInventoryCollection(parsed);
-    } catch {
+    const parsed = safeJsonParse<unknown>(canonicalRaw);
+    if (!parsed) {
       return [];
     }
+
+    return normalizeInventoryCollection(parsed);
   }
 
   if (Array.isArray(canonicalRaw)) {

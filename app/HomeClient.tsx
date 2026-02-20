@@ -276,8 +276,9 @@ export default function HomePage({
   }, []);
 
   useEffect(() => {
+    if (initialAdminProducts.length > 0) return;
     void loadPublicInventory();
-  }, [loadPublicInventory]);
+  }, [initialAdminProducts.length, loadPublicInventory]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
