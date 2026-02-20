@@ -1,7 +1,8 @@
 import { kv } from "@vercel/kv";
-import type { CarouselItem } from "@/lib/siteContent";
+import type { AnnouncementContent, CarouselItem } from "@/lib/siteContent";
 
 export const SITE_CAROUSEL_KEY = "site:carousel";
+export const SITE_ANNOUNCEMENT_KEY = "site:announcement";
 
 type RecordValue = Record<string, unknown>;
 
@@ -46,6 +47,22 @@ const normalizeCarouselPayload = (payload: unknown): CarouselItem[] => {
     .sort((a, b) => a.order - b.order);
 };
 
+const normalizeAnnouncement = (payload: unknown): AnnouncementContent => {
+  if (!isRecord(payload)) {
+    return {
+      text: "Free nationwide delivery updates • WhatsApp-first support • Elegant modest fashion curated for Bangladesh",
+      active: true,
+    };
+  }
+
+  return {
+    text:
+      normalizeString(payload.text) ||
+      "Free nationwide delivery updates • WhatsApp-first support • Elegant modest fashion curated for Bangladesh",
+    active: payload.active !== false,
+  };
+};
+
 export async function loadCarousel(): Promise<CarouselItem[]> {
   const payload = await kv.get<unknown>(SITE_CAROUSEL_KEY);
   return normalizeCarouselPayload(payload);
@@ -54,4 +71,14 @@ export async function loadCarousel(): Promise<CarouselItem[]> {
 export async function saveCarousel(items: unknown[]) {
   const normalized = normalizeCarouselPayload(items);
   await kv.set(SITE_CAROUSEL_KEY, normalized);
+}
+
+export async function loadAnnouncement(): Promise<AnnouncementContent> {
+  const payload = await kv.get<unknown>(SITE_ANNOUNCEMENT_KEY);
+  return normalizeAnnouncement(payload);
+}
+
+export async function saveAnnouncement(input: unknown) {
+  const normalized = normalizeAnnouncement(input);
+  await kv.set(SITE_ANNOUNCEMENT_KEY, normalized);
 }

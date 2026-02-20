@@ -251,6 +251,24 @@ a:focus-visible {
   transform: scale(1.02);
 }
 
+
+@keyframes announcement-glide {
+  0% {
+    transform: translateX(0%);
+  }
+  50% {
+    transform: translateX(-2%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.animate-announcement-glide {
+  animation: announcement-glide 14s ease-in-out infinite;
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .interactive-feedback:active {
     transform: none;
@@ -258,6 +276,10 @@ a:focus-visible {
 
   .product-image:hover {
     transform: none;
+  }
+
+  .animate-announcement-glide {
+    animation: none;
   }
 
   .skeleton-shimmer {
@@ -274,6 +296,7 @@ a:focus-visible {
     transform: none;
   }
 }
+
 
 @media (prefers-reduced-motion: reduce) {
   * {

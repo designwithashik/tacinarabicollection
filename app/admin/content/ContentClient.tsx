@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import type { CarouselItem } from "@/lib/siteContent";
+import type { AnnouncementContent, CarouselItem } from "@/lib/siteContent";
+
+
+const defaultAnnouncement: AnnouncementContent = {
+  text: "",
+  active: true,
+};
 
 const createBlankSlide = (order: number): CarouselItem => ({
   id: crypto.randomUUID(),
@@ -20,14 +26,29 @@ export default function ContentClient() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState<AnnouncementContent>(defaultAnnouncement);
+  const [savingAnnouncement, setSavingAnnouncement] = useState(false);
 
   const loadItems = async () => {
     setError(null);
     try {
-      const res = await fetch("/api/admin/content/carousel", { cache: "no-store" });
-      if (!res.ok) throw new Error("Unable to load carousel content.");
-      const data = (await res.json()) as CarouselItem[];
-      setItems(Array.isArray(data) ? data.sort((a, b) => a.order - b.order) : []);
+      const [carouselRes, announcementRes] = await Promise.all([
+        fetch("/api/admin/content/carousel", { cache: "no-store" }),
+        fetch("/api/admin/content/announcement", { cache: "no-store" }),
+      ]);
+
+      if (!carouselRes.ok) throw new Error("Unable to load carousel content.");
+
+      const carouselData = (await carouselRes.json()) as CarouselItem[];
+      const announcementData = (await announcementRes.json().catch(() => null)) as AnnouncementContent | null;
+
+      setItems(Array.isArray(carouselData) ? carouselData.sort((a, b) => a.order - b.order) : []);
+      if (announcementData && typeof announcementData === "object") {
+        setAnnouncement({
+          text: typeof announcementData.text === "string" ? announcementData.text : "",
+          active: announcementData.active !== false,
+        });
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load content.");
       setItems([]);
@@ -69,6 +90,31 @@ export default function ContentClient() {
     }
   };
 
+  const handleSaveAnnouncement = async () => {
+    setSavingAnnouncement(true);
+    setError(null);
+    setNotice(null);
+
+    try {
+      const res = await fetch("/api/admin/content/announcement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(announcement),
+      });
+
+      if (!res.ok) {
+        const json = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(json?.error ?? "Unable to save announcement.");
+      }
+
+      setNotice("Announcement saved.");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Unable to save announcement.");
+    } finally {
+      setSavingAnnouncement(false);
+    }
+  };
+
   return (
     <section className="space-y-4 rounded-2xl border border-[#e6d8ce] bg-white p-4 md:p-6">
       <div>
@@ -78,6 +124,32 @@ export default function ContentClient() {
 
       {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
       {notice ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</p> : null}
+
+      <section className="space-y-3 rounded-xl border border-[#e6d8ce] p-3">
+        <h3 className="text-sm font-semibold text-ink">Animated Announcement Bar</h3>
+        <input
+          className="w-full rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
+          placeholder="Announcement text"
+          value={announcement.text}
+          onChange={(e) => setAnnouncement((prev) => ({ ...prev, text: e.target.value }))}
+        />
+        <label className="inline-flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={announcement.active}
+            onChange={(e) => setAnnouncement((prev) => ({ ...prev, active: e.target.checked }))}
+          />
+          Active
+        </label>
+        <button
+          type="button"
+          onClick={handleSaveAnnouncement}
+          disabled={savingAnnouncement}
+          className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        >
+          {savingAnnouncement ? "Saving..." : "Save Announcement"}
+        </button>
+      </section>
 
       <form className="space-y-4" onSubmit={handleSave}>
         <div className="space-y-3">

@@ -22,6 +22,7 @@ import type { CustomerInfo } from "../lib/orders";
 import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
 import type { AdminProduct } from "../lib/inventory";
+import type { AnnouncementContent } from "../lib/siteContent";
 import useCart from "../hooks/useCart";
 
 const whatsappNumber = "+8801522119189";
@@ -78,6 +79,11 @@ const storageKeys = {
 };
 
 const statusLabels = ["New", "Popular", "Low Stock"] as const;
+
+const defaultAnnouncement: AnnouncementContent = {
+  text: "Free nationwide delivery updates • WhatsApp-first support • Elegant modest fashion curated for Bangladesh",
+  active: true,
+};
 
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
 const INVENTORY_UPDATED_EVENTS = [
@@ -203,6 +209,7 @@ export default function HomePage({
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>(initialAdminProducts);
   const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
+  const [announcement, setAnnouncement] = useState<AnnouncementContent>(defaultAnnouncement);
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
@@ -271,6 +278,30 @@ export default function HomePage({
   useEffect(() => {
     void loadPublicInventory();
   }, [loadPublicInventory]);
+
+  useEffect(() => {
+    const loadAnnouncement = async () => {
+      try {
+        const res = await fetch("/api/content/announcement", {
+          cache: "no-store",
+          next: { revalidate: 0 },
+        });
+        if (!res.ok) return;
+
+        const data = (await res.json()) as AnnouncementContent;
+        if (!data || typeof data !== "object") return;
+
+        setAnnouncement({
+          text: typeof data.text === "string" ? data.text : defaultAnnouncement.text,
+          active: data.active !== false,
+        });
+      } catch {
+        setAnnouncement(defaultAnnouncement);
+      }
+    };
+
+    void loadAnnouncement();
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -576,19 +607,7 @@ export default function HomePage({
 
   const productSource = adminProducts.filter((item) => item.active !== false);
 
-  const announcementText = useMemo(() => {
-    const editableAnnouncement = productSource
-      .map((item) => {
-        const meta = item as AdminProduct & { subtitle?: string; title?: string };
-        return meta.subtitle || meta.title || "";
-      })
-      .find((value) => value.trim().length > 0);
-
-    return (
-      editableAnnouncement ||
-      "Free nationwide delivery updates • WhatsApp-first support • Elegant modest fashion curated for Bangladesh"
-    );
-  }, [productSource]);
+  const announcementText = announcement.text.trim() || defaultAnnouncement.text;
 
   const filteredProducts = useMemo(() => {
     let result = [...productSource];
@@ -785,21 +804,23 @@ export default function HomePage({
         <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
       </section>
 
-      <section className="bg-black py-2 text-white">
-        <div
-          ref={trustBarRef}
-          className={clsx(
-            "mx-auto max-w-6xl px-4 transition-all duration-700 ease-out",
-            isTrustBarInView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
-          )}
-        >
-          <div className="relative overflow-hidden whitespace-nowrap">
-            <div className="inline-block min-w-full animate-marquee text-[13px] font-medium tracking-wide">
-              {announcementText} &nbsp;&nbsp;&nbsp; {announcementText}
+      {announcement.active ? (
+        <section className="bg-black py-2 text-white">
+          <div
+            ref={trustBarRef}
+            className={clsx(
+              "mx-auto max-w-6xl px-4 transition-all duration-700 ease-out",
+              isTrustBarInView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
+            )}
+          >
+            <div className="relative overflow-hidden whitespace-nowrap">
+              <div className="inline-block min-w-full animate-announcement-glide text-[13px] font-medium tracking-wide">
+                {announcementText} &nbsp;&nbsp;&nbsp; {announcementText}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="bg-[#F7F6F4]">
         <AnimatedWrapper className="retail-section-enter" variant="section">

@@ -8,3 +8,8 @@ export type CarouselItem = {
   active: boolean;
   order: number;
 };
+
+export type AnnouncementContent = {
+  text: string;
+  active: boolean;
+};
