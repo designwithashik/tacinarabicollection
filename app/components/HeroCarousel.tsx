@@ -1,74 +1,58 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import clsx from "clsx";
 
-export type HeroProduct = {
-  id: string;
-  name: string;
-  image?: string;
-  imageUrl?: string | null;
-  price?: number;
-};
+import type { CarouselItem } from "@/lib/siteContent";
 
-type HeroCarouselProps = {
-  addToCart: (product: HeroProduct) => void;
-  buyNow?: (product: HeroProduct) => void;
-  initialProducts?: HeroProduct[];
-};
-
-export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }: HeroCarouselProps) {
-  const handleAddToCart = useCallback((product: HeroProduct) => {
-    addToCart(product);
-  }, [addToCart]);
-
-  const [heroProducts, setHeroProducts] = useState<HeroProduct[]>(initialProducts.slice(0, 3));
+export default function HeroCarousel() {
+  const [slides, setSlides] = useState<CarouselItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    const loadHeroProducts = async () => {
+    const loadSlides = async () => {
       try {
-        const res = await fetch("/api/products?hero=true", { cache: "no-store" });
+        const res = await fetch("/api/content/carousel", { cache: "no-store" });
         if (!res.ok) return;
-        const data = (await res.json()) as HeroProduct[];
-        if (Array.isArray(data) && data.length > 0) {
-          setHeroProducts(data.slice(0, 3));
+        const data = (await res.json()) as CarouselItem[];
+        if (Array.isArray(data)) {
+          setSlides(data.filter((item) => item.active !== false).sort((a, b) => a.order - b.order));
         }
       } catch {
-        setHeroProducts((current) => current);
+        setSlides([]);
       }
     };
 
-    void loadHeroProducts();
+    void loadSlides();
   }, []);
 
   useEffect(() => {
-    if (heroProducts.length < 2) return;
+    if (slides.length < 2) return;
 
     const interval = window.setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % heroProducts.length);
+      setCurrentIndex((prev) => (prev + 1) % slides.length);
     }, 6000);
 
     return () => window.clearInterval(interval);
-  }, [heroProducts.length]);
+  }, [slides.length]);
 
   useEffect(() => {
     setCurrentIndex((prev) => {
-      if (heroProducts.length === 0) return 0;
-      return prev % heroProducts.length;
+      if (slides.length === 0) return 0;
+      return prev % slides.length;
     });
-  }, [heroProducts.length]);
+  }, [slides.length]);
 
-  if (heroProducts.length === 0) {
+  if (slides.length === 0) {
     return null;
   }
 
   const goPrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + heroProducts.length) % heroProducts.length);
+    setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
   const goNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % heroProducts.length);
+    setCurrentIndex((prev) => (prev + 1) % slides.length);
   };
 
   return (
@@ -78,34 +62,28 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
           className="flex transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
-          {heroProducts.map((product) => (
-            <div key={product.id} className="w-full flex-shrink-0 relative">
+          {slides.map((slide) => (
+            <div key={slide.id} className="w-full flex-shrink-0 relative">
               <img
-                src={product.imageUrl || product.image || "/images/product-1.svg"}
-                alt={product.name}
+                src={slide.imageUrl || "/images/product-1.svg"}
+                alt={slide.title || "Carousel slide"}
                 className="h-full w-full object-cover"
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
 
               <div className="absolute inset-0 z-20 flex items-end justify-center px-6 pb-10 md:items-center md:pb-0">
                 <div className="max-w-xl text-center text-white">
-                  <h2 className="text-2xl font-medium tracking-wide md:text-4xl">{product.name}</h2>
+                  <h2 className="text-2xl font-medium tracking-wide md:text-4xl">{slide.title}</h2>
 
-                  <p className="mt-3 text-sm text-white/80 md:text-base">
-                    A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living.
-                  </p>
+                  <p className="mt-3 text-sm text-white/80 md:text-base">{slide.subtitle}</p>
 
                   <div className="mt-5 flex justify-center">
-                    <button
-                      type="button"
-                      className="btn-primary relative z-30"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToCart(product);
-                      }}
+                    <a
+                      className="btn-primary relative z-30 inline-flex items-center justify-center"
+                      href={slide.buttonLink || "/"}
                     >
-                      Add to Cart
-                    </button>
+                      {slide.buttonText || "Shop Now"}
+                    </a>
                   </div>
                 </div>
               </div>
@@ -114,7 +92,7 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
         </div>
       </div>
 
-      {heroProducts.length > 1 ? (
+      {slides.length > 1 ? (
         <>
           <button
             type="button"
@@ -135,20 +113,10 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
         </>
       ) : null}
 
-      {buyNow ? (
-        <button
-          type="button"
-          className="absolute right-6 top-6 z-30 rounded-full border border-white/50 bg-black/40 px-3 py-1 text-xs text-white shadow-md transition-all duration-300 hover:scale-105"
-          onClick={() => buyNow(heroProducts[currentIndex])}
-        >
-          Buy Now
-        </button>
-      ) : null}
-
       <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 gap-2">
-        {heroProducts.map((product, index) => (
+        {slides.map((slide, index) => (
           <button
-            key={`dot-${product.id}`}
+            key={`dot-${slide.id}`}
             type="button"
             aria-label={`Go to slide ${index + 1}`}
             className={clsx(

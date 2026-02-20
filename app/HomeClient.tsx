@@ -11,7 +11,7 @@ import SectionLoader from "../components/SectionLoader";
 import CartSkeleton from "../components/CartSkeleton";
 import SummaryPlaceholder from "../components/SummaryPlaceholder";
 import { AnimatedWrapper } from "../components/AnimatedWrapper";
-import HeroCarousel, { type HeroProduct } from "./components/HeroCarousel";
+import HeroCarousel from "./components/HeroCarousel";
 import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import { Facebook, Instagram, SlidersHorizontal } from "lucide-react";
@@ -734,34 +734,6 @@ export default function HomePage({
   const isSummaryLoading = !hasMounted || isCartHydrating;
   const hasPaymentProof = Boolean(transactionId.trim());
 
-  const handleHeroAddToCart = (heroProduct: HeroProduct, sizeOverride: string | null = null) => {
-    const matchedProduct = adminProducts.find((item) => item.id === heroProduct.id);
-
-    if (!matchedProduct) {
-      showToast({ type: "error", message: "Product is unavailable right now." });
-      return;
-    }
-
-    const defaultSize =
-      sizeOverride ?? selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
-    setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
-    handleAddToCart(matchedProduct, defaultSize);
-  };
-
-  const handleHeroBuyNow = (heroProduct: HeroProduct, sizeOverride: string | null = null) => {
-    const matchedProduct = adminProducts.find((item) => item.id === heroProduct.id);
-
-    if (!matchedProduct) {
-      showToast({ type: "error", message: "Product is unavailable right now." });
-      return;
-    }
-
-    const defaultSize =
-      sizeOverride ?? selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
-    setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
-    handleBuyNow(matchedProduct, defaultSize);
-  };
-
   return (
     <div
       className={clsx(
@@ -806,11 +778,7 @@ export default function HomePage({
 
       <section className="relative">
         <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
-          <HeroCarousel
-            addToCart={handleHeroAddToCart}
-            buyNow={handleHeroBuyNow}
-            initialProducts={initialAdminProducts.filter((item) => item.heroFeatured).slice(0, 3)}
-          />
+          <HeroCarousel />
         </div>
         <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
       </section>
