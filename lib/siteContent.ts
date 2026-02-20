@@ -20,5 +20,6 @@ export type FilterPanelItem = {
   value: string;
   active: boolean;
   highlight: boolean;
+  showOnLanding: boolean;
   order: number;
 };

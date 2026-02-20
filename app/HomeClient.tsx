@@ -94,6 +94,7 @@ const defaultFilterConfig: FilterPanelItem[] = [
     value: "All",
     active: true,
     highlight: true,
+    showOnLanding: true,
     order: 1,
   },
   {
@@ -102,6 +103,7 @@ const defaultFilterConfig: FilterPanelItem[] = [
     value: "Clothing",
     active: true,
     highlight: false,
+    showOnLanding: true,
     order: 2,
   },
   {
@@ -110,6 +112,7 @@ const defaultFilterConfig: FilterPanelItem[] = [
     value: "Ceramic",
     active: true,
     highlight: false,
+    showOnLanding: true,
     order: 3,
   },
 ];
@@ -905,6 +908,7 @@ export default function HomePage({
       value: String(category),
       active: true,
       highlight: false,
+      showOnLanding: true,
       order: index + 1,
     }));
 
@@ -915,6 +919,7 @@ export default function HomePage({
         value: "All",
         active: true,
         highlight: true,
+        showOnLanding: true,
         order: 0,
       },
       ...mapped,
@@ -931,14 +936,12 @@ export default function HomePage({
 
     return availableFilters
       .filter((filterItem) => filterItem.active)
+      .filter((filterItem) => filterItem.showOnLanding !== false)
       .filter((filterItem) =>
-        filterItem.value === "All"
-          ? true
-          : productSource.some(
-              (product) =>
-                product.category === filterItem.value &&
-                product.active !== false,
-            ),
+        productSource.some(
+          (product) =>
+            product.category === filterItem.value && product.active !== false,
+        ),
       )
       .sort((a, b) => a.order - b.order);
   }, [productSource, availableFilters]);

@@ -21,6 +21,7 @@ const defaultFilters: FilterPanelItem[] = [
     value: "All",
     active: true,
     highlight: true,
+    showOnLanding: true,
     order: 1,
   },
   {
@@ -29,6 +30,7 @@ const defaultFilters: FilterPanelItem[] = [
     value: "Clothing",
     active: true,
     highlight: false,
+    showOnLanding: true,
     order: 2,
   },
   {
@@ -37,6 +39,7 @@ const defaultFilters: FilterPanelItem[] = [
     value: "Ceramic",
     active: true,
     highlight: false,
+    showOnLanding: true,
     order: 3,
   },
 ];
@@ -55,6 +58,7 @@ const normalizeFilters = (payload: unknown): FilterPanelItem[] => {
       value: typeof item.value === "string" ? item.value : "",
       active: item.active !== false,
       highlight: item.highlight === true,
+      showOnLanding: item.showOnLanding !== false,
       order: Number.isFinite(item.order) ? Number(item.order) : index + 1,
     }))
     .filter((item) => item.label.trim() && item.value.trim())
@@ -648,6 +652,32 @@ export default function ContentClient() {
                   />
                   Highlight
                 </label>
+                <div className="inline-flex items-center gap-2 text-xs font-semibold text-muted">
+                  <span>Show on Landing</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={filter.showOnLanding !== false}
+                    onClick={() =>
+                      updateFilter(filter.id, {
+                        showOnLanding: filter.showOnLanding === false,
+                      })
+                    }
+                    className={`relative h-6 w-12 rounded-full transition ${
+                      filter.showOnLanding !== false
+                        ? "bg-black"
+                        : "bg-gray-300"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${
+                        filter.showOnLanding !== false
+                          ? "translate-x-6"
+                          : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
             </article>
           ))}
@@ -666,6 +696,7 @@ export default function ContentClient() {
                   value: "",
                   active: true,
                   highlight: false,
+                  showOnLanding: true,
                   order: prev.length + 1,
                 },
               ])

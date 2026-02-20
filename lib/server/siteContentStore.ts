@@ -59,6 +59,7 @@ const defaultFilters: FilterPanelItem[] = [
     value: "All",
     active: true,
     highlight: true,
+    showOnLanding: true,
     order: 1,
   },
   {
@@ -67,6 +68,7 @@ const defaultFilters: FilterPanelItem[] = [
     value: "Clothing",
     active: true,
     highlight: false,
+    showOnLanding: true,
     order: 2,
   },
   {
@@ -75,6 +77,7 @@ const defaultFilters: FilterPanelItem[] = [
     value: "Ceramic",
     active: true,
     highlight: false,
+    showOnLanding: true,
     order: 3,
   },
 ];
@@ -104,6 +107,7 @@ const toFilterPanelItem = (value: unknown): FilterPanelItem | null => {
     value: normalizedValue,
     active: value.active !== false,
     highlight: value.highlight === true,
+    showOnLanding: value.showOnLanding !== false,
     order: Number.isFinite(parsedOrder) ? parsedOrder : 0,
   };
 };
