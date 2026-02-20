@@ -14,7 +14,7 @@ export type Order = {
   paymentMethod: string;
   deliveryZone: string;
   customer: CustomerInfo;
-  status: "pending" | "confirmed" | "delivered";
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "failed";
 };
 
 const ORDERS_KEY = "tacin-orders";

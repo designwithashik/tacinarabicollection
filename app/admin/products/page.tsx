@@ -47,7 +47,7 @@ export default function AdminProductsPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<AdminProduct[]>("/admin/products");
+      const data = await apiFetch<AdminProduct[]>("/api/admin/products");
       setProducts(data ?? []);
     } catch (loadError) {
       if (loadError instanceof Error && loadError.message === "UNAUTHORIZED") {
@@ -108,12 +108,12 @@ export default function AdminProductsPage() {
 
     try {
       if (editingProductId) {
-        await apiFetch(`/admin/products/${editingProductId}`, {
+        await apiFetch(`/api/admin/products/${editingProductId}`, {
           method: "PUT",
           body: JSON.stringify(payload),
         });
       } else {
-        await apiFetch("/admin/products", {
+        await apiFetch("/api/admin/products", {
           method: "POST",
           body: JSON.stringify(payload),
         });
@@ -136,7 +136,7 @@ export default function AdminProductsPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await apiFetch(`/admin/products/${productId}`, { method: "DELETE" });
+      await apiFetch(`/api/admin/products/${productId}/delete`, { method: "DELETE" });
       await loadProducts();
     } catch (deleteError) {
       if (deleteError instanceof Error && deleteError.message === "UNAUTHORIZED") {

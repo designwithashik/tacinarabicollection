@@ -2,10 +2,7 @@ export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!baseUrl) {
-    throw new Error("Missing NEXT_PUBLIC_API_URL");
-  }
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${baseUrl}${normalizedPath}`;

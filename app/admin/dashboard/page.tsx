@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { useEffect, useMemo, useState } from "react";
+import { getStoredOrders, type Order } from "@/lib/orders";
+
+type InventoryProduct = {
+  id: string;
+  name: string;
+  stock: number;
+  lowStockThreshold?: number;
+};
 
 type DashboardSummary = {
   totalProducts: number;
@@ -11,13 +18,6 @@ type DashboardSummary = {
   todayOrders: number;
   todayRevenue: number;
   lowStockCount: number;
-};
-
-type LowStockProduct = {
-  id: number;
-  name: string;
-  stock: number;
-  low_stock_threshold: number;
 };
 
 const currency = (value: number) => `৳${Number(value ?? 0).toLocaleString("en-BD")}`;
@@ -33,40 +33,49 @@ const summaryCards = (summary: DashboardSummary) => [
 ];
 
 export default function AdminDashboardPage() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [lowStockItems, setLowStockItems] = useState<LowStockProduct[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<InventoryProduct[]>([]);
 
   useEffect(() => {
-    let mounted = true;
+    setOrders(getStoredOrders());
 
-    const loadDashboard = async () => {
-      setLoading(true);
-      setError(null);
+    const loadProducts = async () => {
       try {
-        const [summaryData, lowStockData] = await Promise.all([
-          apiFetch<DashboardSummary>("/admin/dashboard/summary"),
-          apiFetch<LowStockProduct[]>("/admin/products/low-stock"),
-        ]);
-
-        if (!mounted) return;
-        setSummary(summaryData);
-        setLowStockItems(lowStockData ?? []);
-      } catch (loadError) {
-        if (!mounted) return;
-        setError(loadError instanceof Error ? loadError.message : "Failed to load dashboard.");
-      } finally {
-        if (mounted) setLoading(false);
+        const response = await fetch("/api/admin/products", { cache: "no-store" });
+        if (!response.ok) return;
+        const data = (await response.json()) as InventoryProduct[];
+        setProducts(data ?? []);
+      } catch {
+        setProducts([]);
       }
     };
 
-    loadDashboard();
-
-    return () => {
-      mounted = false;
-    };
+    void loadProducts();
   }, []);
+
+  const summary = useMemo<DashboardSummary>(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const todayOrders = orders.filter((order) => order.createdAt.startsWith(today));
+    const pendingOrders = orders.filter((order) => order.status === "pending").length;
+    const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total ?? 0), 0);
+    const todayRevenue = todayOrders.reduce((sum, order) => sum + Number(order.total ?? 0), 0);
+    const lowStockCount = products.filter((product) => product.stock <= Number(product.lowStockThreshold ?? 5)).length;
+
+    return {
+      totalProducts: products.length,
+      totalOrders: orders.length,
+      pendingOrders,
+      totalRevenue,
+      todayOrders: todayOrders.length,
+      todayRevenue,
+      lowStockCount,
+    };
+  }, [orders, products]);
+
+  const lowStockItems = useMemo(
+    () => products.filter((product) => product.stock <= Number(product.lowStockThreshold ?? 5)).slice(0, 10),
+    [products]
+  );
 
   return (
     <section className="space-y-6">
@@ -75,34 +84,18 @@ export default function AdminDashboardPage() {
         <p className="mt-1 text-sm text-muted">Operational summary and low-stock signals.</p>
       </div>
 
-      {error ? <p className="rounded-2xl bg-white p-4 text-sm text-red-600 shadow-soft">{error}</p> : null}
-
-      {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 7 }).map((_, index) => (
-            <div key={index} className="h-24 animate-pulse rounded-2xl bg-white shadow-soft" />
-          ))}
-        </div>
-      ) : summary ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {summaryCards(summary).map((card) => (
-            <div key={card.label} className="rounded-2xl bg-white p-4 shadow-soft">
-              <p className="text-xs font-semibold text-muted">{card.label}</p>
-              <p className="mt-2 text-xl font-semibold text-ink">{card.value}</p>
-            </div>
-          ))}
-        </div>
-      ) : null}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {summaryCards(summary).map((card) => (
+          <div key={card.label} className="rounded-2xl bg-white p-4 shadow-soft">
+            <p className="text-xs font-semibold text-muted">{card.label}</p>
+            <p className="mt-2 text-xl font-semibold text-ink">{card.value}</p>
+          </div>
+        ))}
+      </div>
 
       <div className="rounded-3xl bg-white p-6 shadow-soft">
         <h3 className="text-lg font-semibold">Low Stock Items</h3>
-        {loading ? (
-          <div className="mt-4 space-y-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="h-10 animate-pulse rounded-xl bg-[#f7efe9]" />
-            ))}
-          </div>
-        ) : lowStockItems.length === 0 ? (
+        {lowStockItems.length === 0 ? (
           <p className="mt-4 text-sm text-muted">No low stock items right now.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
@@ -119,7 +112,7 @@ export default function AdminDashboardPage() {
                   <tr key={product.id} className="border-t border-[#f0e4da]">
                     <td className="py-3 font-medium">{product.name}</td>
                     <td className="py-3">{product.stock}</td>
-                    <td className="py-3">{product.low_stock_threshold}</td>
+                    <td className="py-3">{product.lowStockThreshold ?? 5}</td>
                   </tr>
                 ))}
               </tbody>
