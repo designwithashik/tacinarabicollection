@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type { AnnouncementContent, CarouselItem } from "@/lib/siteContent";
@@ -239,7 +240,14 @@ export default function ContentClient() {
               <div className="space-y-3">
                 <div className="relative h-36 w-full overflow-hidden rounded-lg border border-[#e6d8ce] bg-[#f6f1ed]">
                   {item.imageUrl ? (
-                    <img src={item.imageUrl} alt={item.title || `Slide ${index + 1}`} className="h-full w-full object-cover" />
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.title || `Slide ${index + 1}`}
+                      fill
+                      sizes="220px"
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     <div className="flex h-full items-center justify-center text-xs text-muted">No preview</div>
                   )}

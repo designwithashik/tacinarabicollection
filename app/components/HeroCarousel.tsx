@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { TouchEvent } from "react";
 import clsx from "clsx";
@@ -126,9 +127,12 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
               index === currentIndex ? "scale-100" : "scale-[0.985]"
             )}
           >
-            <img
+            <Image
               src={slide.imageUrl || "/images/product-1.svg"}
               alt={slide.title || "Carousel slide"}
+              fill
+              priority={index === 0}
+              sizes="100vw"
               className="absolute inset-0 h-full w-full object-cover brightness-75"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />

@@ -3,7 +3,7 @@
 
 import Image from "next/image";
 import clsx from "clsx";
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/products";
 import QuickView from "./QuickView";
 
@@ -34,7 +34,7 @@ type Props = {
   isRouting?: boolean;
 };
 
-export default function ProductCard({
+function ProductCardComponent({
   product,
   selectedSize,
   quantity,
@@ -274,3 +274,25 @@ export default function ProductCard({
     </div>
   );
 }
+
+
+const MemoizedProductCard = memo(ProductCardComponent, (prev, next) => {
+  return (
+    prev.product.id === next.product.id &&
+    prev.product.image === next.product.image &&
+    prev.product.name === next.product.name &&
+    prev.product.price === next.product.price &&
+    prev.selectedSize === next.selectedSize &&
+    prev.quantity === next.quantity &&
+    prev.addState === next.addState &&
+    prev.quantityFeedback === next.quantityFeedback &&
+    prev.isRouting === next.isRouting &&
+    prev.showBadge === next.showBadge &&
+    prev.statusLabel === next.statusLabel &&
+    prev.stockLabel === next.stockLabel
+  );
+});
+
+MemoizedProductCard.displayName = "ProductCard";
+
+export default MemoizedProductCard;

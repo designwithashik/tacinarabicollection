@@ -1341,6 +1341,7 @@ export default function HomePage({
                       alt={item.name}
                       width={60}
                       height={80}
+                      loading="lazy"
                       className="h-20 w-20 rounded-lg object-cover"
                     />
                     <div className="flex-1">
@@ -1458,6 +1459,7 @@ export default function HomePage({
                                   alt={item.name}
                                   width={60}
                                   height={86}
+                                  loading="lazy"
                                   className="rounded-lg object-cover w-[60px] h-[86px] shrink-0"
                                   unoptimized={false}
                                 />
