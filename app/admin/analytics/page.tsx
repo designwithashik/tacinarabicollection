@@ -88,31 +88,6 @@ export default function AdminAnalytics() {
             Client-side revenue insights and payment mix.
           </p>
         </div>
-
-        <div className="grid gap-3 md:grid-cols-4">
-          <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm">
-            <p className="text-xs text-muted">Total Orders</p>
-            <p className="font-semibold">{totalOrders}</p>
-          </div>
-          <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm">
-            <p className="text-xs text-muted">Pending</p>
-            <p className="font-semibold">{pendingCount}</p>
-          </div>
-          <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm">
-            <p className="text-xs text-muted">Sent</p>
-            <p className="font-semibold">{sentCount}</p>
-          </div>
-          <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm">
-            <p className="text-xs text-muted">Failed</p>
-            <p className="font-semibold">{failedCount}</p>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm">
-          <p className="text-xs text-muted">Revenue (excluding failed)</p>
-          <p className="font-semibold">৳{revenue.toLocaleString("en-BD")}</p>
-        </div>
-
         <AnalyticsCharts orders={orders} />
       </div>
     </section>
