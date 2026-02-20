@@ -1,7 +1,20 @@
 # tacinarabicollection
 
-Mobile-first e-commerce storefront with WhatsApp checkout, client-side cart
-persistence, and an optional admin panel for inventory and orders.
+Mobile-first e-commerce storefront with WhatsApp checkout, client-side order
+persistence, and an admin inventory panel backed by server-side KV.
+
+## Runtime architecture (current)
+
+- **Products**: persisted on the server in KV and exposed through Next.js API
+  routes.
+  - Admin inventory uses `GET/POST/PUT/DELETE /api/admin/products...`
+  - Landing/storefront uses `GET /api/products`
+- **Orders**: intentionally client-side only in browser `localStorage` under
+  key `tacin-orders`.
+  - No Worker order pipeline.
+  - No centralized server persistence for orders.
+- **Media uploads**: ImageKit direct upload with auth parameters from
+  `/api/auth/imagekit`.
 
 ## Refinement phases
 Use these phases to evaluate and improve changes without losing UX features:
@@ -12,12 +25,11 @@ Use these phases to evaluate and improve changes without losing UX features:
    (hero chips, cart bump, toast notifications).
 3. **Content density**: Confirm hero copy, trust blocks, and footer content are
    balanced for mobile readability.
-4. **Admin tooling**: Validate admin inventory edits and order logging if you
-   enable those routes.
+4. **Admin tooling**: Validate admin inventory edits and local order logging.
 5. **Performance**: Run `next build` and verify images, fonts, and CSS load as
    expected in production.
 
-## Environment setup for persistent admin inventory
+## Environment setup
 
 Create `.env.local` (and mirror these in your host provider settings):
 
@@ -52,26 +64,3 @@ enhanced UX/animation version, prefer the "ours/current" side for these files:
 3. **Remove conflict markers** and save the file.
 4. **Search for leftovers**: `rg -n "<<<<<<<|=======|>>>>>>>"`.
 5. **Test locally**: `npm install` then `npm run dev` or `npm run build`.
-
-If you need to compare sides before choosing, use:
-
-```bash
-git checkout --theirs path/to/file   # incoming changes
-git checkout --ours path/to/file     # current branch changes
-```
-
-Then reopen the file to confirm the final output includes your animations and
-UX enhancements.
-
-
-## Deploy on Cloudflare Pages (free tier friendly)
-
-1. Push this repo to GitHub/GitLab.
-2. In Cloudflare Pages, create a new project and connect the repo.
-3. Use build command: `npm run build:pages`
-4. Use build output directory: `.vercel/output/static`
-5. Set environment variables in Pages settings (same as `.env.local`).
-6. (Optional) Run local preview: `npm run preview:pages`
-
-This repo is configured with `wrangler.toml` and `@cloudflare/next-on-pages`
-for Pages deployments.

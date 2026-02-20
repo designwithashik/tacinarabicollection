@@ -2,12 +2,9 @@ export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const url = `${baseUrl}${normalizedPath}`;
 
-  const response = await fetch(url, {
+  const response = await fetch(normalizedPath, {
     ...options,
     credentials: "include",
     headers: {

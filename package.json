@@ -5,12 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:pages": "npx @cloudflare/next-on-pages",
-    "preview:pages": "wrangler pages dev .vercel/output/static",
-    "deploy:worker": "wrangler deploy",
-    "deploy:worker:dry": "wrangler deploy --dry-run",
-    "deploy:pages": "wrangler pages deploy .vercel/output/static --project-name=tacin-arabi",
-    "postinstall": "npm --prefix worker install --no-fund --no-audit"
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
     "clsx": "^2.1.1",
