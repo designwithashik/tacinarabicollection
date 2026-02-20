@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Order } from "../../../lib/orders";
-import { getStoredOrders } from "../../../lib/orders";
+
+type OrderStatus = "pending" | "delivering" | "sent" | "failed";
+
+const orderStatuses: OrderStatus[] = [
+  "pending",
+  "delivering",
+  "sent",
+  "failed",
+];
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -10,14 +18,77 @@ export default function AdminOrders() {
   const [deliveryFilter, setDeliveryFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
+  const loadOrders = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/orders", { cache: "no-store" });
+      if (!response.ok) return;
+      const data = (await response.json()) as Order[];
+      setOrders(Array.isArray(data) ? data : []);
+    } catch {
+      setOrders([]);
+    }
+  }, []);
+
+  const emitOrdersUpdated = () => {
+    const stamp = Date.now().toString();
+    localStorage.setItem("orders-updated", stamp);
+    window.dispatchEvent(new Event("orders-updated"));
+  };
+
   useEffect(() => {
-    const loadOrders = async () => {
-      const next = await getStoredOrders();
-      setOrders(next);
+    void loadOrders();
+
+    const handler = () => {
+      void loadOrders();
     };
 
-    void loadOrders();
-  }, []);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        handler();
+      }
+    };
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "orders-updated") {
+        handler();
+      }
+    };
+
+    window.addEventListener("focus", handler);
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("orders-updated", handler);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("focus", handler);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("orders-updated", handler);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [loadOrders]);
+
+  const updateStatus = async (id: string, status: OrderStatus) => {
+    await fetch("/api/admin/orders", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
+
+    emitOrdersUpdated();
+    await loadOrders();
+  };
+
+  const deleteOrder = async (id: string) => {
+    await fetch(`/api/admin/orders?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+
+    if (selectedOrder?.id === id) {
+      setSelectedOrder(null);
+    }
+    emitOrdersUpdated();
+    await loadOrders();
+  };
 
   const filteredOrders = orders.filter((order) => {
     const paymentMatch =
@@ -82,6 +153,7 @@ export default function AdminOrders() {
                     <th className="px-4 py-3">Date</th>
                     <th className="px-4 py-3">Delivery</th>
                     <th className="px-4 py-3">Payment</th>
+                    <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Total</th>
                     <th className="px-4 py-3 text-right">Action</th>
                   </tr>
@@ -100,17 +172,44 @@ export default function AdminOrders() {
                         {deliveryLabel(order.deliveryZone)}
                       </td>
                       <td className="px-4 py-3">{order.paymentMethod}</td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={order.status}
+                          onChange={(event) =>
+                            void updateStatus(
+                              order.id,
+                              event.target.value as OrderStatus,
+                            )
+                          }
+                          className="w-full rounded-lg border border-gray-200 px-2 py-1"
+                        >
+                          {orderStatuses.map((status) => (
+                            <option key={status} value={status}>
+                              {status}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
                       <td className="px-4 py-3 font-semibold">
                         ৳{order.total}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedOrder(order)}
-                          className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
-                        >
-                          View
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOrder(order)}
+                            className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void deleteOrder(order.id)}
+                            className="bg-red-600 text-white rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
