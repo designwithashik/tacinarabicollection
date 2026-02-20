@@ -21,8 +21,8 @@ export default function AdminLayout({
             <Link className="rounded-full border border-[#e6d8ce] px-3 py-2" href="/admin/dashboard">
               Dashboard
             </Link>
-            <Link className="rounded-full border border-[#e6d8ce] px-3 py-2" href="/admin/products">
-              Products
+            <Link className="rounded-full border border-[#e6d8ce] px-3 py-2" href="/admin/inventory">
+              Inventory
             </Link>
             <Link className="rounded-full border border-[#e6d8ce] px-3 py-2" href="/admin/orders">
               Orders

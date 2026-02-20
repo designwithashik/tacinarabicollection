@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 
 export default function AdminSettings() {
-  const [uploadcareKey, setUploadcareKey] = useState("");
+  const [imageKitPublicKey, setImageKitPublicKey] = useState("");
   const [whatsapp, setWhatsapp] = useState("+8801522119189");
 
   useEffect(() => {
-    const storedKey = localStorage.getItem("tacin-uploadcare-key");
-    if (storedKey) setUploadcareKey(storedKey);
+    const storedKey = localStorage.getItem("tacin-imagekit-public-key");
+    if (storedKey) setImageKitPublicKey(storedKey);
     const storedWhatsapp = localStorage.getItem("tacin-whatsapp");
     if (storedWhatsapp) setWhatsapp(storedWhatsapp);
   }, []);
@@ -24,11 +24,11 @@ export default function AdminSettings() {
 
       <div className="rounded-3xl bg-white p-6 shadow-soft">
         <label className="text-xs font-semibold">
-          Uploadcare Public Key
+          ImageKit Public Key (local note)
           <input
             className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-            value={uploadcareKey}
-            onChange={(event) => setUploadcareKey(event.target.value)}
+            value={imageKitPublicKey}
+            onChange={(event) => setImageKitPublicKey(event.target.value)}
           />
         </label>
         <label className="mt-4 block text-xs font-semibold">
@@ -42,7 +42,7 @@ export default function AdminSettings() {
         <button
           type="button"
           onClick={() => {
-            localStorage.setItem("tacin-uploadcare-key", uploadcareKey);
+            localStorage.setItem("tacin-imagekit-public-key", imageKitPublicKey);
             localStorage.setItem("tacin-whatsapp", whatsapp);
           }}
           className="mt-4 min-h-[44px] rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white"

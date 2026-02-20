@@ -1,14 +1,14 @@
+const isAbsoluteUrl = (value: string) => /^https?:\/\//i.test(value);
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!baseUrl) {
-    throw new Error("Missing NEXT_PUBLIC_API_URL");
-  }
-
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const url = `${baseUrl}${normalizedPath}`;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.trim() ?? "";
+  const url = isAbsoluteUrl(normalizedPath)
+    ? normalizedPath
+    : `${baseUrl}${normalizedPath}`;
 
   const response = await fetch(url, {
     ...options,

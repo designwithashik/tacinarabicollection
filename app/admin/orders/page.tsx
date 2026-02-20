@@ -1,18 +1,39 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { getStoredOrders, setStoredOrders, type Order } from "@/lib/orders";
 
+type AdminOrderStatus = "pending" | "confirmed" | "delivered";
 type AdminOrder = {
-  id: number;
+  id: string;
   customer_name: string;
   phone: string;
   total_amount: number;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "failed";
+  status: AdminOrderStatus;
   created_at: string;
 };
 
-const statuses: AdminOrder["status"][] = ["pending", "confirmed", "shipped", "delivered", "failed"];
+const statuses: AdminOrderStatus[] = ["pending", "confirmed", "delivered"];
+
+const toAdminOrder = (order: Order): AdminOrder => ({
+  id: order.id,
+  customer_name: order.customer.name,
+  phone: order.customer.phone,
+  total_amount: Number(order.total ?? 0),
+  status: order.status,
+  created_at: order.createdAt,
+});
+
+const toCsv = (rows: AdminOrder[]) => {
+  const header = ["id", "customer_name", "phone", "total_amount", "status", "created_at"];
+  const data = rows.map((row) =>
+    [row.id, row.customer_name, row.phone, row.total_amount, row.status, row.created_at]
+      .map((value) => `"${String(value).replaceAll('"', '""')}"`)
+      .join(",")
+  );
+
+  return [header.join(","), ...data].join("\n");
+};
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -20,84 +41,51 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
-  const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
-  const loadOrders = async (filterStatus?: string, filterDate?: string) => {
+  useEffect(() => {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams();
-      if (filterStatus) params.set("status", filterStatus);
-      if (filterDate) params.set("date", filterDate);
-      const query = params.toString();
-      const data = await apiFetch<AdminOrder[]>(`/admin/orders${query ? `?${query}` : ""}`);
-      setOrders(data ?? []);
+      setOrders(getStoredOrders().map(toAdminOrder));
     } catch (loadError) {
-      if (loadError instanceof Error && loadError.message === "UNAUTHORIZED") {
-        setError("Auth is disabled in temporary mode.");
-        return;
-      }
       setError(loadError instanceof Error ? loadError.message : "Unable to load orders.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    void loadOrders(statusFilter, dateFilter);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, dateFilter]);
+  const displayedOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const statusMatches = !statusFilter || order.status === statusFilter;
+      const dateMatches = !dateFilter || order.created_at.startsWith(dateFilter);
+      return statusMatches && dateMatches;
+    });
+  }, [dateFilter, orders, statusFilter]);
 
-  const displayedOrders = useMemo(() => orders, [orders]);
-
-  const updateOrderStatus = async (orderId: number, nextStatus: AdminOrder["status"]) => {
-    const previousOrders = orders;
+  const updateOrderStatus = (orderId: string, nextStatus: AdminOrderStatus) => {
     setUpdatingOrderId(orderId);
     setError(null);
-    setOrders((prev) => prev.map((order) => (order.id === orderId ? { ...order, status: nextStatus } : order)));
 
     try {
-      await apiFetch<{ success: boolean }>(`/admin/orders/${orderId}/status`, {
-        method: "PUT",
-        body: JSON.stringify({ status: nextStatus }),
-      });
+      const storedOrders = getStoredOrders();
+      const nextOrders = storedOrders.map((order) =>
+        order.id === orderId ? { ...order, status: nextStatus } : order
+      );
+      setStoredOrders(nextOrders);
+      setOrders(nextOrders.map(toAdminOrder));
     } catch (updateError) {
-      setOrders(previousOrders);
-      if (updateError instanceof Error && updateError.message === "UNAUTHORIZED") {
-        setError("Auth is disabled in temporary mode.");
-        return;
-      }
       setError(updateError instanceof Error ? updateError.message : "Failed to update order status.");
     } finally {
       setUpdatingOrderId(null);
     }
   };
 
-  const handleExportCsv = async () => {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiBaseUrl) {
-      setError("Missing NEXT_PUBLIC_API_URL");
-      return;
-    }
-
+  const handleExportCsv = () => {
     setError(null);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/admin/orders/export`, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      if (response.status === 401) {
-        setError("Auth is disabled in temporary mode.");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to export CSV.");
-      }
-
-      const blob = await response.blob();
+      const blob = new Blob([toCsv(displayedOrders)], { type: "text/csv;charset=utf-8;" });
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = objectUrl;
@@ -182,7 +170,7 @@ export default function AdminOrdersPage() {
               <tbody>
                 {displayedOrders.map((order) => (
                   <tr key={order.id} className="border-t border-[#f0e4da]">
-                    <td className="py-3 font-medium">#{order.id}</td>
+                    <td className="py-3 font-medium">#{order.id.slice(0, 8)}</td>
                     <td className="py-3">{order.customer_name}</td>
                     <td className="py-3">{order.phone}</td>
                     <td className="py-3">৳{Number(order.total_amount ?? 0).toLocaleString("en-BD")}</td>
@@ -191,7 +179,7 @@ export default function AdminOrdersPage() {
                         className="rounded-xl border border-[#e6d8ce] px-3 py-1 text-xs"
                         value={order.status}
                         disabled={updatingOrderId === order.id}
-                        onChange={(event) => updateOrderStatus(order.id, event.target.value as AdminOrder["status"])}
+                        onChange={(event) => updateOrderStatus(order.id, event.target.value as AdminOrderStatus)}
                       >
                         {statuses.map((status) => (
                           <option key={status} value={status}>
@@ -202,7 +190,7 @@ export default function AdminOrdersPage() {
                     </td>
                     <td className="py-3">{new Date(order.created_at).toLocaleString()}</td>
                     <td className="py-3 text-xs text-muted">
-                      {updatingOrderId === order.id ? "Saving..." : "Updated live"}
+                      {updatingOrderId === order.id ? "Saving..." : "Stored locally"}
                     </td>
                   </tr>
                 ))}
