@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { useEffect, useMemo, useState } from "react";
+import { getStoredOrders, type Order } from "@/lib/orders";
 
 type DashboardSummary = {
   totalProducts: number;
@@ -11,13 +11,6 @@ type DashboardSummary = {
   todayOrders: number;
   todayRevenue: number;
   lowStockCount: number;
-};
-
-type LowStockProduct = {
-  id: number;
-  name: string;
-  stock: number;
-  low_stock_threshold: number;
 };
 
 const currency = (value: number) => `৳${Number(value ?? 0).toLocaleString("en-BD")}`;
@@ -32,41 +25,36 @@ const summaryCards = (summary: DashboardSummary) => [
   { label: "Low Stock Count", value: summary.lowStockCount },
 ];
 
+const getTodayKey = () => new Date().toISOString().slice(0, 10);
+
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [lowStockItems, setLowStockItems] = useState<LowStockProduct[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    let mounted = true;
-
-    const loadDashboard = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [summaryData, lowStockData] = await Promise.all([
-          apiFetch<DashboardSummary>("/admin/dashboard/summary"),
-          apiFetch<LowStockProduct[]>("/admin/products/low-stock"),
-        ]);
-
-        if (!mounted) return;
-        setSummary(summaryData);
-        setLowStockItems(lowStockData ?? []);
-      } catch (loadError) {
-        if (!mounted) return;
-        setError(loadError instanceof Error ? loadError.message : "Failed to load dashboard.");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    loadDashboard();
-
-    return () => {
-      mounted = false;
-    };
+    setOrders(getStoredOrders());
+    setLoading(false);
   }, []);
+
+  const summary = useMemo<DashboardSummary>(() => {
+    const todayKey = getTodayKey();
+    const totalOrders = orders.length;
+    const pendingOrders = orders.filter((order) => order.status === "pending").length;
+    const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total ?? 0), 0);
+    const todayOrdersList = orders.filter(
+      (order) => new Date(order.createdAt).toISOString().slice(0, 10) === todayKey
+    );
+
+    return {
+      totalProducts: 0,
+      totalOrders,
+      pendingOrders,
+      totalRevenue,
+      todayOrders: todayOrdersList.length,
+      todayRevenue: todayOrdersList.reduce((sum, order) => sum + Number(order.total ?? 0), 0),
+      lowStockCount: 0,
+    };
+  }, [orders]);
 
   return (
     <section className="space-y-6">
@@ -75,15 +63,13 @@ export default function AdminDashboardPage() {
         <p className="mt-1 text-sm text-muted">Operational summary and low-stock signals.</p>
       </div>
 
-      {error ? <p className="rounded-2xl bg-white p-4 text-sm text-red-600 shadow-soft">{error}</p> : null}
-
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 7 }).map((_, index) => (
             <div key={index} className="h-24 animate-pulse rounded-2xl bg-white shadow-soft" />
           ))}
         </div>
-      ) : summary ? (
+      ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {summaryCards(summary).map((card) => (
             <div key={card.label} className="rounded-2xl bg-white p-4 shadow-soft">
@@ -92,34 +78,36 @@ export default function AdminDashboardPage() {
             </div>
           ))}
         </div>
-      ) : null}
+      )}
 
       <div className="rounded-3xl bg-white p-6 shadow-soft">
-        <h3 className="text-lg font-semibold">Low Stock Items</h3>
+        <h3 className="text-lg font-semibold">Recent Orders</h3>
         {loading ? (
           <div className="mt-4 space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="h-10 animate-pulse rounded-xl bg-[#f7efe9]" />
             ))}
           </div>
-        ) : lowStockItems.length === 0 ? (
-          <p className="mt-4 text-sm text-muted">No low stock items right now.</p>
+        ) : orders.length === 0 ? (
+          <p className="mt-4 text-sm text-muted">No orders available in this browser yet.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[520px] text-left text-sm">
               <thead>
                 <tr className="text-xs uppercase tracking-wide text-muted">
-                  <th className="py-2">Product Name</th>
-                  <th className="py-2">Stock</th>
-                  <th className="py-2">Threshold</th>
+                  <th className="py-2">Order ID</th>
+                  <th className="py-2">Customer</th>
+                  <th className="py-2">Total</th>
+                  <th className="py-2">Date</th>
                 </tr>
               </thead>
               <tbody>
-                {lowStockItems.map((product) => (
-                  <tr key={product.id} className="border-t border-[#f0e4da]">
-                    <td className="py-3 font-medium">{product.name}</td>
-                    <td className="py-3">{product.stock}</td>
-                    <td className="py-3">{product.low_stock_threshold}</td>
+                {orders.slice(0, 10).map((order) => (
+                  <tr key={order.id} className="border-t border-[#f0e4da]">
+                    <td className="py-3 font-medium">#{order.id}</td>
+                    <td className="py-3">{order.customer.name}</td>
+                    <td className="py-3">৳{Number(order.total ?? 0).toLocaleString("en-BD")}</td>
+                    <td className="py-3">{new Date(order.createdAt).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
