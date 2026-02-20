@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
@@ -206,6 +206,8 @@ export default function HomePage({
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
+  const trustBarRef = useRef<HTMLDivElement | null>(null);
+  const isTrustBarInView = useInView(trustBarRef, { once: true, amount: 0.35 });
 
   const showToast = (nextToast: ToastState) => {
     setToast(nextToast);
@@ -784,7 +786,13 @@ export default function HomePage({
       </section>
 
       <section className="bg-black py-2 text-white">
-        <div className="mx-auto max-w-6xl px-4">
+        <div
+          ref={trustBarRef}
+          className={clsx(
+            "mx-auto max-w-6xl px-4 transition-all duration-700 ease-out",
+            isTrustBarInView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
+          )}
+        >
           <div className="relative overflow-hidden whitespace-nowrap">
             <div className="inline-block min-w-full animate-marquee text-[13px] font-medium tracking-wide">
               {announcementText} &nbsp;&nbsp;&nbsp; {announcementText}
