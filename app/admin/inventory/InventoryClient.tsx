@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import AdminToast from "@/components/admin/AdminToast";
 import type { AdminProduct } from "../../../lib/inventory";
+import type { FilterPanelItem } from "@/lib/siteContent";
 import { validateImageUrl } from "../../../lib/images";
 
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
@@ -43,6 +44,7 @@ export default function AdminInventory() {
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [filterOptions, setFilterOptions] = useState<FilterPanelItem[]>([]);
   const isEditing = Boolean(draft.id);
 
   const hasImageKitConfig = useMemo(
@@ -59,6 +61,44 @@ export default function AdminInventory() {
     const timer = window.setTimeout(() => setToast(null), 2600);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  const loadFilterOptions = async () => {
+    try {
+      const res = await fetch("/api/content/filters", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as FilterPanelItem[];
+      setFilterOptions(
+        (data || [])
+          .filter((item) => item?.active)
+          .sort((a, b) => a.order - b.order),
+      );
+    } catch {
+      setFilterOptions((current) => current);
+    }
+  };
+
+  useEffect(() => {
+    const handler = () => {
+      void loadFilterOptions();
+    };
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "site-content-updated") {
+        handler();
+      }
+    };
+
+    handler();
+    window.addEventListener("focus", handler);
+    window.addEventListener("site-content-updated", handler);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("focus", handler);
+      window.removeEventListener("site-content-updated", handler);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   const loadProducts = async () => {
     setError(null);
@@ -265,6 +305,18 @@ export default function AdminInventory() {
     }
   };
 
+  const derivedCategoryOptions = [
+    ...new Set(items.map((item) => item.category).filter(Boolean)),
+  ];
+
+  const categoryOptions =
+    filterOptions.length > 0
+      ? filterOptions.map((item) => ({ value: item.value, label: item.label }))
+      : derivedCategoryOptions.map((category) => ({
+          value: category,
+          label: category,
+        }));
+
   return (
     <section className="space-y-6">
       <div className="rounded-2xl bg-white p-6 shadow-md space-y-6">
@@ -333,8 +385,12 @@ export default function AdminInventory() {
                   }))
                 }
               >
-                <option value="Clothing">Clothing</option>
-                <option value="Ceramic">Ceramic</option>
+                <option value="">Select Category</option>
+                {categoryOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="text-xs font-semibold">
