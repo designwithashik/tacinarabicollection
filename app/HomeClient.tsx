@@ -219,8 +219,7 @@ export default function HomePage({
   const [toast, setToast] = useState<ToastState | null>(null);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [draftFilters, setDraftFilters] = useState<Filters>(defaultFilters);
-  const [selectedCategory, setSelectedCategory] =
-    useState<CategoryFilter>("All");
+  const [activeFilter, setActiveFilter] = useState<CategoryFilter | null>(null);
   const [activeSheet, setActiveSheet] = useState<DrawerTab | null>(null);
   const [detailsProduct, setDetailsProduct] = useState<Product | null>(null);
   const [showCart, setShowCart] = useState(false);
@@ -722,8 +721,6 @@ export default function HomePage({
         ? "28s"
         : "20s";
 
-  const activeFilter = selectedCategory === "All" ? null : selectedCategory;
-
   const categoryFilteredProducts = useMemo(() => {
     if (!activeFilter) return productSource;
     return productSource.filter((product) => product.category === activeFilter);
@@ -812,7 +809,7 @@ export default function HomePage({
 
   const clearFilters = () => {
     setDraftFilters(defaultFilters);
-    setSelectedCategory("All");
+    setActiveFilter(null);
   };
 
   const updateCartQuantity = async (index: number, quantity: number) => {
@@ -897,60 +894,26 @@ export default function HomePage({
   const isSummaryLoading = !hasMounted || isCartHydrating;
   const hasPaymentProof = Boolean(transactionId.trim());
 
-  const fallbackAutoFilters = useMemo(() => {
-    const autoFilters = [
-      ...new Set(productSource.map((product) => product.category)),
-    ];
-
-    const mapped = autoFilters.map((category, index) => ({
-      id: `auto-${String(category).toLowerCase().replace(/\s+/g, "-")}`,
-      label: String(category),
-      value: String(category),
-      active: true,
-      highlight: false,
-      showOnLanding: true,
-      order: index + 1,
-    }));
-
-    return [
-      {
-        id: "all",
-        label: "All",
-        value: "All",
-        active: true,
-        highlight: true,
-        showOnLanding: true,
-        order: 0,
-      },
-      ...mapped,
-    ];
-  }, [productSource]);
-
-  const availableFilters =
-    Array.isArray(filterConfig) && filterConfig.length > 0
-      ? filterConfig
-      : fallbackAutoFilters;
-
   const visibleFilters = useMemo(() => {
-    if (!productSource.length || !availableFilters.length) return [];
+    if (!filterConfig?.length) return [];
 
-    return availableFilters
+    return filterConfig
       .filter((filterItem) => filterItem.active)
       .filter((filterItem) => filterItem.showOnLanding !== false)
-      .filter((filterItem) =>
-        productSource.some(
-          (product) =>
-            product.category === filterItem.value && product.active !== false,
-        ),
-      )
       .sort((a, b) => a.order - b.order);
-  }, [productSource, availableFilters]);
+  }, [filterConfig]);
 
   useEffect(() => {
-    if (!visibleFilters.some((item) => item.value === selectedCategory)) {
-      setSelectedCategory(visibleFilters[0]?.value ?? "All");
+    if (!activeFilter) return;
+
+    const stillExists = visibleFilters.some(
+      (filterItem) => filterItem.value === activeFilter,
+    );
+
+    if (!stillExists) {
+      setActiveFilter(null);
     }
-  }, [visibleFilters, selectedCategory]);
+  }, [visibleFilters, activeFilter]);
 
   return (
     <div
@@ -1041,14 +1004,26 @@ export default function HomePage({
         <AnimatedWrapper className="retail-section-enter" variant="section">
           <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
             <div className="flex gap-2 overflow-x-auto pb-1">
+              <button
+                type="button"
+                onClick={() => setActiveFilter(null)}
+                className={clsx(
+                  "whitespace-nowrap rounded-full border border-neutral-300 px-3 py-1.5 text-[12px] transition hover:bg-neutral-900 hover:text-white",
+                  activeFilter === null
+                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    : "text-ink",
+                )}
+              >
+                All
+              </button>
               {visibleFilters.map((category) => (
                 <button
                   key={category.id}
                   type="button"
-                  onClick={() => setSelectedCategory(category.value)}
+                  onClick={() => setActiveFilter(category.value)}
                   className={clsx(
                     "whitespace-nowrap rounded-full border border-neutral-300 px-3 py-1.5 text-[12px] transition hover:bg-neutral-900 hover:text-white",
-                    selectedCategory === category.value
+                    activeFilter === category.value
                       ? "border-neutral-900 bg-neutral-900 text-white"
                       : category.highlight
                         ? "border-accent/70 text-ink"
