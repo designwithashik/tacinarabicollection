@@ -315,69 +315,37 @@ export default function HomePage({
     }
   }, []);
 
-  const loadPublicInventory = useCallback(async () => {
+  const refreshCatalogData = useCallback(async () => {
     try {
-      const res = await fetch("/api/products", {
-        cache: "no-store",
-        next: { revalidate: 0 },
-      });
-      if (!res.ok) return;
-      const data = (await res.json()) as unknown;
-      const shaped = Array.isArray(data) ? data.flat() : data ? [data] : [];
-      setAdminProducts(normalizeInventoryResponse(shaped));
+      const [productsResponse, filtersResponse] = await Promise.all([
+        fetch("/api/products", {
+          cache: "no-store",
+          next: { revalidate: 0 },
+        }),
+        fetch("/api/content/filters", { cache: "no-store" }),
+      ]);
+
+      if (productsResponse.ok) {
+        const data = (await productsResponse.json()) as unknown;
+        const shaped = Array.isArray(data) ? data.flat() : data ? [data] : [];
+        setAdminProducts(normalizeInventoryResponse(shaped));
+      }
+
+      if (filtersResponse.ok) {
+        const data = (await filtersResponse.json()) as FilterPanelItem[];
+        if (Array.isArray(data)) {
+          setFilterConfig(data);
+        }
+      }
     } catch {
       setAdminProducts((current) => current);
+      setFilterConfig((current) => current);
     }
   }, []);
 
   useEffect(() => {
-    void loadPublicInventory();
-  }, [loadPublicInventory]);
-
-  const loadFilterConfig = useCallback(async () => {
-    try {
-      const response = await fetch("/api/content/filters", {
-        cache: "no-store",
-      });
-      if (!response.ok) return;
-      const data = (await response.json()) as FilterPanelItem[];
-      if (Array.isArray(data) && data.length > 0) {
-        setFilterConfig(data);
-      }
-    } catch {
-      // keep existing UI config
-    }
-  }, []);
-
-  useEffect(() => {
-    const onRefresh = () => {
-      void loadFilterConfig();
-    };
-
-    const onVisibilityOrFocus = () => {
-      if (document.visibilityState === "visible") {
-        void loadFilterConfig();
-      }
-    };
-
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === "site-content-updated") {
-        void loadFilterConfig();
-      }
-    };
-
-    window.addEventListener("focus", onVisibilityOrFocus);
-    document.addEventListener("visibilitychange", onVisibilityOrFocus);
-    window.addEventListener("site-content-updated", onRefresh);
-    window.addEventListener("storage", onStorage);
-
-    return () => {
-      window.removeEventListener("focus", onVisibilityOrFocus);
-      document.removeEventListener("visibilitychange", onVisibilityOrFocus);
-      window.removeEventListener("site-content-updated", onRefresh);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, [loadFilterConfig]);
+    void refreshCatalogData();
+  }, [refreshCatalogData]);
 
   useEffect(() => {
     const loadAnnouncement = async () => {
@@ -409,38 +377,46 @@ export default function HomePage({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const refresh = () => {
+      void refreshCatalogData();
+    };
+
     const onVisibilityOrFocus = () => {
       if (document.visibilityState === "visible") {
-        void loadPublicInventory();
+        refresh();
       }
     };
 
-    const onInventoryUpdated = () => {
-      void loadPublicInventory();
-    };
-
     const onStorage = (event: StorageEvent) => {
-      if (event.key === INVENTORY_UPDATED_STORAGE_KEY) {
-        void loadPublicInventory();
+      if (
+        event.key === INVENTORY_UPDATED_STORAGE_KEY ||
+        event.key === "inventory-updated" ||
+        event.key === "site-content-updated"
+      ) {
+        refresh();
       }
     };
 
     window.addEventListener("focus", onVisibilityOrFocus);
     document.addEventListener("visibilitychange", onVisibilityOrFocus);
-    INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
-      window.addEventListener(eventName, onInventoryUpdated);
-    });
     window.addEventListener("storage", onStorage);
+    window.addEventListener("site-content-updated", refresh);
+    window.addEventListener("inventory-updated", refresh);
+    INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
+      window.addEventListener(eventName, refresh);
+    });
 
     return () => {
       window.removeEventListener("focus", onVisibilityOrFocus);
       document.removeEventListener("visibilitychange", onVisibilityOrFocus);
-      INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
-        window.removeEventListener(eventName, onInventoryUpdated);
-      });
       window.removeEventListener("storage", onStorage);
+      window.removeEventListener("site-content-updated", refresh);
+      window.removeEventListener("inventory-updated", refresh);
+      INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
+        window.removeEventListener(eventName, refresh);
+      });
     };
-  }, [loadPublicInventory]);
+  }, [refreshCatalogData]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -743,14 +719,15 @@ export default function HomePage({
         ? "28s"
         : "20s";
 
-  const filteredProducts = useMemo(() => {
-    let result = [...productSource];
+  const activeFilter = selectedCategory === "All" ? null : selectedCategory;
 
-    if (selectedCategory !== "All") {
-      result = result.filter(
-        (product) => product.category === selectedCategory,
-      );
-    }
+  const categoryFilteredProducts = useMemo(() => {
+    if (!activeFilter) return productSource;
+    return productSource.filter((product) => product.category === activeFilter);
+  }, [productSource, activeFilter]);
+
+  const filteredProducts = useMemo(() => {
+    let result = [...categoryFilteredProducts];
 
     if (filters.size.length) {
       result = result.filter((product) =>
@@ -783,7 +760,7 @@ export default function HomePage({
     }
 
     return result;
-  }, [filters, productSource, selectedCategory]);
+  }, [filters, categoryFilteredProducts]);
 
   const visibleProducts =
     hasMounted && Array.isArray(filteredProducts) ? filteredProducts : [];
@@ -917,21 +894,60 @@ export default function HomePage({
   const isSummaryLoading = !hasMounted || isCartHydrating;
   const hasPaymentProof = Boolean(transactionId.trim());
 
-  const categoryOptions = useMemo(() => {
-    const available = (
-      Array.isArray(filterConfig) ? filterConfig : defaultFilterConfig
-    )
-      .filter((item) => item.active !== false)
-      .sort((a, b) => a.order - b.order);
+  const fallbackAutoFilters = useMemo(() => {
+    const autoFilters = [
+      ...new Set(productSource.map((product) => product.category)),
+    ];
 
-    return available.length ? available : defaultFilterConfig;
-  }, [filterConfig]);
+    const mapped = autoFilters.map((category, index) => ({
+      id: `auto-${String(category).toLowerCase().replace(/\s+/g, "-")}`,
+      label: String(category),
+      value: String(category),
+      active: true,
+      highlight: false,
+      order: index + 1,
+    }));
+
+    return [
+      {
+        id: "all",
+        label: "All",
+        value: "All",
+        active: true,
+        highlight: true,
+        order: 0,
+      },
+      ...mapped,
+    ];
+  }, [productSource]);
+
+  const availableFilters =
+    Array.isArray(filterConfig) && filterConfig.length > 0
+      ? filterConfig
+      : fallbackAutoFilters;
+
+  const visibleFilters = useMemo(() => {
+    if (!productSource.length || !availableFilters.length) return [];
+
+    return availableFilters
+      .filter((filterItem) => filterItem.active)
+      .filter((filterItem) =>
+        filterItem.value === "All"
+          ? true
+          : productSource.some(
+              (product) =>
+                product.category === filterItem.value &&
+                product.active !== false,
+            ),
+      )
+      .sort((a, b) => a.order - b.order);
+  }, [productSource, availableFilters]);
 
   useEffect(() => {
-    if (!categoryOptions.some((item) => item.value === selectedCategory)) {
-      setSelectedCategory(categoryOptions[0]?.value ?? "All");
+    if (!visibleFilters.some((item) => item.value === selectedCategory)) {
+      setSelectedCategory(visibleFilters[0]?.value ?? "All");
     }
-  }, [categoryOptions, selectedCategory]);
+  }, [visibleFilters, selectedCategory]);
 
   return (
     <div
@@ -1022,7 +1038,7 @@ export default function HomePage({
         <AnimatedWrapper className="retail-section-enter" variant="section">
           <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {categoryOptions.map((category) => (
+              {visibleFilters.map((category) => (
                 <button
                   key={category.id}
                   type="button"
