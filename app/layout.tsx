@@ -1,19 +1,6 @@
 import "./globals.css";
-import { Playfair_Display, Inter } from "next/font/google";
 import type { Metadata } from "next";
 import GlobalAnimatedWrapper from "../components/AnimatedWrapper";
-
-const headingFont = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  variable: "--font-heading",
-});
-
-const bodyFont = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-body",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -75,7 +62,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en-BD" className={`${headingFont.variable} ${bodyFont.variable}`}>
+    <html lang="en-BD">
       <body><GlobalAnimatedWrapper>{children}</GlobalAnimatedWrapper></body>
     </html>
   );

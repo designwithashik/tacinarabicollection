@@ -1,8 +1,44 @@
-import { kv } from "@vercel/kv";
-
 export const INVENTORY_PRODUCTS_KEY = "inventory:products";
 
 type InventoryRecord = Record<string, unknown>;
+
+type KvLike = {
+  get: <T = unknown>(key: string) => Promise<T | null>;
+  set: (key: string, value: unknown) => Promise<unknown>;
+  hgetall: <T = Record<string, unknown>>(key: string) => Promise<T | null>;
+};
+
+const memoryStore = new Map<string, unknown>();
+
+const inMemoryKv: KvLike = {
+  async get<T = unknown>(key: string) {
+    return (memoryStore.get(key) as T | undefined) ?? null;
+  },
+  async set(key: string, value: unknown) {
+    memoryStore.set(key, value);
+  },
+  async hgetall<T = Record<string, unknown>>(key: string) {
+    const value = memoryStore.get(key);
+    if (!value || typeof value !== "object") return null;
+    return value as T;
+  },
+};
+
+let cachedKv: Promise<KvLike> | null = null;
+
+const getKv = async (): Promise<KvLike> => {
+  if (!cachedKv) {
+    const dynamicImport = new Function("m", "return import(m)") as (
+      moduleName: string
+    ) => Promise<{ kv: KvLike }>;
+
+    cachedKv = dynamicImport("@vercel/kv")
+      .then((module) => module.kv as KvLike)
+      .catch(() => inMemoryKv);
+  }
+
+  return cachedKv;
+};
 
 export type InventoryProduct = {
   id: string;
@@ -94,6 +130,7 @@ const normalizeInventoryCollection = (payload: unknown): InventoryProduct[] => {
 
 async function tryLegacyMigration(): Promise<InventoryProduct[] | null> {
   try {
+    const kv = await getKv();
     const legacy = await kv.hgetall<Record<string, unknown>>("tacin_collection_final");
     if (!legacy || Object.keys(legacy).length === 0) return null;
 
@@ -109,6 +146,7 @@ async function tryLegacyMigration(): Promise<InventoryProduct[] | null> {
 }
 
 export async function loadInventoryArray(): Promise<InventoryProduct[]> {
+  const kv = await getKv();
   const canonical = await kv.get<InventoryProduct[] | unknown>(INVENTORY_PRODUCTS_KEY);
 
   if (Array.isArray(canonical)) {
@@ -125,6 +163,7 @@ export async function loadInventoryArray(): Promise<InventoryProduct[]> {
 }
 
 export async function saveInventoryArray(items: InventoryProduct[]) {
+  const kv = await getKv();
   await kv.set(INVENTORY_PRODUCTS_KEY, items);
 }
 
