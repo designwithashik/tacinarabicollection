@@ -23,7 +23,9 @@ export const getStoredOrders = (): Order[] => {
   if (typeof window === "undefined") return [];
   try {
     const stored = window.localStorage.getItem(ORDERS_KEY);
-    return stored ? (JSON.parse(stored) as Order[]) : [];
+    if (!stored) return [];
+    const parsed = JSON.parse(stored) as unknown;
+    return Array.isArray(parsed) ? (parsed as Order[]) : [];
   } catch {
     return [];
   }

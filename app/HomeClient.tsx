@@ -86,8 +86,8 @@ const storageKeys = {
 
 const statusLabels = ["New", "Popular", "Low Stock"] as const;
 
-const INVENTORY_UPDATED_STORAGE_KEY = "tacin-inventory-updated";
-const INVENTORY_UPDATED_EVENT = "tacin:inventory-updated";
+const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
+const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
 
 const normalizeInventoryResponse = (payload: unknown): AdminProduct[] => {
   if (Array.isArray(payload)) {
@@ -276,8 +276,9 @@ export default function HomePage({
   }, []);
 
   useEffect(() => {
+    if (initialAdminProducts.length > 0) return;
     void loadPublicInventory();
-  }, [loadPublicInventory]);
+  }, [initialAdminProducts.length, loadPublicInventory]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -300,13 +301,17 @@ export default function HomePage({
 
     window.addEventListener("focus", onVisibilityOrFocus);
     document.addEventListener("visibilitychange", onVisibilityOrFocus);
-    window.addEventListener(INVENTORY_UPDATED_EVENT, onInventoryUpdated);
+    INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
+      window.addEventListener(eventName, onInventoryUpdated);
+    });
     window.addEventListener("storage", onStorage);
 
     return () => {
       window.removeEventListener("focus", onVisibilityOrFocus);
       document.removeEventListener("visibilitychange", onVisibilityOrFocus);
-      window.removeEventListener(INVENTORY_UPDATED_EVENT, onInventoryUpdated);
+      INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
+        window.removeEventListener(eventName, onInventoryUpdated);
+      });
       window.removeEventListener("storage", onStorage);
     };
   }, [loadPublicInventory]);

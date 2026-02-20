@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 import type { AdminProduct } from "../../../lib/inventory";
 import { validateImageUrl } from "../../../lib/images";
 
-const INVENTORY_UPDATED_STORAGE_KEY = "tacin-inventory-updated";
-const INVENTORY_UPDATED_EVENT = "tacin:inventory-updated";
+const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
+const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
 
 const defaultDraft: AdminProduct = {
   id: "",
@@ -187,7 +187,9 @@ export default function AdminInventory() {
       if (typeof window !== "undefined") {
         const stamp = String(Date.now());
         window.localStorage.setItem(INVENTORY_UPDATED_STORAGE_KEY, stamp);
-        window.dispatchEvent(new Event(INVENTORY_UPDATED_EVENT));
+        INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
+          window.dispatchEvent(new Event(eventName));
+        });
       }
       router.refresh();
     } catch (saveError) {
@@ -218,7 +220,9 @@ export default function AdminInventory() {
       if (typeof window !== "undefined") {
         const stamp = String(Date.now());
         window.localStorage.setItem(INVENTORY_UPDATED_STORAGE_KEY, stamp);
-        window.dispatchEvent(new Event(INVENTORY_UPDATED_EVENT));
+        INVENTORY_UPDATED_EVENTS.forEach((eventName) => {
+          window.dispatchEvent(new Event(eventName));
+        });
       }
       router.refresh();
     } catch {
