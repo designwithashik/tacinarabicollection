@@ -110,9 +110,14 @@ async function tryLegacyMigration(): Promise<InventoryProduct[] | null> {
 
 export async function loadInventoryArray(): Promise<InventoryProduct[]> {
   const canonical = await kv.get<InventoryProduct[] | unknown>(INVENTORY_PRODUCTS_KEY);
+  const normalizedCanonical = normalizeInventoryCollection(canonical);
 
-  if (Array.isArray(canonical)) {
-    return normalizeInventoryCollection(canonical);
+  if (normalizedCanonical.length > 0) {
+    if (!Array.isArray(canonical)) {
+      await kv.set(INVENTORY_PRODUCTS_KEY, normalizedCanonical);
+    }
+
+    return normalizedCanonical;
   }
 
   const migrated = await tryLegacyMigration();
