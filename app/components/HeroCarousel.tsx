@@ -5,8 +5,14 @@ import clsx from "clsx";
 
 import type { CarouselItem } from "@/lib/siteContent";
 
-export default function HeroCarousel() {
-  const [slides, setSlides] = useState<CarouselItem[]>([]);
+type HeroCarouselProps = {
+  initialSlides?: CarouselItem[];
+};
+
+export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) {
+  const [slides, setSlides] = useState<CarouselItem[]>(
+    initialSlides.filter((item) => item.active !== false).sort((a, b) => a.order - b.order)
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {

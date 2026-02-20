@@ -22,7 +22,7 @@ import type { CustomerInfo } from "../lib/orders";
 import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
 import type { AdminProduct } from "../lib/inventory";
-import type { AnnouncementContent } from "../lib/siteContent";
+import type { AnnouncementContent, CarouselItem } from "../lib/siteContent";
 import useCart from "../hooks/useCart";
 
 const whatsappNumber = "+8801522119189";
@@ -166,10 +166,14 @@ const getStockLabel = (index: number) =>
 
 type HomeClientProps = {
   initialAdminProducts?: AdminProduct[];
+  initialAnnouncement?: AnnouncementContent;
+  initialCarouselSlides?: CarouselItem[];
 };
 
 export default function HomePage({
   initialAdminProducts = [],
+  initialAnnouncement = defaultAnnouncement,
+  initialCarouselSlides = [],
 }: HomeClientProps) {
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -209,7 +213,7 @@ export default function HomePage({
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>(initialAdminProducts);
   const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
-  const [announcement, setAnnouncement] = useState<AnnouncementContent>(defaultAnnouncement);
+  const [announcement, setAnnouncement] = useState<AnnouncementContent>(initialAnnouncement);
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
@@ -799,7 +803,7 @@ export default function HomePage({
 
       <section className="relative">
         <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
-          <HeroCarousel />
+          <HeroCarousel initialSlides={initialCarouselSlides} />
         </div>
         <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
       </section>
