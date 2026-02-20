@@ -3,9 +3,16 @@ export const revalidate = 0;
 
 import HomeClient from "./HomeClient";
 import type { AdminProduct } from "../lib/inventory";
-import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
+import {
+  loadInventoryArray,
+  toStorefrontProduct,
+} from "@/lib/server/inventoryStore";
 import type { Metadata } from "next";
-import type { AnnouncementContent, CarouselItem } from "@/lib/siteContent";
+import type {
+  AnnouncementContent,
+  CarouselItem,
+  FilterPanelItem,
+} from "@/lib/siteContent";
 
 const siteUrl = "https://tacinarabicollection.vercel.app";
 
@@ -22,6 +29,7 @@ export default async function HomePage() {
   let initialAdminProducts: AdminProduct[] = [];
   let initialAnnouncement: AnnouncementContent = { text: "", active: true };
   let initialCarouselSlides: CarouselItem[] = [];
+  let initialFilters: FilterPanelItem[] = [];
 
   try {
     const products = await loadInventoryArray();
@@ -31,9 +39,10 @@ export default async function HomePage() {
   }
 
   try {
-    const [carouselRes, announcementRes] = await Promise.all([
+    const [carouselRes, announcementRes, filtersRes] = await Promise.all([
       fetch(`${siteUrl}/api/content/carousel`, { cache: "no-store" }),
       fetch(`${siteUrl}/api/content/announcement`, { cache: "no-store" }),
+      fetch("/api/content/filters", { cache: "no-store" }),
     ]);
 
     if (carouselRes.ok) {
@@ -41,11 +50,17 @@ export default async function HomePage() {
     }
 
     if (announcementRes.ok) {
-      initialAnnouncement = (await announcementRes.json()) as AnnouncementContent;
+      initialAnnouncement =
+        (await announcementRes.json()) as AnnouncementContent;
+    }
+
+    if (filtersRes.ok) {
+      initialFilters = (await filtersRes.json()) as FilterPanelItem[];
     }
   } catch {
     initialCarouselSlides = [];
     initialAnnouncement = { text: "", active: true };
+    initialFilters = [];
   }
 
   const organizationSchema = {
@@ -54,9 +69,7 @@ export default async function HomePage() {
     name: "Tacin Arabi Collection",
     url: siteUrl,
     logo: `${siteUrl}/icons/icon-192.svg`,
-    sameAs: [
-      "https://wa.me/8801522119189",
-    ],
+    sameAs: ["https://wa.me/8801522119189"],
     contactPoint: [
       {
         "@type": "ContactPoint",
@@ -95,6 +108,7 @@ export default async function HomePage() {
         initialAdminProducts={initialAdminProducts}
         initialCarouselSlides={initialCarouselSlides}
         initialAnnouncement={initialAnnouncement}
+        initialFilters={initialFilters}
       />
     </>
   );

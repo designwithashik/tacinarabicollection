@@ -22,7 +22,11 @@ import type { CustomerInfo } from "../lib/orders";
 import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
 import type { AdminProduct } from "../lib/inventory";
-import type { AnnouncementContent, CarouselItem } from "../lib/siteContent";
+import type {
+  AnnouncementContent,
+  CarouselItem,
+  FilterPanelItem,
+} from "../lib/siteContent";
 import useCart from "../hooks/useCart";
 
 const whatsappNumber = "+8801522119189";
@@ -40,8 +44,6 @@ const sortOptions = [
   { id: "high-low", label: "Price High-Low" },
 ];
 
-const categories: CategoryFilter[] = ["All", "Clothing", "Ceramic"];
-
 const deliveryFees = {
   inside: 60,
   outside: 120,
@@ -54,7 +56,7 @@ type Filters = {
   sort: string | null;
 };
 
-type CategoryFilter = "All" | AdminProduct["category"];
+type CategoryFilter = string;
 
 type AddState = "idle" | "loading" | "success";
 
@@ -85,6 +87,33 @@ const defaultAnnouncement: AnnouncementContent = {
   active: true,
 };
 
+const defaultFilterConfig: FilterPanelItem[] = [
+  {
+    id: "all",
+    label: "All",
+    value: "All",
+    active: true,
+    highlight: true,
+    order: 1,
+  },
+  {
+    id: "clothing",
+    label: "Clothing",
+    value: "Clothing",
+    active: true,
+    highlight: false,
+    order: 2,
+  },
+  {
+    id: "ceramic",
+    label: "Ceramic",
+    value: "Ceramic",
+    active: true,
+    highlight: false,
+    order: 3,
+  },
+];
+
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
 const INVENTORY_UPDATED_EVENTS = [
   "tacin:inventory-updated",
@@ -94,8 +123,8 @@ const INVENTORY_UPDATED_EVENTS = [
 
 const normalizeInventoryResponse = (payload: unknown): AdminProduct[] => {
   if (Array.isArray(payload)) {
-    return payload.filter(
-      (item): item is AdminProduct => Boolean(item && typeof item === "object"),
+    return payload.filter((item): item is AdminProduct =>
+      Boolean(item && typeof item === "object"),
     );
   }
 
@@ -106,8 +135,8 @@ const normalizeInventoryResponse = (payload: unknown): AdminProduct[] => {
       return [objectPayload as AdminProduct];
     }
 
-    return Object.values(objectPayload).filter(
-      (item): item is AdminProduct => Boolean(item && typeof item === "object"),
+    return Object.values(objectPayload).filter((item): item is AdminProduct =>
+      Boolean(item && typeof item === "object"),
     );
   }
 
@@ -160,7 +189,8 @@ const copy = {
 const qtyUpdatedMessage = "Qty updated";
 const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
 
-const getStatusLabel = (index: number) => statusLabels[index % statusLabels.length];
+const getStatusLabel = (index: number) =>
+  statusLabels[index % statusLabels.length];
 const getStockLabel = (index: number) =>
   index % 3 === 2 ? "Limited stock" : "In stock";
 
@@ -168,21 +198,26 @@ type HomeClientProps = {
   initialAdminProducts?: AdminProduct[];
   initialAnnouncement?: AnnouncementContent;
   initialCarouselSlides?: CarouselItem[];
+  initialFilters?: FilterPanelItem[];
 };
 
 export default function HomePage({
   initialAdminProducts = [],
   initialAnnouncement = defaultAnnouncement,
   initialCarouselSlides = [],
+  initialFilters = defaultFilterConfig,
 }: HomeClientProps) {
-  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>(
+    {},
+  );
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const { cartItems, setCartItems, isCartHydrating, clearCart } = useCart();
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [draftFilters, setDraftFilters] = useState<Filters>(defaultFilters);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("All");
+  const [selectedCategory, setSelectedCategory] =
+    useState<CategoryFilter>("All");
   const [activeSheet, setActiveSheet] = useState<DrawerTab | null>(null);
   const [detailsProduct, setDetailsProduct] = useState<Product | null>(null);
   const [showCart, setShowCart] = useState(false);
@@ -194,14 +229,18 @@ export default function HomePage({
   const [isOrderConfirmed, setIsOrderConfirmed] = useState(false);
   const [isFieldShake, setIsFieldShake] = useState(false);
   const [transactionId, setTransactionId] = useState("");
-  const [deliveryZone, setDeliveryZone] = useState<"inside" | "outside">("inside");
+  const [deliveryZone, setDeliveryZone] = useState<"inside" | "outside">(
+    "inside",
+  );
   const [customer, setCustomer] = useState<CustomerInfo>({
     name: "",
     phone: "",
     address: "",
   });
   const [addStates, setAddStates] = useState<Record<string, AddState>>({});
-  const [quantityFeedback, setQuantityFeedback] = useState<Record<string, string>>({});
+  const [quantityFeedback, setQuantityFeedback] = useState<
+    Record<string, string>
+  >({});
   const [cartQuantityFeedback, setCartQuantityFeedback] = useState<
     Record<number, string>
   >({});
@@ -212,9 +251,18 @@ export default function HomePage({
   const [isLoading, setIsLoading] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const [adminProducts, setAdminProducts] = useState<AdminProduct[]>(initialAdminProducts);
-  const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
-  const [announcement, setAnnouncement] = useState<AnnouncementContent>(initialAnnouncement);
+  const [adminProducts, setAdminProducts] =
+    useState<AdminProduct[]>(initialAdminProducts);
+  const [cartActionLoading, setCartActionLoading] = useState<
+    Record<number, boolean>
+  >({});
+  const [announcement, setAnnouncement] =
+    useState<AnnouncementContent>(initialAnnouncement);
+  const [filterConfig, setFilterConfig] = useState<FilterPanelItem[]>(
+    Array.isArray(initialFilters) && initialFilters.length
+      ? initialFilters
+      : defaultFilterConfig,
+  );
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
@@ -250,7 +298,9 @@ export default function HomePage({
     setHasMounted(true);
 
     const storedViewed = localStorage.getItem(storageKeys.viewed);
-    const storedLanguage = localStorage.getItem(storageKeys.language) as Language | null;
+    const storedLanguage = localStorage.getItem(
+      storageKeys.language,
+    ) as Language | null;
 
     if (storedViewed) {
       try {
@@ -284,6 +334,51 @@ export default function HomePage({
     void loadPublicInventory();
   }, [loadPublicInventory]);
 
+  const loadFilterConfig = useCallback(async () => {
+    try {
+      const response = await fetch("/api/content/filters", {
+        cache: "no-store",
+      });
+      if (!response.ok) return;
+      const data = (await response.json()) as FilterPanelItem[];
+      if (Array.isArray(data) && data.length > 0) {
+        setFilterConfig(data);
+      }
+    } catch {
+      // keep existing UI config
+    }
+  }, []);
+
+  useEffect(() => {
+    const onRefresh = () => {
+      void loadFilterConfig();
+    };
+
+    const onVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        void loadFilterConfig();
+      }
+    };
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "site-content-updated") {
+        void loadFilterConfig();
+      }
+    };
+
+    window.addEventListener("focus", onVisibilityOrFocus);
+    document.addEventListener("visibilitychange", onVisibilityOrFocus);
+    window.addEventListener("site-content-updated", onRefresh);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("focus", onVisibilityOrFocus);
+      document.removeEventListener("visibilitychange", onVisibilityOrFocus);
+      window.removeEventListener("site-content-updated", onRefresh);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [loadFilterConfig]);
+
   useEffect(() => {
     const loadAnnouncement = async () => {
       try {
@@ -297,7 +392,10 @@ export default function HomePage({
         if (!data || typeof data !== "object") return;
 
         setAnnouncement({
-          text: typeof data.text === "string" ? data.text : defaultAnnouncement.text,
+          text:
+            typeof data.text === "string"
+              ? data.text
+              : defaultAnnouncement.text,
           active: data.active !== false,
         });
       } catch {
@@ -426,7 +524,10 @@ export default function HomePage({
   const updateQuantity = (productId: string, quantity: number) => {
     const safeQuantity = Math.max(1, Math.floor(quantity || 1));
     setQuantities((prev) => ({ ...prev, [productId]: safeQuantity }));
-    setQuantityFeedback((prev) => ({ ...prev, [productId]: qtyUpdatedMessage }));
+    setQuantityFeedback((prev) => ({
+      ...prev,
+      [productId]: qtyUpdatedMessage,
+    }));
     window.setTimeout(() => {
       setQuantityFeedback((prev) => ({ ...prev, [productId]: "" }));
     }, 1000);
@@ -458,7 +559,10 @@ export default function HomePage({
       image: product.image,
     });
 
-  const handleAddToCart = (product: Product, sizeOverride: string | null = null) => {
+  const handleAddToCart = (
+    product: Product,
+    sizeOverride: string | null = null,
+  ) => {
     if (!product.id) return;
     markRecentlyViewed(product);
     const selectedSize = sizeOverride ?? selectedSizes[product.id];
@@ -466,7 +570,11 @@ export default function HomePage({
 
     setAddStates((prev) => ({ ...prev, [product.id]: "loading" }));
     const requestedQuantity = quantities[product.id] ?? 1;
-    const normalized = buildNormalizedCartItem(product, selectedSize, requestedQuantity);
+    const normalized = buildNormalizedCartItem(
+      product,
+      selectedSize,
+      requestedQuantity,
+    );
     if (!normalized) {
       showToast({ type: "error", message: "Failed to add item." });
       setAddStates((prev) => ({ ...prev, [product.id]: "idle" }));
@@ -482,7 +590,10 @@ export default function HomePage({
           item.id === normalized.id && item.size === normalized.size
             ? {
                 ...item,
-                quantity: Math.max(1, Math.floor((item.quantity || 1) + normalized.quantity)),
+                quantity: Math.max(
+                  1,
+                  Math.floor((item.quantity || 1) + normalized.quantity),
+                ),
               }
             : item,
         );
@@ -504,13 +615,20 @@ export default function HomePage({
     }, 400);
   };
 
-  const handleBuyNow = (product: Product, sizeOverride: string | null = null) => {
+  const handleBuyNow = (
+    product: Product,
+    sizeOverride: string | null = null,
+  ) => {
     if (isRouting || !product.id) return;
     markRecentlyViewed(product);
     const selectedSize = sizeOverride ?? selectedSizes[product.id];
     if (!selectedSize) return;
 
-    const normalized = buildNormalizedCartItem(product, selectedSize, quantities[product.id] ?? 1);
+    const normalized = buildNormalizedCartItem(
+      product,
+      selectedSize,
+      quantities[product.id] ?? 1,
+    );
     if (!normalized) {
       showToast({ type: "error", message: "Unable to start checkout." });
       return;
@@ -521,7 +639,10 @@ export default function HomePage({
       setCheckoutItems([normalized]);
       setIsOrderConfirmed(false);
       setIsSubmitting(false);
-      logEvent("begin_checkout", { productId: product.id, quantity: normalized.quantity });
+      logEvent("begin_checkout", {
+        productId: product.id,
+        quantity: normalized.quantity,
+      });
       setShowCheckout(true);
       scrollToCheckout();
       setIsRouting(false);
@@ -536,7 +657,10 @@ export default function HomePage({
     }
     const safeSubtotal = getSafeCartSubtotal(cartItems);
     if (!Number.isFinite(safeSubtotal) || safeSubtotal <= 0) {
-      showToast({ type: "error", message: "Unable to checkout. Please review your cart." });
+      showToast({
+        type: "error",
+        message: "Unable to checkout. Please review your cart.",
+      });
       return;
     }
     setIsRouting(true);
@@ -566,7 +690,10 @@ export default function HomePage({
     const safeSubtotal = getSafeCartSubtotal(checkoutItems);
     const total = safeSubtotal + deliveryFee;
     if (!Number.isFinite(total) || total <= 0) {
-      showToast({ type: "error", message: "Unable to complete checkout. Please try again." });
+      showToast({
+        type: "error",
+        message: "Unable to complete checkout. Please try again.",
+      });
       setIsSubmitting(false);
       return;
     }
@@ -609,13 +736,20 @@ export default function HomePage({
   const productSource = adminProducts.filter((item) => item.active !== false);
 
   const announcementText = announcement.text.trim() || defaultAnnouncement.text;
-  const announcementDuration = announcementText.length < 90 ? "15s" : announcementText.length > 180 ? "28s" : "20s";
+  const announcementDuration =
+    announcementText.length < 90
+      ? "15s"
+      : announcementText.length > 180
+        ? "28s"
+        : "20s";
 
   const filteredProducts = useMemo(() => {
     let result = [...productSource];
 
     if (selectedCategory !== "All") {
-      result = result.filter((product) => product.category === selectedCategory);
+      result = result.filter(
+        (product) => product.category === selectedCategory,
+      );
     }
 
     if (filters.size.length) {
@@ -633,7 +767,8 @@ export default function HomePage({
     if (filters.price) {
       result = result.filter((product) => {
         if (filters.price === "under-500") return product.price < 500;
-        if (filters.price === "500-800") return product.price >= 500 && product.price <= 800;
+        if (filters.price === "500-800")
+          return product.price >= 500 && product.price <= 800;
         return product.price > 800;
       });
     }
@@ -650,7 +785,8 @@ export default function HomePage({
     return result;
   }, [filters, productSource, selectedCategory]);
 
-  const visibleProducts = hasMounted && Array.isArray(filteredProducts) ? filteredProducts : [];
+  const visibleProducts =
+    hasMounted && Array.isArray(filteredProducts) ? filteredProducts : [];
   const productBatchKey = useMemo(
     () => visibleProducts.map((product) => product.id).join("|"),
     [visibleProducts],
@@ -706,7 +842,9 @@ export default function HomePage({
     try {
       setCartItems((prev) => {
         if (safeQuantity === 0) return prev.filter((_, idx) => idx !== index);
-        return prev.map((item, idx) => (idx === index ? { ...item, quantity: safeQuantity } : item));
+        return prev.map((item, idx) =>
+          idx === index ? { ...item, quantity: safeQuantity } : item,
+        );
       });
       showToast({ type: "success", message: "Cart updated." });
     } catch {
@@ -749,19 +887,25 @@ export default function HomePage({
     }
   };
 
-  const isCustomerInfoValid = customer.name.trim() && customer.phone.trim() && customer.address.trim();
+  const isCustomerInfoValid =
+    customer.name.trim() && customer.phone.trim() && customer.address.trim();
 
   const handlePaymentInfoOpen = () => {
     if (!isCustomerInfoValid) {
       setIsFieldShake(true);
-      showToast({ type: "info", message: "Please fill in all required fields." });
+      showToast({
+        type: "info",
+        message: "Please fill in all required fields.",
+      });
       return;
     }
     setShowPaymentInfo(true);
   };
 
   const checkoutSubtotal = getSafeCartSubtotal(checkoutItems);
-  const deliveryFee = Number.isFinite(deliveryFees[deliveryZone]) ? deliveryFees[deliveryZone] : 0;
+  const deliveryFee = Number.isFinite(deliveryFees[deliveryZone])
+    ? deliveryFees[deliveryZone]
+    : 0;
   const checkoutTotal = checkoutSubtotal + deliveryFee;
   const isCheckoutBlocked =
     isSubmitting ||
@@ -772,6 +916,22 @@ export default function HomePage({
     !Number.isFinite(checkoutTotal);
   const isSummaryLoading = !hasMounted || isCartHydrating;
   const hasPaymentProof = Boolean(transactionId.trim());
+
+  const categoryOptions = useMemo(() => {
+    const available = (
+      Array.isArray(filterConfig) ? filterConfig : defaultFilterConfig
+    )
+      .filter((item) => item.active !== false)
+      .sort((a, b) => a.order - b.order);
+
+    return available.length ? available : defaultFilterConfig;
+  }, [filterConfig]);
+
+  useEffect(() => {
+    if (!categoryOptions.some((item) => item.value === selectedCategory)) {
+      setSelectedCategory(categoryOptions[0]?.value ?? "All");
+    }
+  }, [categoryOptions, selectedCategory]);
 
   return (
     <div
@@ -802,7 +962,9 @@ export default function HomePage({
               className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
               aria-label="Open cart"
             >
-              <span className={clsx(cartBump && "animate-cart-bounce")}>🛍️</span>
+              <span className={clsx(cartBump && "animate-cart-bounce")}>
+                🛍️
+              </span>
               {hasMounted && cartItems.length > 0 ? (
                 <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
                   {cartItems.length}
@@ -828,17 +990,26 @@ export default function HomePage({
             ref={trustBarRef}
             className={clsx(
               "mx-auto max-w-6xl px-4 transition-all duration-700 ease-out",
-              isTrustBarInView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
+              isTrustBarInView
+                ? "translate-y-0 opacity-100"
+                : "translate-y-6 opacity-0",
             )}
           >
             <div className="relative overflow-hidden w-full bg-black text-white">
               <div
                 className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-[13px] font-medium tracking-wide"
-                style={{ "--announcement-duration": announcementDuration } as Record<string, string>}
+                style={
+                  { "--announcement-duration": announcementDuration } as Record<
+                    string,
+                    string
+                  >
+                }
               >
                 <span className="px-8 flex-none">{announcementText}</span>
                 <span className="px-8 flex-none">{announcementText}</span>
-                <span className="px-8 flex-none" aria-hidden="true">{announcementText}</span>
+                <span className="px-8 flex-none" aria-hidden="true">
+                  {announcementText}
+                </span>
               </div>
               <div className="absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-black to-transparent pointer-events-none" />
               <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-black to-transparent pointer-events-none" />
@@ -851,27 +1022,30 @@ export default function HomePage({
         <AnimatedWrapper className="retail-section-enter" variant="section">
           <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {categories.map((category) => (
+              {categoryOptions.map((category) => (
                 <button
-                  key={category}
+                  key={category.id}
                   type="button"
-                  onClick={() => setSelectedCategory(category)}
+                  onClick={() => setSelectedCategory(category.value)}
                   className={clsx(
                     "whitespace-nowrap rounded-full border border-neutral-300 px-3 py-1.5 text-[12px] transition hover:bg-neutral-900 hover:text-white",
-                    selectedCategory === category
+                    selectedCategory === category.value
                       ? "border-neutral-900 bg-neutral-900 text-white"
-                      : "text-ink",
+                      : category.highlight
+                        ? "border-accent/70 text-ink"
+                        : "text-ink",
                   )}
                 >
-                  {category}
+                  {category.label}
                 </button>
               ))}
             </div>
 
             <div className="flex items-center justify-between">
               <p className="text-[13px] text-neutral-600">
-                {sortOptions.find((option) => option.id === (filters.sort ?? "newest"))?.label ??
-                  "Newest"}
+                {sortOptions.find(
+                  (option) => option.id === (filters.sort ?? "newest"),
+                )?.label ?? "Newest"}
               </p>
               <div className="flex items-center gap-2">
                 <button
@@ -887,9 +1061,13 @@ export default function HomePage({
                   className="flex items-center gap-2 rounded-full border border-neutral-300 px-3 py-1 text-[13px]"
                 >
                   Filter
-                  {filters.size.length || filters.colors.length || filters.price ? (
+                  {filters.size.length ||
+                  filters.colors.length ||
+                  filters.price ? (
                     <span className="rounded-full bg-gold px-2 text-xs text-charcoal">
-                      {filters.size.length + filters.colors.length + (filters.price ? 1 : 0)}
+                      {filters.size.length +
+                        filters.colors.length +
+                        (filters.price ? 1 : 0)}
                     </span>
                   ) : null}
                 </button>
@@ -913,7 +1091,8 @@ export default function HomePage({
                 {chip.type === "price"
                   ? priceRanges.find((range) => range.id === chip.value)?.label
                   : chip.type === "sort"
-                    ? sortOptions.find((option) => option.id === chip.value)?.label
+                    ? sortOptions.find((option) => option.id === chip.value)
+                        ?.label
                     : chip.value}
                 <span className="ml-2 text-accent">✕</span>
               </button>
@@ -933,7 +1112,9 @@ export default function HomePage({
         >
           {visibleProducts.length === 0 ? (
             <div className="rounded-3xl bg-card p-6 text-center shadow-soft">
-              <p className="text-base font-semibold text-ink">No products found.</p>
+              <p className="text-base font-semibold text-ink">
+                No products found.
+              </p>
               <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
                 Adjust filters or check back soon.
               </p>
@@ -947,20 +1128,27 @@ export default function HomePage({
               )}
               initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: prefersReducedMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
+              transition={{
+                duration: prefersReducedMotion ? 0 : 0.22,
+                ease: [0.16, 1, 0.3, 1],
+              }}
             >
               {visibleProducts.map((product, index) => (
                 <AnimatedWrapper
                   key={product.id}
                   variant="product-card"
-                  delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.12)}
+                  delay={
+                    prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.12)
+                  }
                 >
                   <ProductCard
                     product={product}
                     selectedSize={selectedSizes[product.id]}
                     quantity={quantities[product.id] ?? 1}
                     onSizeChange={(size) => updateSize(product.id, size)}
-                    onQuantityChange={(quantity) => updateQuantity(product.id, quantity)}
+                    onQuantityChange={(quantity) =>
+                      updateQuantity(product.id, quantity)
+                    }
                     onBuyNow={() => handleBuyNow(product)}
                     onAddToCart={() => handleAddToCart(product)}
                     onOpenDetails={() => {
@@ -987,28 +1175,48 @@ export default function HomePage({
 
         <section className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-neutral-200 bg-white p-4">
           <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">🚚 Fast Nationwide Delivery</p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">Reliable delivery across Bangladesh.</p>
+            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
+              🚚 Fast Nationwide Delivery
+            </p>
+            <p className="text-[12px] leading-[1.4] text-neutral-700">
+              Reliable delivery across Bangladesh.
+            </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">🔒 Secure Order Handling</p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">Safe data and verified order process.</p>
+            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
+              🔒 Secure Order Handling
+            </p>
+            <p className="text-[12px] leading-[1.4] text-neutral-700">
+              Safe data and verified order process.
+            </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">💬 WhatsApp Order Support</p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">Quick support from real agents.</p>
+            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
+              💬 WhatsApp Order Support
+            </p>
+            <p className="text-[12px] leading-[1.4] text-neutral-700">
+              Quick support from real agents.
+            </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">💵 Cash on Delivery</p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">Pay after delivery confirmation.</p>
+            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
+              💵 Cash on Delivery
+            </p>
+            <p className="text-[12px] leading-[1.4] text-neutral-700">
+              Pay after delivery confirmation.
+            </p>
           </div>
         </section>
 
         {recentlyViewed.length > 0 ? (
           <section className="mt-6">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-heading text-2xl font-semibold">Recently Viewed</h2>
-              <span className="text-[12px] font-semibold text-muted">Last 2 items</span>
+              <h2 className="font-heading text-2xl font-semibold">
+                Recently Viewed
+              </h2>
+              <span className="text-[12px] font-semibold text-muted">
+                Last 2 items
+              </span>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {recentlyViewed.map((product, index) => (
@@ -1022,7 +1230,9 @@ export default function HomePage({
                     selectedSize={selectedSizes[product.id]}
                     quantity={quantities[product.id] ?? 1}
                     onSizeChange={(size) => updateSize(product.id, size)}
-                    onQuantityChange={(quantity) => updateQuantity(product.id, quantity)}
+                    onQuantityChange={(quantity) =>
+                      updateQuantity(product.id, quantity)
+                    }
                     onBuyNow={() => handleBuyNow(product)}
                     onAddToCart={() => handleAddToCart(product)}
                     onOpenDetails={() => setDetailsProduct(product)}
@@ -1049,14 +1259,22 @@ export default function HomePage({
       <footer className="mt-16 border-t border-neutral-200 bg-[#F3F2F0]">
         <div className="mx-auto grid max-w-6xl gap-8 space-y-0 px-4 pb-20 pt-14 md:grid-cols-3">
           <div>
-            <h3 className="font-heading text-[20px] font-semibold">Tacin Arabi Collection</h3>
+            <h3 className="font-heading text-[20px] font-semibold">
+              Tacin Arabi Collection
+            </h3>
             <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
-              Your trusted online fashion shop in Bangladesh for kurti, modest wear, and ceramic lifestyle picks—powered by WhatsApp-first ordering.
+              Your trusted online fashion shop in Bangladesh for kurti, modest
+              wear, and ceramic lifestyle picks—powered by WhatsApp-first
+              ordering.
             </p>
-            <p className="mt-3 text-[13px] font-semibold text-ink">WhatsApp: +8801522119189</p>
+            <p className="mt-3 text-[13px] font-semibold text-ink">
+              WhatsApp: +8801522119189
+            </p>
           </div>
           <div>
-            <h4 className="text-[13px] font-semibold text-ink">Store Policies</h4>
+            <h4 className="text-[13px] font-semibold text-ink">
+              Store Policies
+            </h4>
             <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-neutral-600">
               <li>Cash on Delivery available nationwide</li>
               <li>Delivery confirmation before dispatch</li>
@@ -1064,7 +1282,9 @@ export default function HomePage({
             </ul>
           </div>
           <div className="mt-8 space-y-4">
-            <h3 className="text-[15px] font-semibold leading-[1.4] text-neutral-900">Connect With Us</h3>
+            <h3 className="text-[15px] font-semibold leading-[1.4] text-neutral-900">
+              Connect With Us
+            </h3>
             <div className="flex items-center gap-4 text-neutral-800">
               <a
                 href="https://www.facebook.com/tacinarabicollection"
@@ -1096,7 +1316,9 @@ export default function HomePage({
                 </span>
               </a>
             </div>
-            <div className="text-[14px] font-medium leading-[1.6] text-neutral-800">📞 +8801522119189</div>
+            <div className="text-[14px] font-medium leading-[1.6] text-neutral-800">
+              📞 +8801522119189
+            </div>
           </div>
         </div>
       </footer>
@@ -1165,8 +1387,12 @@ export default function HomePage({
           <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[12px] font-semibold text-muted">Quick View</p>
-                <h3 className="text-base font-semibold text-ink">{detailsProduct.name}</h3>
+                <p className="text-[12px] font-semibold text-muted">
+                  Quick View
+                </p>
+                <h3 className="text-base font-semibold text-ink">
+                  {detailsProduct.name}
+                </h3>
               </div>
               <button
                 type="button"
@@ -1188,13 +1414,22 @@ export default function HomePage({
               </div>
               <div className="flex-1 text-[13px] text-muted leading-relaxed">
                 <p>
-                  Category: <span className="font-semibold text-ink">{detailsProduct.category}</span>
+                  Category:{" "}
+                  <span className="font-semibold text-ink">
+                    {detailsProduct.category}
+                  </span>
                 </p>
                 <p>
-                  Colors: <span className="font-semibold text-ink">{detailsProduct.colors.join(", ")}</span>
+                  Colors:{" "}
+                  <span className="font-semibold text-ink">
+                    {detailsProduct.colors.join(", ")}
+                  </span>
                 </p>
                 <p>
-                  {text.priceLabel}: <span className="font-semibold text-ink">{formatPrice(detailsProduct.price)}</span>
+                  {text.priceLabel}:{" "}
+                  <span className="font-semibold text-ink">
+                    {formatPrice(detailsProduct.price)}
+                  </span>
                 </p>
               </div>
             </div>
@@ -1233,7 +1468,12 @@ export default function HomePage({
                 </span>
                 <button
                   type="button"
-                  onClick={() => updateQuantity(detailsProduct.id, (quantities[detailsProduct.id] ?? 1) + 1)}
+                  onClick={() =>
+                    updateQuantity(
+                      detailsProduct.id,
+                      (quantities[detailsProduct.id] ?? 1) + 1,
+                    )
+                  }
                 >
                   +
                 </button>
@@ -1274,7 +1514,9 @@ export default function HomePage({
       <div
         className={clsx(
           "fixed inset-0 z-40 flex justify-end transition-opacity duration-300",
-          showCart ? "pointer-events-auto bg-black/40 opacity-100" : "pointer-events-none bg-black/0 opacity-0",
+          showCart
+            ? "pointer-events-auto bg-black/40 opacity-100"
+            : "pointer-events-none bg-black/0 opacity-0",
         )}
       >
         <button
@@ -1291,7 +1533,11 @@ export default function HomePage({
           )}
         >
           <div className="flex items-center justify-between">
-            <h3 ref={cartHeadingRef} tabIndex={-1} className="text-base font-semibold text-ink">
+            <h3
+              ref={cartHeadingRef}
+              tabIndex={-1}
+              className="text-base font-semibold text-ink"
+            >
               Your Cart
             </h3>
             <button
@@ -1307,8 +1553,12 @@ export default function HomePage({
           ) : cartItems.length === 0 ? (
             <div className="mt-6 rounded-2xl border border-[#f0e4da] bg-base p-4 text-center">
               <p className="text-lg">🛍️</p>
-              <p className="mt-2 text-sm font-semibold text-ink">Your cart is empty.</p>
-              <p className="mt-1 text-[12px] text-muted">Start shopping to add items.</p>
+              <p className="mt-2 text-sm font-semibold text-ink">
+                Your cart is empty.
+              </p>
+              <p className="mt-1 text-[12px] text-muted">
+                Start shopping to add items.
+              </p>
               <button
                 type="button"
                 onClick={() => setShowCart(false)}
@@ -1336,11 +1586,19 @@ export default function HomePage({
                   />
                   <div className="flex flex-1 items-start justify-between gap-3">
                     <div className="flex-1">
-                      <p className="text-base font-medium text-ink">{item.name}</p>
-                      <p className="text-[12px] text-muted">Size: {item.size} · Color: {item.color}</p>
-                      <p className="mt-1 font-semibold text-ink">{formatPrice(item.price)}</p>
+                      <p className="text-base font-medium text-ink">
+                        {item.name}
+                      </p>
+                      <p className="text-[12px] text-muted">
+                        Size: {item.size} · Color: {item.color}
+                      </p>
+                      <p className="mt-1 font-semibold text-ink">
+                        {formatPrice(item.price)}
+                      </p>
                       {cartQuantityFeedback[index] ? (
-                        <p className="mt-1 text-xs font-semibold text-accent">{cartQuantityFeedback[index]}</p>
+                        <p className="mt-1 text-xs font-semibold text-accent">
+                          {cartQuantityFeedback[index]}
+                        </p>
                       ) : null}
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -1348,16 +1606,22 @@ export default function HomePage({
                         <button
                           type="button"
                           disabled={cartActionLoading[index]}
-                          onClick={() => void updateCartQuantity(index, item.quantity - 1)}
+                          onClick={() =>
+                            void updateCartQuantity(index, item.quantity - 1)
+                          }
                           className="rounded-full px-2 transition-transform duration-200 hover:scale-105 active:scale-95"
                         >
                           -
                         </button>
-                        <span className="text-[13px] font-semibold">{item.quantity}</span>
+                        <span className="text-[13px] font-semibold">
+                          {item.quantity}
+                        </span>
                         <button
                           type="button"
                           disabled={cartActionLoading[index]}
-                          onClick={() => void updateCartQuantity(index, item.quantity + 1)}
+                          onClick={() =>
+                            void updateCartQuantity(index, item.quantity + 1)
+                          }
                           className="rounded-full px-2 transition-transform duration-200 hover:scale-105 active:scale-95"
                         >
                           +
@@ -1383,7 +1647,11 @@ export default function HomePage({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {isCartHydrating ? <SummaryPlaceholder /> : formatPrice(getSafeCartSubtotal(cartItems))}
+                  {isCartHydrating ? (
+                    <SummaryPlaceholder />
+                  ) : (
+                    formatPrice(getSafeCartSubtotal(cartItems))
+                  )}
                 </motion.span>
               </div>
               <div className="sticky bottom-0 bg-white pt-3">
@@ -1406,8 +1674,14 @@ export default function HomePage({
             <div className="border-b border-[#f0e4da] px-4 sm:px-6 py-4">
               <div className="mx-auto max-w-4xl flex items-center justify-between">
                 <div>
-                  <p className="text-[12px] font-semibold text-muted">Universal Checkout</p>
-                  <h3 ref={checkoutHeadingRef} tabIndex={-1} className="text-base font-semibold text-ink">
+                  <p className="text-[12px] font-semibold text-muted">
+                    Universal Checkout
+                  </p>
+                  <h3
+                    ref={checkoutHeadingRef}
+                    tabIndex={-1}
+                    className="text-base font-semibold text-ink"
+                  >
                     Confirm your order
                   </h3>
                 </div>
@@ -1429,15 +1703,21 @@ export default function HomePage({
               {isOrderConfirmed ? (
                 <div className="mx-auto max-w-4xl px-4 py-5">
                   <div className="text-center py-16 transition-opacity duration-300 animate-fadeIn">
-                    <h2 className="text-2xl font-semibold mb-4">Order Confirmed</h2>
-                    <p className="text-neutral-600">We will contact you shortly via phone or WhatsApp.</p>
+                    <h2 className="text-2xl font-semibold mb-4">
+                      Order Confirmed
+                    </h2>
+                    <p className="text-neutral-600">
+                      We will contact you shortly via phone or WhatsApp.
+                    </p>
                   </div>
                 </div>
               ) : (
                 <div className="mx-auto max-w-4xl px-4 py-5">
                   <div className="grid md:grid-cols-2 gap-5">
                     <div className="max-w-[680px] space-y-4">
-                      <h2 className="text-base font-semibold mb-4">Order Summary</h2>
+                      <h2 className="text-base font-semibold mb-4">
+                        Order Summary
+                      </h2>
                       <div className="rounded-2xl border border-[#f0e4da] p-3">
                         <div className="space-y-3 text-[13px]">
                           {checkoutItems.map((item, index) => (
@@ -1447,7 +1727,11 @@ export default function HomePage({
                             >
                               <div className="flex items-center gap-3 min-w-0">
                                 <Image
-                                  src={item.imageUrl || item.image || "/images/product-1.svg"}
+                                  src={
+                                    item.imageUrl ||
+                                    item.image ||
+                                    "/images/product-1.svg"
+                                  }
                                   alt={item.name}
                                   width={60}
                                   height={86}
@@ -1455,8 +1739,12 @@ export default function HomePage({
                                   unoptimized={false}
                                 />
                                 <div className="min-w-0">
-                                  <p className="font-semibold text-ink break-words">{item.name}</p>
-                                  <p className="text-[12px] text-muted">Size: {item.size} · Qty: {item.quantity}</p>
+                                  <p className="font-semibold text-ink break-words">
+                                    {item.name}
+                                  </p>
+                                  <p className="text-[12px] text-muted">
+                                    Size: {item.size} · Qty: {item.quantity}
+                                  </p>
                                 </div>
                               </div>
                               <p className="font-semibold text-ink whitespace-nowrap">
@@ -1468,7 +1756,9 @@ export default function HomePage({
                       </div>
 
                       <div className="rounded-2xl border border-[#f0e4da] p-3">
-                        <p className="text-[12px] font-semibold text-ink">{text.deliveryZone}</p>
+                        <p className="text-[12px] font-semibold text-ink">
+                          {text.deliveryZone}
+                        </p>
                         <div className="mt-2 flex gap-2">
                           <button
                             type="button"
@@ -1501,7 +1791,11 @@ export default function HomePage({
                         <div className="flex items-center justify-between">
                           <span>{text.subtotal}</span>
                           <span className="text-neutral-900 font-medium">
-                            {isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutSubtotal)}
+                            {isSummaryLoading ? (
+                              <SummaryPlaceholder />
+                            ) : (
+                              formatPrice(checkoutSubtotal)
+                            )}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
@@ -1517,7 +1811,11 @@ export default function HomePage({
                         <div className="mt-3 flex justify-between border-t pt-3 text-[16px] font-semibold">
                           <span>{text.totalPayable}</span>
                           <span className="text-black">
-                            {isSummaryLoading ? <SummaryPlaceholder /> : formatPrice(checkoutTotal)}
+                            {isSummaryLoading ? (
+                              <SummaryPlaceholder />
+                            ) : (
+                              formatPrice(checkoutTotal)
+                            )}
                           </span>
                         </div>
                       </div>
@@ -1530,9 +1828,19 @@ export default function HomePage({
                     </div>
 
                     <div>
-                      <h2 className="mb-4 text-base font-semibold">Shipping Information</h2>
-                      <div className={clsx("grid gap-4", isFieldShake && "animate-checkout-shake")}>
-                        <label htmlFor="checkout-name" className="text-xs font-semibold text-neutral-700">
+                      <h2 className="mb-4 text-base font-semibold">
+                        Shipping Information
+                      </h2>
+                      <div
+                        className={clsx(
+                          "grid gap-4",
+                          isFieldShake && "animate-checkout-shake",
+                        )}
+                      >
+                        <label
+                          htmlFor="checkout-name"
+                          className="text-xs font-semibold text-neutral-700"
+                        >
                           Full Name <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -1541,12 +1849,18 @@ export default function HomePage({
                           placeholder="Name"
                           value={customer.name}
                           onChange={(event) =>
-                            setCustomer((prev) => ({ ...prev, name: event.target.value }))
+                            setCustomer((prev) => ({
+                              ...prev,
+                              name: event.target.value,
+                            }))
                           }
                           aria-required="true"
                           className="w-full rounded-lg border border-neutral-300 p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
                         />
-                        <label htmlFor="checkout-phone" className="text-xs font-semibold text-neutral-700">
+                        <label
+                          htmlFor="checkout-phone"
+                          className="text-xs font-semibold text-neutral-700"
+                        >
                           Phone <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -1555,12 +1869,18 @@ export default function HomePage({
                           placeholder="Phone"
                           value={customer.phone}
                           onChange={(event) =>
-                            setCustomer((prev) => ({ ...prev, phone: event.target.value }))
+                            setCustomer((prev) => ({
+                              ...prev,
+                              phone: event.target.value,
+                            }))
                           }
                           aria-required="true"
                           className="w-full rounded-lg border border-neutral-300 p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
                         />
-                        <label htmlFor="checkout-address" className="text-xs font-semibold text-neutral-700">
+                        <label
+                          htmlFor="checkout-address"
+                          className="text-xs font-semibold text-neutral-700"
+                        >
                           Address <span className="text-red-500">*</span>
                         </label>
                         <textarea
@@ -1569,7 +1889,10 @@ export default function HomePage({
                           rows={3}
                           value={customer.address}
                           onChange={(event) =>
-                            setCustomer((prev) => ({ ...prev, address: event.target.value }))
+                            setCustomer((prev) => ({
+                              ...prev,
+                              address: event.target.value,
+                            }))
                           }
                           aria-required="true"
                           className="w-full rounded-lg border border-neutral-300 p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
@@ -1587,7 +1910,8 @@ export default function HomePage({
                           disabled={isCheckoutBlocked}
                           className={clsx(
                             "mt-6 w-full rounded-full bg-black py-3 text-[14px] font-semibold text-white shadow-md transition-all duration-300 hover:scale-105 active:scale-95",
-                            isCheckoutBlocked && "cursor-not-allowed opacity-60 hover:scale-100",
+                            isCheckoutBlocked &&
+                              "cursor-not-allowed opacity-60 hover:scale-100",
                           )}
                         >
                           {isSubmitting ? (
@@ -1601,17 +1925,21 @@ export default function HomePage({
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleWhatsappRedirect("Cash on Delivery")}
+                          onClick={() =>
+                            handleWhatsappRedirect("Cash on Delivery")
+                          }
                           disabled={isCheckoutBlocked}
                           className={clsx(
                             "mt-3 w-full rounded-lg bg-green-600 py-2.5 text-[14px] text-white transition hover:bg-green-700",
-                            isCheckoutBlocked && "cursor-not-allowed opacity-60 hover:bg-green-600",
+                            isCheckoutBlocked &&
+                              "cursor-not-allowed opacity-60 hover:bg-green-600",
                           )}
                         >
                           {isSubmitting ? "Processing..." : text.orderCod}
                         </button>
                         <p className="mt-3 text-[12px] text-neutral-600">
-                          Cash on Delivery available nationwide. You will receive confirmation before dispatch.
+                          Cash on Delivery available nationwide. You will
+                          receive confirmation before dispatch.
                         </p>
                       </div>
                     </div>
@@ -1628,8 +1956,12 @@ export default function HomePage({
           <div className="panel-enter w-full rounded-t-3xl bg-white p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[12px] font-semibold text-muted">Payment Info</p>
-                <h3 className="text-base font-semibold text-ink">bKash / Nagad Transfer</h3>
+                <p className="text-[12px] font-semibold text-muted">
+                  Payment Info
+                </p>
+                <h3 className="text-base font-semibold text-ink">
+                  bKash / Nagad Transfer
+                </h3>
               </div>
               <button
                 type="button"
@@ -1649,7 +1981,9 @@ export default function HomePage({
               <p>
                 Nagad: <span className="font-semibold">{paymentNumber}</span>
               </p>
-              <p className="text-[12px] text-muted">Please pay first, then paste your Transaction ID below.</p>
+              <p className="text-[12px] text-muted">
+                Please pay first, then paste your Transaction ID below.
+              </p>
               <label htmlFor="transaction-id" className="sr-only">
                 Transaction ID
               </label>

@@ -3,11 +3,65 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import AdminToast from "@/components/admin/AdminToast";
-import type { AnnouncementContent, CarouselItem } from "@/lib/siteContent";
+import type {
+  AnnouncementContent,
+  CarouselItem,
+  FilterPanelItem,
+} from "@/lib/siteContent";
 
 const defaultAnnouncement: AnnouncementContent = {
   text: "",
   active: true,
+};
+
+const defaultFilters: FilterPanelItem[] = [
+  {
+    id: "all",
+    label: "All",
+    value: "All",
+    active: true,
+    highlight: true,
+    order: 1,
+  },
+  {
+    id: "clothing",
+    label: "Clothing",
+    value: "Clothing",
+    active: true,
+    highlight: false,
+    order: 2,
+  },
+  {
+    id: "ceramic",
+    label: "Ceramic",
+    value: "Ceramic",
+    active: true,
+    highlight: false,
+    order: 3,
+  },
+];
+
+const normalizeFilters = (payload: unknown): FilterPanelItem[] => {
+  if (!Array.isArray(payload)) return defaultFilters;
+
+  const normalized = payload
+    .filter((item): item is FilterPanelItem =>
+      Boolean(item && typeof item === "object"),
+    )
+    .map((item, index) => ({
+      id:
+        typeof item.id === "string" && item.id ? item.id : crypto.randomUUID(),
+      label: typeof item.label === "string" ? item.label : "",
+      value: typeof item.value === "string" ? item.value : "",
+      active: item.active !== false,
+      highlight: item.highlight === true,
+      order: Number.isFinite(item.order) ? Number(item.order) : index + 1,
+    }))
+    .filter((item) => item.label.trim() && item.value.trim())
+    .sort((a, b) => a.order - b.order)
+    .map((item, index) => ({ ...item, order: index + 1 }));
+
+  return normalized.length ? normalized : defaultFilters;
 };
 
 const createBlankSlide = (order: number): CarouselItem => ({
@@ -32,6 +86,8 @@ export default function ContentClient() {
   const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(
     null,
   );
+  const [filters, setFilters] = useState<FilterPanelItem[]>(defaultFilters);
+  const [savingFilters, setSavingFilters] = useState(false);
   const [toast, setToast] = useState<{
     tone: "success" | "error" | "info";
     message: string;
@@ -52,9 +108,10 @@ export default function ContentClient() {
   const loadItems = async () => {
     setError(null);
     try {
-      const [carouselRes, announcementRes] = await Promise.all([
+      const [carouselRes, announcementRes, filtersRes] = await Promise.all([
         fetch("/api/admin/content/carousel", { cache: "no-store" }),
         fetch("/api/admin/content/announcement", { cache: "no-store" }),
+        fetch("/api/content/filters", { cache: "no-store" }),
       ]);
 
       if (!carouselRes.ok) throw new Error("Unable to load carousel content.");
@@ -77,6 +134,11 @@ export default function ContentClient() {
               : "",
           active: announcementData.active !== false,
         });
+      }
+
+      if (filtersRes.ok) {
+        const filtersData = (await filtersRes.json()) as unknown;
+        setFilters(normalizeFilters(filtersData));
       }
     } catch (loadError) {
       setError(
@@ -193,6 +255,59 @@ export default function ContentClient() {
     if (!deleteCandidateId) return;
     setItems((prev) => prev.filter((slide) => slide.id !== deleteCandidateId));
     setDeleteCandidateId(null);
+  };
+
+  const moveFilter = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= filters.length) return;
+
+    setFilters((prev) => {
+      const next = [...prev];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next.map((item, orderIndex) => ({
+        ...item,
+        order: orderIndex + 1,
+      }));
+    });
+  };
+
+  const updateFilter = (id: string, patch: Partial<FilterPanelItem>) => {
+    setFilters((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
+  };
+
+  const saveFilters = async () => {
+    setSavingFilters(true);
+    setError(null);
+    setNotice(null);
+
+    try {
+      const payload = filters.map((item, index) => ({
+        ...item,
+        order: index + 1,
+      }));
+      const response = await fetch("/api/content/filters", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Unable to save filters.");
+      }
+
+      setNotice("Filter panel saved.");
+      setToast({ tone: "success", message: "Filter panel saved." });
+      const stamp = Date.now().toString();
+      localStorage.setItem("site-content-updated", stamp);
+      window.dispatchEvent(new Event("site-content-updated"));
+    } catch {
+      setError("Unable to save filters.");
+      setToast({ tone: "error", message: "Unable to save filters." });
+    } finally {
+      setSavingFilters(false);
+    }
   };
 
   return (
@@ -438,6 +553,136 @@ export default function ContentClient() {
           </button>
         </div>
       </form>
+
+      <section className="rounded-2xl bg-white p-6 shadow-md space-y-6 border border-gray-200">
+        <div>
+          <h3 className="border-b pb-3 text-xl font-semibold text-ink">
+            Filter Panel Manager
+          </h3>
+          <p className="mt-2 text-sm text-muted">
+            Manage homepage category filter labels, values, order, and emphasis.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {filters.map((filter, index) => (
+            <article
+              key={filter.id}
+              className="rounded-xl border border-gray-200 bg-gray-50 p-4"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-ink">
+                  Filter {index + 1}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="border border-black rounded-full px-3 py-1 text-xs transition-all duration-200 hover:scale-105 active:scale-95"
+                    onClick={() => moveFilter(index, -1)}
+                    disabled={index === 0}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className="border border-black rounded-full px-3 py-1 text-xs transition-all duration-200 hover:scale-105 active:scale-95"
+                    onClick={() => moveFilter(index, 1)}
+                    disabled={index === filters.length - 1}
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    className="bg-red-600 text-white rounded-full px-3 py-1 text-xs transition-all duration-200 hover:scale-105 active:scale-95"
+                    onClick={() =>
+                      setFilters((prev) =>
+                        prev.filter((item) => item.id !== filter.id),
+                      )
+                    }
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <label className="text-xs font-semibold text-muted">
+                  Label
+                  <input
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    value={filter.label}
+                    onChange={(event) =>
+                      updateFilter(filter.id, { label: event.target.value })
+                    }
+                  />
+                </label>
+                <label className="text-xs font-semibold text-muted">
+                  Value (category key)
+                  <input
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    value={filter.value}
+                    onChange={(event) =>
+                      updateFilter(filter.id, { value: event.target.value })
+                    }
+                  />
+                </label>
+                <label className="inline-flex items-center gap-2 text-xs font-semibold text-muted">
+                  <input
+                    type="checkbox"
+                    checked={filter.active}
+                    onChange={(event) =>
+                      updateFilter(filter.id, { active: event.target.checked })
+                    }
+                  />
+                  Active
+                </label>
+                <label className="inline-flex items-center gap-2 text-xs font-semibold text-muted">
+                  <input
+                    type="checkbox"
+                    checked={filter.highlight}
+                    onChange={(event) =>
+                      updateFilter(filter.id, {
+                        highlight: event.target.checked,
+                      })
+                    }
+                  />
+                  Highlight
+                </label>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            className="border border-black rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+            onClick={() =>
+              setFilters((prev) => [
+                ...prev,
+                {
+                  id: crypto.randomUUID(),
+                  label: "",
+                  value: "",
+                  active: true,
+                  highlight: false,
+                  order: prev.length + 1,
+                },
+              ])
+            }
+          >
+            Add Filter
+          </button>
+          <button
+            type="button"
+            onClick={() => void saveFilters()}
+            disabled={savingFilters}
+            className="bg-black text-white rounded-full px-6 py-2.5 text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-60"
+          >
+            {savingFilters ? "Saving..." : "Save Filters"}
+          </button>
+        </div>
+      </section>
 
       {deleteCandidate ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
