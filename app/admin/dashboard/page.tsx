@@ -1,81 +1,64 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { useEffect, useMemo, useState } from "react";
+import { getStoredOrders, type Order } from "@/lib/orders";
 
 type DashboardSummary = {
-  totalProducts: number;
   totalOrders: number;
   pendingOrders: number;
+  confirmedOrders: number;
+  deliveredOrders: number;
   totalRevenue: number;
   todayOrders: number;
   todayRevenue: number;
-  lowStockCount: number;
-};
-
-type LowStockProduct = {
-  id: number;
-  name: string;
-  stock: number;
-  low_stock_threshold: number;
 };
 
 const currency = (value: number) => `৳${Number(value ?? 0).toLocaleString("en-BD")}`;
 
 const summaryCards = (summary: DashboardSummary) => [
-  { label: "Total Products", value: summary.totalProducts },
   { label: "Total Orders", value: summary.totalOrders },
   { label: "Pending Orders", value: summary.pendingOrders },
+  { label: "Confirmed Orders", value: summary.confirmedOrders },
+  { label: "Delivered Orders", value: summary.deliveredOrders },
   { label: "Total Revenue", value: currency(summary.totalRevenue) },
   { label: "Today Orders", value: summary.todayOrders },
   { label: "Today Revenue", value: currency(summary.todayRevenue) },
-  { label: "Low Stock Count", value: summary.lowStockCount },
 ];
 
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [lowStockItems, setLowStockItems] = useState<LowStockProduct[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    let mounted = true;
-
-    const loadDashboard = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [summaryData, lowStockData] = await Promise.all([
-          apiFetch<DashboardSummary>("/admin/dashboard/summary"),
-          apiFetch<LowStockProduct[]>("/admin/products/low-stock"),
-        ]);
-
-        if (!mounted) return;
-        setSummary(summaryData);
-        setLowStockItems(lowStockData ?? []);
-      } catch (loadError) {
-        if (!mounted) return;
-        setError(loadError instanceof Error ? loadError.message : "Failed to load dashboard.");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    loadDashboard();
-
-    return () => {
-      mounted = false;
-    };
+    setOrders(getStoredOrders());
+    setLoading(false);
   }, []);
+
+  const summary = useMemo<DashboardSummary>(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const pendingOrders = orders.filter((o) => o.status === "pending").length;
+    const confirmedOrders = orders.filter((o) => o.status === "confirmed").length;
+    const deliveredOrders = orders.filter((o) => o.status === "delivered").length;
+    const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total ?? 0), 0);
+    const todayOrdersList = orders.filter((order) => order.createdAt.slice(0, 10) === today);
+
+    return {
+      totalOrders: orders.length,
+      pendingOrders,
+      confirmedOrders,
+      deliveredOrders,
+      totalRevenue,
+      todayOrders: todayOrdersList.length,
+      todayRevenue: todayOrdersList.reduce((sum, order) => sum + Number(order.total ?? 0), 0),
+    };
+  }, [orders]);
 
   return (
     <section className="space-y-6">
       <div>
         <h2 className="font-heading text-2xl font-semibold">Dashboard Overview</h2>
-        <p className="mt-1 text-sm text-muted">Operational summary and low-stock signals.</p>
+        <p className="mt-1 text-sm text-muted">Operational summary and order signals.</p>
       </div>
-
-      {error ? <p className="rounded-2xl bg-white p-4 text-sm text-red-600 shadow-soft">{error}</p> : null}
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -83,7 +66,7 @@ export default function AdminDashboardPage() {
             <div key={index} className="h-24 animate-pulse rounded-2xl bg-white shadow-soft" />
           ))}
         </div>
-      ) : summary ? (
+      ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {summaryCards(summary).map((card) => (
             <div key={card.label} className="rounded-2xl bg-white p-4 shadow-soft">
@@ -92,40 +75,13 @@ export default function AdminDashboardPage() {
             </div>
           ))}
         </div>
-      ) : null}
+      )}
 
       <div className="rounded-3xl bg-white p-6 shadow-soft">
-        <h3 className="text-lg font-semibold">Low Stock Items</h3>
-        {loading ? (
-          <div className="mt-4 space-y-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="h-10 animate-pulse rounded-xl bg-[#f7efe9]" />
-            ))}
-          </div>
-        ) : lowStockItems.length === 0 ? (
-          <p className="mt-4 text-sm text-muted">No low stock items right now.</p>
-        ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[520px] text-left text-sm">
-              <thead>
-                <tr className="text-xs uppercase tracking-wide text-muted">
-                  <th className="py-2">Product Name</th>
-                  <th className="py-2">Stock</th>
-                  <th className="py-2">Threshold</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lowStockItems.map((product) => (
-                  <tr key={product.id} className="border-t border-[#f0e4da]">
-                    <td className="py-3 font-medium">{product.name}</td>
-                    <td className="py-3">{product.stock}</td>
-                    <td className="py-3">{product.low_stock_threshold}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <h3 className="text-lg font-semibold">Inventory</h3>
+        <p className="mt-4 text-sm text-muted">
+          Product inventory and low-stock monitoring are managed in /admin/inventory.
+        </p>
       </div>
     </section>
   );
