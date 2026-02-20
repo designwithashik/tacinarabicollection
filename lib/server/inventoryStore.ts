@@ -164,7 +164,7 @@ export async function loadInventoryArray(): Promise<InventoryProduct[]> {
 
   if (typeof canonicalRaw === "string") {
     const parsed = safeJsonParse<unknown>(canonicalRaw);
-    if (!parsed || !Array.isArray(parsed)) {
+    if (!parsed) {
       return [];
     }
 
