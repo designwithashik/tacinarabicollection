@@ -1,16 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Order } from "../../../lib/orders";
-
-type OrderStatus = "pending" | "delivering" | "sent" | "failed";
-
-const orderStatuses: OrderStatus[] = [
-  "pending",
-  "delivering",
-  "sent",
-  "failed",
-];
+import { getStoredOrders } from "../../../lib/orders";
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -153,7 +145,6 @@ export default function AdminOrders() {
                     <th className="px-4 py-3">Date</th>
                     <th className="px-4 py-3">Delivery</th>
                     <th className="px-4 py-3">Payment</th>
-                    <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Total</th>
                     <th className="px-4 py-3 text-right">Action</th>
                   </tr>
@@ -172,44 +163,17 @@ export default function AdminOrders() {
                         {deliveryLabel(order.deliveryZone)}
                       </td>
                       <td className="px-4 py-3">{order.paymentMethod}</td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={order.status}
-                          onChange={(event) =>
-                            void updateStatus(
-                              order.id,
-                              event.target.value as OrderStatus,
-                            )
-                          }
-                          className="w-full rounded-lg border border-gray-200 px-2 py-1"
-                        >
-                          {orderStatuses.map((status) => (
-                            <option key={status} value={status}>
-                              {status}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
                       <td className="px-4 py-3 font-semibold">
                         ৳{order.total}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedOrder(order)}
-                            className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
-                          >
-                            View
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void deleteOrder(order.id)}
-                            className="bg-red-600 text-white rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOrder(order)}
+                          className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                        >
+                          View
+                        </button>
                       </td>
                     </tr>
                   ))}
