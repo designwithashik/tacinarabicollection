@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type { AnnouncementContent, CarouselItem } from "@/lib/siteContent";
-
 
 const defaultAnnouncement: AnnouncementContent = {
   text: "",
@@ -28,6 +27,19 @@ export default function ContentClient() {
   const [notice, setNotice] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState<AnnouncementContent>(defaultAnnouncement);
   const [savingAnnouncement, setSavingAnnouncement] = useState(false);
+  const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null);
+
+  const deleteCandidate = useMemo(
+    () => items.find((item) => item.id === deleteCandidateId) ?? null,
+    [items, deleteCandidateId]
+  );
+
+  const notifySiteContentUpdated = () => {
+    if (typeof window === "undefined") return;
+    const stamp = String(Date.now());
+    window.localStorage.setItem("site-content-updated", stamp);
+    window.dispatchEvent(new Event("site-content-updated"));
+  };
 
   const loadItems = async () => {
     setError(null);
@@ -83,6 +95,7 @@ export default function ContentClient() {
 
       setNotice("Carousel content saved.");
       setItems(normalized);
+      notifySiteContentUpdated();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save content.");
     } finally {
@@ -108,6 +121,7 @@ export default function ContentClient() {
       }
 
       setNotice("Announcement saved.");
+      notifySiteContentUpdated();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save announcement.");
     } finally {
@@ -115,17 +129,38 @@ export default function ContentClient() {
     }
   };
 
+  const updateSlide = (id: string, patch: Partial<CarouselItem>) => {
+    setItems((prev) => prev.map((slide) => (slide.id === id ? { ...slide, ...patch } : slide)));
+  };
+
+  const moveSlide = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= items.length) return;
+
+    setItems((prev) => {
+      const next = [...prev];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next;
+    });
+  };
+
+  const confirmDelete = () => {
+    if (!deleteCandidateId) return;
+    setItems((prev) => prev.filter((slide) => slide.id !== deleteCandidateId));
+    setDeleteCandidateId(null);
+  };
+
   return (
-    <section className="space-y-4 rounded-2xl border border-[#e6d8ce] bg-white p-4 md:p-6">
+    <section className="space-y-6 rounded-xl border border-[#e6d8ce] bg-white p-6 shadow-md">
       <div>
         <h2 className="font-heading text-xl font-semibold text-ink">Homepage Carousel Content</h2>
-        <p className="mt-1 text-sm text-muted">Manage slide image, text, button, active state, and order.</p>
+        <p className="mt-1 text-sm text-muted">Manage slides visually with preview, safe delete, and ordered save.</p>
       </div>
 
       {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
       {notice ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</p> : null}
 
-      <section className="space-y-3 rounded-xl border border-[#e6d8ce] p-3">
+      <section className="space-y-3 rounded-xl border border-[#e6d8ce] p-6 shadow-md">
         <h3 className="text-sm font-semibold text-ink">Animated Announcement Bar</h3>
         <input
           className="w-full rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
@@ -151,23 +186,24 @@ export default function ContentClient() {
         </button>
       </section>
 
-      <form className="space-y-4" onSubmit={handleSave}>
-        <div className="space-y-3">
+      <form className="space-y-6" onSubmit={handleSave}>
+        <div className="grid gap-6">
           {items.map((item, index) => (
-            <article key={item.id} className="space-y-3 rounded-xl border border-[#e6d8ce] p-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-ink">Slide {index + 1}</h3>
-                <div className="flex gap-2">
+            <article key={item.id} className="grid gap-6 rounded-xl border border-[#e6d8ce] p-6 shadow-md lg:grid-cols-[220px_1fr]">
+              <div className="space-y-3">
+                <div className="relative h-36 w-full overflow-hidden rounded-lg border border-[#e6d8ce] bg-[#f6f1ed]">
+                  {item.imageUrl ? (
+                    <img src={item.imageUrl} alt={item.title || `Slide ${index + 1}`} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs text-muted">No preview</div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     className="rounded-full border border-[#e6d8ce] px-3 py-1 text-xs"
                     disabled={index === 0}
-                    onClick={() => {
-                      if (index === 0) return;
-                      const next = [...items];
-                      [next[index - 1], next[index]] = [next[index], next[index - 1]];
-                      setItems(next);
-                    }}
+                    onClick={() => moveSlide(index, -1)}
                   >
                     ↑
                   </button>
@@ -175,102 +211,76 @@ export default function ContentClient() {
                     type="button"
                     className="rounded-full border border-[#e6d8ce] px-3 py-1 text-xs"
                     disabled={index === items.length - 1}
-                    onClick={() => {
-                      if (index === items.length - 1) return;
-                      const next = [...items];
-                      [next[index], next[index + 1]] = [next[index + 1], next[index]];
-                      setItems(next);
-                    }}
+                    onClick={() => moveSlide(index, 1)}
                   >
                     ↓
                   </button>
-                  <button
-                    type="button"
-                    className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600"
-                    onClick={() => setItems((prev) => prev.filter((slide) => slide.id !== item.id))}
-                  >
-                    Remove
-                  </button>
+                  <span className="text-xs text-muted">Order {index + 1}</span>
                 </div>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
-                <input
-                  className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
-                  placeholder="Image URL"
-                  value={item.imageUrl}
-                  onChange={(e) =>
-                    setItems((prev) =>
-                      prev.map((slide) =>
-                        slide.id === item.id ? { ...slide, imageUrl: e.target.value } : slide
-                      )
-                    )
-                  }
-                />
-                <input
-                  className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
-                  placeholder="Title"
-                  value={item.title}
-                  onChange={(e) =>
-                    setItems((prev) =>
-                      prev.map((slide) =>
-                        slide.id === item.id ? { ...slide, title: e.target.value } : slide
-                      )
-                    )
-                  }
-                />
-                <input
-                  className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm md:col-span-2"
-                  placeholder="Subtitle"
-                  value={item.subtitle}
-                  onChange={(e) =>
-                    setItems((prev) =>
-                      prev.map((slide) =>
-                        slide.id === item.id ? { ...slide, subtitle: e.target.value } : slide
-                      )
-                    )
-                  }
-                />
-                <input
-                  className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
-                  placeholder="Button text"
-                  value={item.buttonText}
-                  onChange={(e) =>
-                    setItems((prev) =>
-                      prev.map((slide) =>
-                        slide.id === item.id ? { ...slide, buttonText: e.target.value } : slide
-                      )
-                    )
-                  }
-                />
-                <input
-                  className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
-                  placeholder="Button link"
-                  value={item.buttonLink}
-                  onChange={(e) =>
-                    setItems((prev) =>
-                      prev.map((slide) =>
-                        slide.id === item.id ? { ...slide, buttonLink: e.target.value } : slide
-                      )
-                    )
-                  }
-                />
-              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-ink">Slide {index + 1}</h3>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={item.active}
+                      onClick={() => updateSlide(item.id, { active: !item.active })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        item.active ? "bg-emerald-500" : "bg-gray-300"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                          item.active ? "translate-x-5" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-600"
+                      onClick={() => setDeleteCandidateId(item.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
 
-              <label className="inline-flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={item.active}
-                  onChange={(e) =>
-                    setItems((prev) =>
-                      prev.map((slide) =>
-                        slide.id === item.id ? { ...slide, active: e.target.checked } : slide
-                      )
-                    )
-                  }
-                />
-                Active
-              </label>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <input
+                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm md:col-span-2"
+                    placeholder="Image URL"
+                    value={item.imageUrl}
+                    onChange={(e) => updateSlide(item.id, { imageUrl: e.target.value })}
+                  />
+                  <input
+                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
+                    placeholder="Title"
+                    value={item.title}
+                    onChange={(e) => updateSlide(item.id, { title: e.target.value })}
+                  />
+                  <input
+                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
+                    placeholder="Button text"
+                    value={item.buttonText}
+                    onChange={(e) => updateSlide(item.id, { buttonText: e.target.value })}
+                  />
+                  <input
+                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm md:col-span-2"
+                    placeholder="Subtitle"
+                    value={item.subtitle}
+                    onChange={(e) => updateSlide(item.id, { subtitle: e.target.value })}
+                  />
+                  <input
+                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm md:col-span-2"
+                    placeholder="Button link"
+                    value={item.buttonLink}
+                    onChange={(e) => updateSlide(item.id, { buttonLink: e.target.value })}
+                  />
+                </div>
+              </div>
             </article>
           ))}
         </div>
@@ -281,17 +291,49 @@ export default function ContentClient() {
             className="rounded-full border border-[#e6d8ce] px-4 py-2 text-sm font-semibold"
             onClick={() => setItems((prev) => [...prev, createBlankSlide(prev.length + 1)])}
           >
-            Add Slide
+            Add New Slide
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
           >
-            {saving ? "Saving..." : "Save Carousel"}
+            {saving ? (
+              <>
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                Saving...
+              </>
+            ) : (
+              "Save Carousel"
+            )}
           </button>
         </div>
       </form>
+
+      {deleteCandidate ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-md">
+            <h4 className="text-base font-semibold text-ink">Delete this slide?</h4>
+            <p className="mt-2 text-sm text-muted">This removes the slide from the current draft list.</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-full border border-[#e6d8ce] px-4 py-2 text-sm"
+                onClick={() => setDeleteCandidateId(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white"
+                onClick={confirmDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
