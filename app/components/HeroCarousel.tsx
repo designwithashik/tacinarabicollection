@@ -49,19 +49,18 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
   useEffect(() => {
     if (slides.length < 2 || isPaused) return;
 
-    const timer = window.setTimeout(() => {
+    const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % slides.length);
-    }, 5000);
+    }, 6000);
 
-    return () => window.clearTimeout(timer);
-  }, [slides.length, currentIndex, isPaused]);
+    return () => clearInterval(interval);
+  }, [slides.length, isPaused]);
 
   if (slides.length === 0) {
     return null;
   }
 
   const goTo = (index: number) => {
-    if (slides.length === 0) return;
     const safeIndex = ((index % slides.length) + slides.length) % slides.length;
     setCurrentIndex(safeIndex);
   };
@@ -113,11 +112,20 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
       onTouchEnd={onTouchEnd}
     >
       <div
-        className="flex transition-transform duration-700 ease-[cubic-bezier(.22,1,.36,1)]"
-        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        className="flex will-change-transform"
+        style={{
+          transform: `translate3d(-${currentIndex * 100}%, 0, 0)`,
+          transition: "transform 900ms cubic-bezier(.22,1,.36,1)",
+        }}
       >
-        {slides.map((slide) => (
-          <article key={slide.id} className="relative w-full flex-shrink-0 aspect-[16/9] md:aspect-[21/9]">
+        {slides.map((slide, index) => (
+          <article
+            key={slide.id}
+            className={clsx(
+              "relative w-full flex-shrink-0 aspect-[16/9] md:aspect-[21/9] overflow-hidden transition-transform duration-[900ms]",
+              index === currentIndex ? "scale-100" : "scale-[0.985]"
+            )}
+          >
             <img
               src={slide.imageUrl || "/images/product-1.svg"}
               alt={slide.title || "Carousel slide"}
@@ -132,7 +140,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
                 <p className="text-base md:text-lg opacity-90">{slide.subtitle}</p>
                 <div>
                   <a
-                    className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-white text-black font-semibold shadow-lg hover:scale-105 transition-all duration-300"
+                    className="inline-flex items-center justify-center px-7 py-3 rounded-full bg-white text-black font-semibold shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
                     href={slide.buttonLink || "/"}
                   >
                     {slide.buttonText || "Shop Now"}
@@ -149,7 +157,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <button
             type="button"
             aria-label="Previous slide"
-            className="absolute left-3 top-1/2 z-30 -translate-y-1/2 rounded-full bg-white/25 p-2.5 text-white backdrop-blur-sm transition-all duration-300 hover:scale-110"
+            className="absolute top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:bg-black/50 hover:scale-110 left-3"
             onClick={goPrev}
           >
             ‹
@@ -157,7 +165,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <button
             type="button"
             aria-label="Next slide"
-            className="absolute right-3 top-1/2 z-30 -translate-y-1/2 rounded-full bg-white/25 p-2.5 text-white backdrop-blur-sm transition-all duration-300 hover:scale-110"
+            className="absolute top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:bg-black/50 hover:scale-110 right-3"
             onClick={goNext}
           >
             ›
@@ -172,8 +180,8 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
             type="button"
             aria-label={`Go to slide ${index + 1}`}
             className={clsx(
-              "h-2.5 rounded-full bg-white/70 transition-all duration-300",
-              index === currentIndex ? "w-8" : "w-2.5 hover:scale-110"
+              "transition-all duration-300 rounded-full",
+              index === currentIndex ? "w-6 h-2 bg-white" : "w-2 h-2 bg-white/50"
             )}
             onClick={() => goTo(index)}
           />

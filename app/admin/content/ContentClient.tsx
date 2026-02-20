@@ -151,7 +151,7 @@ export default function ContentClient() {
   };
 
   return (
-    <section className="space-y-6 rounded-xl border border-[#e6d8ce] bg-white p-6 shadow-md">
+    <section className="rounded-xl bg-white shadow-md p-6 space-y-6">
       <div>
         <h2 className="font-heading text-xl font-semibold text-ink">Homepage Carousel Content</h2>
         <p className="mt-1 text-sm text-muted">Manage slides visually with preview, safe delete, and ordered save.</p>
@@ -160,30 +160,64 @@ export default function ContentClient() {
       {error ? <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
       {notice ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</p> : null}
 
-      <section className="space-y-3 rounded-xl border border-[#e6d8ce] p-6 shadow-md">
-        <h3 className="text-sm font-semibold text-ink">Animated Announcement Bar</h3>
-        <input
-          className="w-full rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
-          placeholder="Announcement text"
+      <section className="rounded-xl bg-white shadow-md p-6 space-y-6 border border-[#e6d8ce]">
+        <div>
+          <h3 className="text-xl font-semibold mb-2 text-ink">Text Bar Under Carousel</h3>
+          <p className="text-sm text-muted">Control the animated announcement shown below the hero.</p>
+        </div>
+
+        <textarea
+          className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-black"
+          rows={3}
+          placeholder="Enter announcement text"
           value={announcement.text}
           onChange={(e) => setAnnouncement((prev) => ({ ...prev, text: e.target.value }))}
         />
-        <label className="inline-flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={announcement.active}
-            onChange={(e) => setAnnouncement((prev) => ({ ...prev, active: e.target.checked }))}
-          />
-          Active
-        </label>
-        <button
-          type="button"
-          onClick={handleSaveAnnouncement}
-          disabled={savingAnnouncement}
-          className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-        >
-          {savingAnnouncement ? "Saving..." : "Save Announcement"}
-        </button>
+
+        <div className="flex items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-3">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={announcement.active}
+              onClick={() => setAnnouncement((prev) => ({ ...prev, active: !prev.active }))}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                announcement.active ? "bg-emerald-500" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                  announcement.active ? "translate-x-5" : "translate-x-1"
+                }`}
+              />
+            </button>
+            <span className="text-sm text-ink">Active</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSaveAnnouncement}
+            disabled={savingAnnouncement}
+            className="bg-black text-white px-5 py-2.5 rounded-full font-medium transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-60"
+          >
+            {savingAnnouncement ? "Saving..." : "Save Text Bar"}
+          </button>
+        </div>
+
+        <div className="mt-4 rounded-lg border p-4 overflow-hidden relative bg-gray-50">
+          <p className="text-xs font-semibold text-muted mb-2">Live Preview</p>
+          <div className="rounded-md bg-black py-2 px-3 text-white overflow-hidden">
+            {announcement.active ? (
+              <div className="whitespace-nowrap animate-[announcementScroll_20s_linear_infinite] text-sm">
+                {(announcement.text.trim() || "Your announcement will appear here") + "   •   "}
+                {(announcement.text.trim() || "Your announcement will appear here") + "   •   "}
+                {announcement.text.trim() || "Your announcement will appear here"}
+              </div>
+            ) : (
+              <p className="text-sm text-white/70">Announcement is currently inactive.</p>
+            )}
+          </div>
+        </div>
       </section>
 
       <form className="space-y-6" onSubmit={handleSave}>
@@ -334,6 +368,13 @@ export default function ContentClient() {
           </div>
         </div>
       ) : null}
+
+      <style jsx global>{`
+        @keyframes announcementScroll {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
     </section>
   );
 }
