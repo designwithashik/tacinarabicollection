@@ -63,7 +63,10 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
   useEffect(() => {
     const loadHeroProducts = async () => {
       try {
-        const res = await fetch("/api/products?hero=true", { cache: "default" });
+        const res = await fetch("/api/products?hero=true", {
+          cache: "no-store",
+          next: { revalidate: 0 },
+        });
         if (!res.ok) return;
         const data = (await res.json()) as HeroProduct[];
         if (Array.isArray(data) && data.length > 0) {
