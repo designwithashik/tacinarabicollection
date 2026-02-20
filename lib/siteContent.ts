@@ -13,3 +13,13 @@ export type AnnouncementContent = {
   text: string;
   active: boolean;
 };
+
+export type FilterPanelItem = {
+  id: string;
+  label: string;
+  value: string;
+  active: boolean;
+  highlight: boolean;
+  showOnLanding: boolean;
+  order: number;
+};
