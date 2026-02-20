@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import clsx from "clsx";
 
 export type HeroProduct = {
@@ -22,12 +21,10 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
   const handleAddToCart = useCallback((product: HeroProduct) => {
     addToCart(product);
   }, [addToCart]);
-  // Phase1.8: State for dynamic hero products and active slide index.
+
   const [heroProducts, setHeroProducts] = useState<HeroProduct[]>(initialProducts.slice(0, 3));
   const [currentIndex, setCurrentIndex] = useState(0);
-  const prefersReducedMotion = useReducedMotion();
 
-  // Phase1.8: Fetch admin-controlled featured products.
   useEffect(() => {
     const loadHeroProducts = async () => {
       try {
@@ -45,16 +42,15 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
     void loadHeroProducts();
   }, []);
 
-  // Phase1.8: Auto-scroll slides every 6 seconds for calmer pacing.
   useEffect(() => {
-    if (heroProducts.length < 2 || prefersReducedMotion) return;
+    if (heroProducts.length < 2) return;
 
     const interval = window.setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % heroProducts.length);
     }, 6000);
 
     return () => window.clearInterval(interval);
-  }, [heroProducts.length, prefersReducedMotion]);
+  }, [heroProducts.length]);
 
   useEffect(() => {
     setCurrentIndex((prev) => {
@@ -67,78 +63,99 @@ export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }
     return null;
   }
 
+  const goPrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + heroProducts.length) % heroProducts.length);
+  };
+
+  const goNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % heroProducts.length);
+  };
+
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl md:rounded-3xl">
-      {/* Phase1.8: Horizontal slide animation wrapper. */}
-      <motion.div
-        className="flex"
-        animate={{ x: `-${currentIndex * 100}%` }}
-        transition={{ type: "tween", duration: prefersReducedMotion ? 0 : 0.7, ease: "easeInOut" }}
-      >
-        {heroProducts.map((product) => (
-          <div
-            key={product.id}
-            className="relative min-w-full overflow-hidden"
-          >
-            <div className="aspect-[16/7] md:aspect-[21/8] pointer-events-none">
+    <div className="relative overflow-hidden w-full">
+      <div className="aspect-[16/9] md:aspect-[21/9] overflow-hidden rounded-2xl md:rounded-3xl">
+        <div
+          className="flex transition-transform duration-700 ease-in-out"
+          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        >
+          {heroProducts.map((product) => (
+            <div key={product.id} className="w-full flex-shrink-0 relative">
               <img
                 src={product.imageUrl || product.image || "/images/product-1.svg"}
                 alt={product.name}
-                className="w-full h-auto md:h-full object-cover"
+                className="h-full w-full object-cover"
               />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent pointer-events-none" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
 
-            <div className="absolute inset-0 z-20 flex items-end md:items-center justify-center px-6 pb-10 md:pb-0">
-              <div className="text-center text-white max-w-xl">
-                <h2 className="text-2xl md:text-4xl font-medium tracking-wide">
-                  {product.name}
-                </h2>
+              <div className="absolute inset-0 z-20 flex items-end justify-center px-6 pb-10 md:items-center md:pb-0">
+                <div className="max-w-xl text-center text-white">
+                  <h2 className="text-2xl font-medium tracking-wide md:text-4xl">{product.name}</h2>
 
-                <p className="mt-3 text-sm md:text-base text-white/80">
-                  A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living.
-                </p>
+                  <p className="mt-3 text-sm text-white/80 md:text-base">
+                    A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living.
+                  </p>
 
-                <div className="mt-5 flex justify-center">
-                  <button
-                    type="button"
-                    className="btn-primary relative z-30"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAddToCart(product);
-                    }}
-                  >
-                    Add to Cart
-                  </button>
+                  <div className="mt-5 flex justify-center">
+                    <button
+                      type="button"
+                      className="btn-primary relative z-30"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToCart(product);
+                      }}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {heroProducts.length > 1 ? (
+        <>
+          <button
+            type="button"
+            aria-label="Previous slide"
+            className="absolute left-3 top-1/2 z-30 -translate-y-1/2 rounded-full bg-white/85 p-2 text-neutral-800 shadow-md transition-all duration-300 hover:scale-105"
+            onClick={goPrev}
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            aria-label="Next slide"
+            className="absolute right-3 top-1/2 z-30 -translate-y-1/2 rounded-full bg-white/85 p-2 text-neutral-800 shadow-md transition-all duration-300 hover:scale-105"
+            onClick={goNext}
+          >
+            ›
+          </button>
+        </>
+      ) : null}
 
       {buyNow ? (
         <button
           type="button"
-          className="absolute right-6 top-6 rounded-full border border-white/50 bg-black/30 px-3 py-1 text-xs text-white"
+          className="absolute right-6 top-6 z-30 rounded-full border border-white/50 bg-black/40 px-3 py-1 text-xs text-white shadow-md transition-all duration-300 hover:scale-105"
           onClick={() => buyNow(heroProducts[currentIndex])}
         >
           Buy Now
         </button>
       ) : null}
 
-      {/* Phase1.8: Subtle navigation dots. */}
-      <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
+      <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 gap-2">
         {heroProducts.map((product, index) => (
           <button
             key={`dot-${product.id}`}
             type="button"
             aria-label={`Go to slide ${index + 1}`}
             className={clsx(
-              "h-2.5 w-2.5 rounded-full transition-opacity duration-300",
+              "h-2.5 w-2.5 rounded-full shadow-sm transition-all duration-300 hover:scale-105",
               index === currentIndex
                 ? "bg-[var(--brand-primary)]/70"
-                : "bg-[var(--brand-secondary)]/35 hover:opacity-100 opacity-60"
+                : "bg-[var(--brand-secondary)]/35 opacity-60 hover:opacity-100"
             )}
             onClick={() => setCurrentIndex(index)}
           />
