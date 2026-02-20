@@ -5,6 +5,7 @@ import HomeClient from "./HomeClient";
 import type { AdminProduct } from "../lib/inventory";
 import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
 import type { Metadata } from "next";
+import type { AnnouncementContent, CarouselItem } from "@/lib/siteContent";
 
 const siteUrl = "https://tacinarabicollection.vercel.app";
 
@@ -19,12 +20,32 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   let initialAdminProducts: AdminProduct[] = [];
+  let initialAnnouncement: AnnouncementContent = { text: "", active: true };
+  let initialCarouselSlides: CarouselItem[] = [];
 
   try {
     const products = await loadInventoryArray();
     initialAdminProducts = products.map(toStorefrontProduct) as AdminProduct[];
   } catch {
     initialAdminProducts = [];
+  }
+
+  try {
+    const [carouselRes, announcementRes] = await Promise.all([
+      fetch(`${siteUrl}/api/content/carousel`, { cache: "no-store" }),
+      fetch(`${siteUrl}/api/content/announcement`, { cache: "no-store" }),
+    ]);
+
+    if (carouselRes.ok) {
+      initialCarouselSlides = (await carouselRes.json()) as CarouselItem[];
+    }
+
+    if (announcementRes.ok) {
+      initialAnnouncement = (await announcementRes.json()) as AnnouncementContent;
+    }
+  } catch {
+    initialCarouselSlides = [];
+    initialAnnouncement = { text: "", active: true };
   }
 
   const organizationSchema = {
@@ -70,7 +91,11 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
       />
-      <HomeClient initialAdminProducts={initialAdminProducts} />
+      <HomeClient
+        initialAdminProducts={initialAdminProducts}
+        initialCarouselSlides={initialCarouselSlides}
+        initialAnnouncement={initialAnnouncement}
+      />
     </>
   );
 }

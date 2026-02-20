@@ -251,6 +251,26 @@ a:focus-visible {
   transform: scale(1.02);
 }
 
+
+@keyframes announcement-scroll {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-33.333%, 0, 0);
+  }
+}
+
+.animate-announcement-scroll {
+  animation: announcement-scroll var(--announcement-duration, 20s) linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.animate-announcement-scroll:hover {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .interactive-feedback:active {
     transform: none;
@@ -258,6 +278,10 @@ a:focus-visible {
 
   .product-image:hover {
     transform: none;
+  }
+
+  .animate-announcement-scroll {
+    animation: none;
   }
 
   .skeleton-shimmer {
@@ -274,6 +298,7 @@ a:focus-visible {
     transform: none;
   }
 }
+
 
 @media (prefers-reduced-motion: reduce) {
   * {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
@@ -11,7 +11,7 @@ import SectionLoader from "../components/SectionLoader";
 import CartSkeleton from "../components/CartSkeleton";
 import SummaryPlaceholder from "../components/SummaryPlaceholder";
 import { AnimatedWrapper } from "../components/AnimatedWrapper";
-import HeroCarousel, { type HeroProduct } from "./components/HeroCarousel";
+import HeroCarousel from "./components/HeroCarousel";
 import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import { Facebook, Instagram, SlidersHorizontal } from "lucide-react";
@@ -22,6 +22,7 @@ import type { CustomerInfo } from "../lib/orders";
 import { addOrder } from "../lib/orders";
 import { buildWhatsAppMessage } from "../lib/whatsapp";
 import type { AdminProduct } from "../lib/inventory";
+import type { AnnouncementContent, CarouselItem } from "../lib/siteContent";
 import useCart from "../hooks/useCart";
 
 const whatsappNumber = "+8801522119189";
@@ -78,6 +79,11 @@ const storageKeys = {
 };
 
 const statusLabels = ["New", "Popular", "Low Stock"] as const;
+
+const defaultAnnouncement: AnnouncementContent = {
+  text: "Free nationwide delivery updates • WhatsApp-first support • Elegant modest fashion curated for Bangladesh",
+  active: true,
+};
 
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
 const INVENTORY_UPDATED_EVENTS = [
@@ -160,10 +166,14 @@ const getStockLabel = (index: number) =>
 
 type HomeClientProps = {
   initialAdminProducts?: AdminProduct[];
+  initialAnnouncement?: AnnouncementContent;
+  initialCarouselSlides?: CarouselItem[];
 };
 
 export default function HomePage({
   initialAdminProducts = [],
+  initialAnnouncement = defaultAnnouncement,
+  initialCarouselSlides = [],
 }: HomeClientProps) {
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -203,9 +213,12 @@ export default function HomePage({
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>(initialAdminProducts);
   const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
+  const [announcement, setAnnouncement] = useState<AnnouncementContent>(initialAnnouncement);
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
+  const trustBarRef = useRef<HTMLDivElement | null>(null);
+  const isTrustBarInView = useInView(trustBarRef, { once: true, amount: 0.35 });
 
   const showToast = (nextToast: ToastState) => {
     setToast(nextToast);
@@ -269,6 +282,30 @@ export default function HomePage({
   useEffect(() => {
     void loadPublicInventory();
   }, [loadPublicInventory]);
+
+  useEffect(() => {
+    const loadAnnouncement = async () => {
+      try {
+        const res = await fetch("/api/content/announcement", {
+          cache: "no-store",
+          next: { revalidate: 0 },
+        });
+        if (!res.ok) return;
+
+        const data = (await res.json()) as AnnouncementContent;
+        if (!data || typeof data !== "object") return;
+
+        setAnnouncement({
+          text: typeof data.text === "string" ? data.text : defaultAnnouncement.text,
+          active: data.active !== false,
+        });
+      } catch {
+        setAnnouncement(defaultAnnouncement);
+      }
+    };
+
+    void loadAnnouncement();
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -574,19 +611,8 @@ export default function HomePage({
 
   const productSource = adminProducts.filter((item) => item.active !== false);
 
-  const announcementText = useMemo(() => {
-    const editableAnnouncement = productSource
-      .map((item) => {
-        const meta = item as AdminProduct & { subtitle?: string; title?: string };
-        return meta.subtitle || meta.title || "";
-      })
-      .find((value) => value.trim().length > 0);
-
-    return (
-      editableAnnouncement ||
-      "Free nationwide delivery updates • WhatsApp-first support • Elegant modest fashion curated for Bangladesh"
-    );
-  }, [productSource]);
+  const announcementText = announcement.text.trim() || defaultAnnouncement.text;
+  const announcementDuration = announcementText.length < 90 ? "15s" : announcementText.length > 180 ? "28s" : "20s";
 
   const filteredProducts = useMemo(() => {
     let result = [...productSource];
@@ -734,34 +760,6 @@ export default function HomePage({
   const isSummaryLoading = !hasMounted || isCartHydrating;
   const hasPaymentProof = Boolean(transactionId.trim());
 
-  const handleHeroAddToCart = (heroProduct: HeroProduct, sizeOverride: string | null = null) => {
-    const matchedProduct = adminProducts.find((item) => item.id === heroProduct.id);
-
-    if (!matchedProduct) {
-      showToast({ type: "error", message: "Product is unavailable right now." });
-      return;
-    }
-
-    const defaultSize =
-      sizeOverride ?? selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
-    setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
-    handleAddToCart(matchedProduct, defaultSize);
-  };
-
-  const handleHeroBuyNow = (heroProduct: HeroProduct, sizeOverride: string | null = null) => {
-    const matchedProduct = adminProducts.find((item) => item.id === heroProduct.id);
-
-    if (!matchedProduct) {
-      showToast({ type: "error", message: "Product is unavailable right now." });
-      return;
-    }
-
-    const defaultSize =
-      sizeOverride ?? selectedSizes[matchedProduct.id] ?? matchedProduct.sizes[0] ?? "M";
-    setSelectedSizes((prev) => ({ ...prev, [matchedProduct.id]: defaultSize }));
-    handleBuyNow(matchedProduct, defaultSize);
-  };
-
   return (
     <div
       className={clsx(
@@ -774,50 +772,67 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="border-b border-neutral-200 bg-white">
-        <nav className="sticky top-0 z-50 mx-auto flex max-w-6xl items-center justify-between border-b border-neutral-200 bg-white px-4 py-3 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setShowCart(true)}
-            className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
-            aria-label="Open cart"
-          >
-            <span className={clsx(cartBump && "animate-cart-bounce")}>🛍️</span>
-            {hasMounted && cartItems.length > 0 ? (
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
-                {cartItems.length}
-              </span>
-            ) : !hasMounted ? (
-              <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[#eadad0]" />
-            ) : null}
-          </button>
+      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur">
+        <nav className="mx-auto w-full max-w-6xl px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-h-10 min-w-[104px] items-center justify-start">
+              <LanguageToggle language={language} setLanguage={setLanguage} />
+            </div>
 
-          <p className="text-[16px] font-semibold leading-[1.4] text-neutral-900">Tacin Arabi</p>
+            <p className="text-center text-[16px] font-semibold leading-[1.4] text-neutral-900">
+              Tacin Arabi
+            </p>
 
-          <LanguageToggle language={language} setLanguage={setLanguage} />
+            <button
+              type="button"
+              onClick={() => setShowCart(true)}
+              className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
+              aria-label="Open cart"
+            >
+              <span className={clsx(cartBump && "animate-cart-bounce")}>🛍️</span>
+              {hasMounted && cartItems.length > 0 ? (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
+                  {cartItems.length}
+                </span>
+              ) : !hasMounted ? (
+                <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[#eadad0]" />
+              ) : null}
+            </button>
+          </div>
         </nav>
       </header>
 
       <section className="relative">
         <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
-          <HeroCarousel
-            addToCart={handleHeroAddToCart}
-            buyNow={handleHeroBuyNow}
-            initialProducts={initialAdminProducts.filter((item) => item.heroFeatured).slice(0, 3)}
-          />
+          <HeroCarousel initialSlides={initialCarouselSlides} />
         </div>
         <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
       </section>
 
-      <section className="bg-black py-2 text-white">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="relative overflow-hidden whitespace-nowrap">
-            <div className="inline-block min-w-full animate-marquee text-[13px] font-medium tracking-wide">
-              {announcementText} &nbsp;&nbsp;&nbsp; {announcementText}
+      {announcement.active ? (
+        <section className="bg-black py-2 text-white">
+          <div
+            ref={trustBarRef}
+            className={clsx(
+              "mx-auto max-w-6xl px-4 transition-all duration-700 ease-out",
+              isTrustBarInView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
+            )}
+          >
+            <div className="relative overflow-hidden w-full bg-black text-white">
+              <div
+                className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-[13px] font-medium tracking-wide"
+                style={{ "--announcement-duration": announcementDuration } as Record<string, string>}
+              >
+                <span className="px-8 flex-none">{announcementText}</span>
+                <span className="px-8 flex-none">{announcementText}</span>
+                <span className="px-8 flex-none" aria-hidden="true">{announcementText}</span>
+              </div>
+              <div className="absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-black to-transparent pointer-events-none" />
+              <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-black to-transparent pointer-events-none" />
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="bg-[#F7F6F4]">
         <AnimatedWrapper className="retail-section-enter" variant="section">
