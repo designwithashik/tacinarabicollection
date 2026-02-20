@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import HomeClient from "./HomeClient";
-import type { AdminProduct } from "../lib/inventory";
+import type { AdminProduct } from "../lib/models/inventory";
 import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
 import type { Metadata } from "next";
 

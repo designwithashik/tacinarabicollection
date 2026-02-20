@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import type { AdminProduct } from "../../../lib/inventory";
-import { validateImageUrl } from "../../../lib/images";
+import type { AdminProduct } from "../../../lib/models/inventory";
+import { validateImageUrl } from "../../../lib/utils/images";
 
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
 const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;

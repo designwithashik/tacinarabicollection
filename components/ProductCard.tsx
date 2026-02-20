@@ -4,7 +4,7 @@
 import Image from "next/image";
 import clsx from "clsx";
 import { useEffect, useMemo, useState } from "react";
-import type { Product } from "../lib/products";
+import type { Product } from "../lib/models/products";
 import QuickView from "./QuickView";
 import Button from "./ui/Button";
 import Badge from "./ui/Badge";

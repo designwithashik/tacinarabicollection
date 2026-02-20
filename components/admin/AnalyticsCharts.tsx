@@ -1,6 +1,6 @@
 "use client";
 
-import type { Order } from "../../lib/orders";
+import type { Order } from "../../lib/models/orders";
 
 const formatMoney = (value: number) => `৳${value.toLocaleString("en-BD")}`;
 

@@ -1,6 +1,6 @@
 export const runtime = "edge";
 import { notFound } from "next/navigation";
-import { products, type Product } from "../../../lib/products";
+import { products, type Product } from "../../../lib/models/products";
 import { loadInventoryArray, toStorefrontProduct } from "../../../lib/server/inventoryStore";
 import ProductDetailClient from "./ProductDetailClient";
 

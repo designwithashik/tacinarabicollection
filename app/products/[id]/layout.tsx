@@ -1,6 +1,6 @@
 export const runtime = 'edge';
 import type { Metadata } from "next";
-import { products } from "../../../lib/products";
+import { products } from "../../../lib/models/products";
 import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
 
 export const dynamic = "force-dynamic";

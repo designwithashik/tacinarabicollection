@@ -1,5 +1,5 @@
-import type { CartItem } from "./cart";
-import type { CustomerInfo } from "./orders";
+import type { CartItem } from "../models/cart";
+import type { CustomerInfo } from "../models/orders";
 import { getPublicImageUrl } from "./images";
 
 const formatMoney = (value: number) => {

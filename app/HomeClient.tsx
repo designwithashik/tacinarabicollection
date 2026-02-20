@@ -15,16 +15,16 @@ import HeroCarousel, { type HeroProduct } from "./components/HeroCarousel";
 import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import { Facebook, Instagram, SlidersHorizontal } from "lucide-react";
-import type { Product } from "../lib/products";
-import type { CartItem } from "../lib/cart";
+import type { Product } from "../lib/models/products";
+import type { CartItem } from "../lib/models/cart";
 import {
   getSafeCartSubtotal,
   normalizeCartItem,
-} from "../lib/cart";
-import type { CustomerInfo } from "../lib/orders";
-import { addOrder } from "../lib/orders";
-import { buildWhatsAppMessage } from "../lib/whatsapp";
-import type { AdminProduct } from "../lib/inventory";
+} from "../lib/models/cart";
+import type { CustomerInfo } from "../lib/models/orders";
+import { addOrder } from "../lib/models/orders";
+import { buildWhatsAppMessage } from "../lib/utils/whatsapp";
+import type { AdminProduct } from "../lib/models/inventory";
 import useCart from "../hooks/useCart";
 
 // Contact numbers

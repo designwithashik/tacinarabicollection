@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { getStoredOrders, type Order } from "../../../lib/orders";
+import { getStoredOrders, type Order } from "../../../lib/models/orders";
 
 const AnalyticsCharts = dynamic(
   () => import("../../../components/admin/AnalyticsCharts"),

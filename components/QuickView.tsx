@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
-import type { Product } from "../lib/products";
+import type { Product } from "../lib/models/products";
 
 type QuickViewProps = {
   product: Product | null;

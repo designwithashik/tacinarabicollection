@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import clsx from "clsx";
-import type { Product } from "../../../lib/products";
+import type { Product } from "../../../lib/models/products";
 import useCart from "../../../hooks/useCart";
 
 type Props = {
