@@ -107,7 +107,6 @@ a:focus-visible {
   }
 }
 
-
 @keyframes floatSoft {
   0% {
     transform: translateY(0px);
@@ -177,13 +176,56 @@ a:focus-visible {
   }
 }
 
+@keyframes admin-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes admin-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes checkout-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
 .animate-cart-bounce {
   animation: cart-bounce 0.45s ease-out;
 }
 
 .interactive-feedback {
-  transition: transform 220ms ease-out, box-shadow 220ms ease-out,
-    opacity 220ms ease-out, background-color 220ms ease-out,
+  transition:
+    transform 220ms ease-out,
+    box-shadow 220ms ease-out,
+    opacity 220ms ease-out,
+    background-color 220ms ease-out,
     border-color 220ms ease-out;
 }
 
@@ -209,7 +251,6 @@ a:focus-visible {
   animation: fadeUp 260ms ease-out forwards;
 }
 
-
 .animate-floatSoft {
   animation: floatSoft 6s ease-in-out infinite;
 }
@@ -223,7 +264,9 @@ a:focus-visible {
 }
 
 .floating-action {
-  transition: transform 240ms ease-out, box-shadow 240ms ease-out,
+  transition:
+    transform 240ms ease-out,
+    box-shadow 240ms ease-out,
     opacity 240ms ease-out;
 }
 
@@ -241,6 +284,10 @@ a:focus-visible {
   animation: subtle-shimmer 1.2s ease-in-out infinite;
 }
 
+.animate-checkout-shake {
+  animation: checkout-shake 320ms ease-in-out;
+}
+
 /* Phase1.5: Image Hover Motion */
 .product-image {
   transition: transform 250ms ease-in-out;
@@ -250,7 +297,6 @@ a:focus-visible {
 .product-image:hover {
   transform: scale(1.02);
 }
-
 
 @keyframes announcement-scroll {
   0% {
@@ -262,7 +308,8 @@ a:focus-visible {
 }
 
 .animate-announcement-scroll {
-  animation: announcement-scroll var(--announcement-duration, 20s) linear infinite;
+  animation: announcement-scroll var(--announcement-duration, 20s) linear
+    infinite;
   will-change: transform;
   transform: translateZ(0);
 }
@@ -299,7 +346,6 @@ a:focus-visible {
   }
 }
 
-
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -321,4 +367,12 @@ a:focus-visible {
 
 .animate-modalFade {
   animation: modalFade 0.25s ease-out forwards;
+}
+
+.admin-modal-enter {
+  animation: admin-modal-in 220ms ease-out;
+}
+
+.admin-toast-enter {
+  animation: admin-toast-in 220ms ease-out;
 }

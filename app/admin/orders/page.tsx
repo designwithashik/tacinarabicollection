@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getStoredOrders, type Order } from "../../../lib/orders";
+import type { Order } from "../../../lib/orders";
+import { getStoredOrders } from "../../../lib/orders";
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [deliveryFilter, setDeliveryFilter] = useState("all");
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     setOrders(getStoredOrders());
@@ -25,19 +27,19 @@ export default function AdminOrders() {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h2 className="font-heading text-2xl font-semibold">Orders</h2>
-        <p className="mt-1 text-sm text-muted">
-          Review and filter incoming orders.
-        </p>
-      </div>
+      <div className="rounded-2xl bg-white p-6 shadow-md space-y-6">
+        <div>
+          <h2 className="border-b pb-3 text-xl font-semibold">Orders</h2>
+          <p className="mt-2 text-sm text-muted">
+            Review and filter incoming orders.
+          </p>
+        </div>
 
-      <div className="rounded-3xl bg-white p-6 shadow-soft">
         <div className="flex flex-wrap gap-3">
           <label className="text-xs font-semibold">
             Payment
             <select
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
               value={paymentFilter}
               onChange={(event) => setPaymentFilter(event.target.value)}
             >
@@ -49,7 +51,7 @@ export default function AdminOrders() {
           <label className="text-xs font-semibold">
             Delivery Zone
             <select
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
               value={deliveryFilter}
               onChange={(event) => setDeliveryFilter(event.target.value)}
             >
@@ -61,49 +63,97 @@ export default function AdminOrders() {
         </div>
       </div>
 
-      <div className="rounded-3xl bg-white p-6 shadow-soft">
+      <div className="rounded-2xl bg-white p-6 shadow-md space-y-6">
+        <h3 className="border-b pb-3 text-xl font-semibold">Order Table</h3>
         {filteredOrders.length === 0 ? (
           <p className="text-sm text-muted">No orders found.</p>
         ) : (
-          <div className="space-y-4">
-            {filteredOrders.map((order) => (
-              <details
-                key={order.id}
-                className="rounded-2xl border border-[#f0e4da] p-4"
-              >
-                <summary className="cursor-pointer list-none">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">{order.id}</span>
-                    <span className="text-xs text-muted">
-                      {new Date(order.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-sm">
-                    <span className="text-muted">
-                      {deliveryLabel(order.deliveryZone)}
-                    </span>
-                    <span className="font-semibold">৳{order.total}</span>
-                  </div>
-                </summary>
-                <div className="mt-3 space-y-2 text-sm">
-                  <p>
-                    <span className="font-semibold">Customer:</span>{" "}
-                    {order.customer.name} · {order.customer.phone}
-                  </p>
-                  <p className="text-muted">{order.customer.address}</p>
-                  <ul className="space-y-1">
-                    {order.items.map((item) => (
-                      <li key={`${order.id}-${item.id}`}>
-                        {item.name} · {item.size} · Qty {item.quantity}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </details>
-            ))}
+          <div className="overflow-hidden rounded-2xl border border-gray-200">
+            <div className="max-h-[520px] overflow-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="sticky top-0 z-10 bg-gray-100 text-xs uppercase tracking-wide text-gray-600">
+                  <tr>
+                    <th className="px-4 py-3">Order ID</th>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Delivery</th>
+                    <th className="px-4 py-3">Payment</th>
+                    <th className="px-4 py-3">Total</th>
+                    <th className="px-4 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders.map((order, index) => (
+                    <tr
+                      key={order.id}
+                      className={`transition-colors hover:bg-gray-100 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                    >
+                      <td className="px-4 py-3 font-semibold">{order.id}</td>
+                      <td className="px-4 py-3 text-xs text-muted">
+                        {new Date(order.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        {deliveryLabel(order.deliveryZone)}
+                      </td>
+                      <td className="px-4 py-3">{order.paymentMethod}</td>
+                      <td className="px-4 py-3 font-semibold">
+                        ৳{order.total}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOrder(order)}
+                          className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
+
+      {selectedOrder ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="admin-modal-enter w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h4 className="text-xl font-semibold">{selectedOrder.id}</h4>
+              <button
+                type="button"
+                className="border border-black rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                onClick={() => setSelectedOrder(null)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-4 space-y-3 text-sm">
+              <p>
+                <span className="font-semibold">Customer:</span>{" "}
+                {selectedOrder.customer.name} · {selectedOrder.customer.phone}
+              </p>
+              <p className="text-muted">{selectedOrder.customer.address}</p>
+              <p>
+                <span className="font-semibold">Delivery:</span>{" "}
+                {deliveryLabel(selectedOrder.deliveryZone)}
+              </p>
+              <p>
+                <span className="font-semibold">Payment:</span>{" "}
+                {selectedOrder.paymentMethod}
+              </p>
+              <ul className="space-y-1 rounded-lg bg-gray-50 p-3">
+                {selectedOrder.items.map((item) => (
+                  <li key={`${selectedOrder.id}-${item.id}`}>
+                    {item.name} · {item.size} · Qty {item.quantity}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
