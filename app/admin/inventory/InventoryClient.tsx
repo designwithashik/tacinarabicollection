@@ -4,11 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import AdminToast from "@/components/admin/AdminToast";
 import type { AdminProduct } from "../../../lib/inventory";
+import type { FilterPanelItem } from "@/lib/siteContent";
 import { validateImageUrl } from "../../../lib/images";
 
 const INVENTORY_UPDATED_STORAGE_KEY = "tacin:inventory-updated-at";
-const INVENTORY_UPDATED_EVENTS = ["tacin:inventory-updated", "product-added", "product-deleted"] as const;
+const INVENTORY_UPDATED_EVENTS = [
+  "tacin:inventory-updated",
+  "product-added",
+  "product-deleted",
+] as const;
 
 const defaultDraft: AdminProduct = {
   id: "",
@@ -23,6 +29,11 @@ const defaultDraft: AdminProduct = {
   updatedAt: new Date().toISOString(),
 };
 
+type ToastState = {
+  tone: "success" | "error" | "info";
+  message: string;
+};
+
 export default function AdminInventory() {
   const router = useRouter();
   const [items, setItems] = useState<AdminProduct[]>([]);
@@ -32,16 +43,62 @@ export default function AdminInventory() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
+  const [filterOptions, setFilterOptions] = useState<FilterPanelItem[]>([]);
   const isEditing = Boolean(draft.id);
 
   const hasImageKitConfig = useMemo(
     () =>
       Boolean(
         process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT &&
-          process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY
+        process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY,
       ),
-    []
+    [],
   );
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 2600);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  const loadFilterOptions = async () => {
+    try {
+      const res = await fetch("/api/content/filters", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as FilterPanelItem[];
+      setFilterOptions(
+        (data || [])
+          .filter((item) => item?.active)
+          .sort((a, b) => a.order - b.order),
+      );
+    } catch {
+      setFilterOptions((current) => current);
+    }
+  };
+
+  useEffect(() => {
+    const handler = () => {
+      void loadFilterOptions();
+    };
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "site-content-updated") {
+        handler();
+      }
+    };
+
+    handler();
+    window.addEventListener("focus", handler);
+    window.addEventListener("site-content-updated", handler);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("focus", handler);
+      window.removeEventListener("site-content-updated", handler);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   const loadProducts = async () => {
     setError(null);
@@ -52,11 +109,12 @@ export default function AdminInventory() {
       });
       if (!res.ok) throw new Error();
       const data = (await res.json()) as unknown;
-      const shaped = Array.isArray(data) ? data.flat() : (data ? [data] : []);
+      const shaped = Array.isArray(data) ? data.flat() : data ? [data] : [];
       setItems(shaped as AdminProduct[]);
     } catch {
       setError("Failed to load inventory from KV.");
       setItems([]);
+      setToast({ tone: "error", message: "Failed to load inventory." });
     }
   };
 
@@ -66,18 +124,21 @@ export default function AdminInventory() {
 
   const uploadToImageKit = async (file: File) => {
     try {
-      // 1. Get the signature from the working API
       const authRes = await fetch("/api/auth/imagekit");
       const authData = (await authRes.json()) as {
         signature?: string;
         expire?: number;
         token?: string;
       };
-      if (!authRes.ok || !authData.signature || !authData.expire || !authData.token) {
+      if (
+        !authRes.ok ||
+        !authData.signature ||
+        !authData.expire ||
+        !authData.token
+      ) {
         throw new Error("Auth failed");
       }
 
-      // 2. Prepare the form data for ImageKit
       const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
       if (!publicKey) throw new Error("ImageKit public key missing");
       const formData = new FormData();
@@ -88,18 +149,20 @@ export default function AdminInventory() {
       formData.append("expire", String(authData.expire));
       formData.append("token", authData.token);
 
-      // 3. Post directly to ImageKit
-      const uploadRes = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const uploadRes = await fetch(
+        "https://upload.imagekit.io/api/v1/files/upload",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       if (!uploadRes.ok) throw new Error("Upload failed");
       const result = (await uploadRes.json()) as { url?: string };
       if (!result.url) throw new Error("Upload missing URL");
-      return result.url; // This is the final image/video link
-    } catch (error) {
-      console.error("Upload failed:", error);
+      return result.url;
+    } catch (uploadError) {
+      console.error("Upload failed:", uploadError);
       alert("Media upload failed. Check console.");
       return null;
     }
@@ -110,7 +173,7 @@ export default function AdminInventory() {
 
     if (!hasImageKitConfig) {
       throw new Error(
-        "ImageKit env is missing. Set NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT and NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY."
+        "ImageKit env is missing. Set NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT and NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY.",
       );
     }
 
@@ -126,6 +189,10 @@ export default function AdminInventory() {
     event.preventDefault();
     if (!draft.name || draft.price <= 0) {
       setError("Please fill out all required fields.");
+      setToast({
+        tone: "info",
+        message: "Please complete required product fields.",
+      });
       return;
     }
 
@@ -134,7 +201,6 @@ export default function AdminInventory() {
     setError(null);
 
     try {
-      // If a new file is selected, upload it first via ImageKit.
       let imageUrl = draft.image;
       if (selectedFile) {
         const uploadedUrl = await uploadImageIfNeeded();
@@ -143,6 +209,10 @@ export default function AdminInventory() {
 
       if (!validateImageUrl(imageUrl)) {
         setError("Please provide a valid image URL.");
+        setToast({
+          tone: "error",
+          message: "Please provide a valid image URL.",
+        });
         return;
       }
 
@@ -150,7 +220,6 @@ export default function AdminInventory() {
         name: draft.name,
         price: Number(draft.price),
         image: imageUrl,
-        // Alias for compatibility with imageUrl-based payload handlers.
         imageUrl,
         category: draft.category,
         colors: draft.colors,
@@ -171,11 +240,17 @@ export default function AdminInventory() {
       });
 
       if (!res.ok) {
-        const json = (await res.json().catch(() => null)) as { error?: string } | null;
+        const json = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
         throw new Error(json?.error ?? "Failed to save product.");
       }
 
       setNotice(isEditing ? "Product updated." : "Product created.");
+      setToast({
+        tone: "success",
+        message: isEditing ? "Product updated." : "Product created.",
+      });
       setDraft(defaultDraft);
       setSelectedFile(null);
       await loadProducts();
@@ -188,9 +263,12 @@ export default function AdminInventory() {
       }
       router.refresh();
     } catch (saveError) {
-      setError(
-        saveError instanceof Error ? saveError.message : "Unable to save product."
-      );
+      const message =
+        saveError instanceof Error
+          ? saveError.message
+          : "Unable to save product.";
+      setError(message);
+      setToast({ tone: "error", message });
     } finally {
       setSaving(false);
       setUploading(false);
@@ -203,10 +281,11 @@ export default function AdminInventory() {
     try {
       const res = await fetch(
         `/api/admin/products/${encodeURIComponent(id)}/delete`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       if (!res.ok) throw new Error();
       setNotice("Product deleted.");
+      setToast({ tone: "success", message: "Product deleted." });
       if (draft.id === id) {
         setDraft(defaultDraft);
         setSelectedFile(null);
@@ -222,197 +301,265 @@ export default function AdminInventory() {
       router.refresh();
     } catch {
       setError("Failed to delete product.");
+      setToast({ tone: "error", message: "Failed to delete product." });
     }
   };
 
+  const derivedCategoryOptions = [
+    ...new Set(items.map((item) => item.category).filter(Boolean)),
+  ];
+
+  const categoryOptions =
+    filterOptions.length > 0
+      ? filterOptions.map((item) => ({ value: item.value, label: item.label }))
+      : derivedCategoryOptions.map((category) => ({
+          value: category,
+          label: category,
+        }));
+
   return (
     <section className="space-y-6">
-      <div>
-        <h2 className="font-heading text-2xl font-semibold">Inventory</h2>
-        <p className="mt-1 text-sm text-muted">
-          Manage products, pricing, and visibility (KV persistence).
-        </p>
-        <p className="mt-1 text-xs text-muted">
-          ImageKit upload requires URL endpoint + public key + server auth route.
-        </p>
-      </div>
-
-      <form className="rounded-3xl bg-white p-6 shadow-soft" onSubmit={handleSave}>
-        <h3 className="text-lg font-semibold">
-          {isEditing ? "Update Product" : "Create Product"}
-        </h3>
-        {error ? <p className="mt-2 text-xs text-red-600">{error}</p> : null}
-        {notice ? <p className="mt-2 text-xs text-emerald-700">{notice}</p> : null}
-
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <label className="text-xs font-semibold">
-            Name
-            <input
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-              value={draft.name}
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, name: event.target.value }))
-              }
-            />
-          </label>
-          <label className="text-xs font-semibold">
-            Price (BDT)
-            <input
-              type="number"
-              min={0}
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-              value={draft.price}
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, price: Number(event.target.value) }))
-              }
-            />
-          </label>
-          <label className="text-xs font-semibold">
-            Category
-            <select
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-              value={draft.category}
-              onChange={(event) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  category: event.target.value as AdminProduct["category"],
-                }))
-              }
-            >
-              <option value="Clothing">Clothing</option>
-              <option value="Ceramic">Ceramic</option>
-            </select>
-          </label>
-          <label className="text-xs font-semibold">
-            Active
-            <select
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-              value={draft.active ? "true" : "false"}
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, active: event.target.value === "true" }))
-              }
-            >
-              <option value="true">Active</option>
-              <option value="false">Hidden</option>
-            </select>
-          </label>
-          <label className="text-xs font-semibold">
-            Hero Featured
-            <select
-              className="mt-1 w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-              value={draft.heroFeatured ? "true" : "false"}
-              onChange={(event) =>
-                setDraft((prev) => ({ ...prev, heroFeatured: event.target.value === "true" }))
-              }
-            >
-              <option value="false">No</option>
-              <option value="true">Yes</option>
-            </select>
-          </label>
+      <div className="rounded-2xl bg-white p-6 shadow-md space-y-6">
+        <div>
+          <h2 className="border-b pb-3 text-xl font-semibold">Inventory</h2>
+          <p className="mt-2 text-sm text-muted">
+            Manage products, pricing, and visibility (KV persistence).
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            ImageKit upload requires URL endpoint + public key + server auth
+            route.
+          </p>
         </div>
 
-        <div className="mt-4 space-y-2">
-          <label className="text-xs font-semibold">Image URL (manual fallback)</label>
-          <input
-            className="w-full rounded-2xl border border-[#e6d8ce] px-3 py-2 text-sm"
-            value={draft.image}
-            onChange={(event) =>
-              setDraft((prev) => ({ ...prev, image: event.target.value }))
-            }
-          />
-          <div className="flex items-center gap-2">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-            />
-            {uploading ? <span className="text-xs text-muted">Uploading...</span> : null}
-          </div>
-        </div>
-
-        {draft.image ? (
-          <div className="mt-4 overflow-hidden rounded-2xl border border-[#f0e4da]">
-            <Image
-              src={draft.image}
-              alt={draft.name || "Preview"}
-              width={600}
-              height={400}
-              className="h-40 w-full object-cover"
-            />
-          </div>
+        {error ? (
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </p>
+        ) : null}
+        {notice ? (
+          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            {notice}
+          </p>
         ) : null}
 
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={saving || uploading}
-            className="min-h-[44px] rounded-full bg-accent px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {uploading
-              ? "Uploading..."
-              : saving
-              ? "Saving..."
-              : isEditing
-              ? "Update Product"
-              : "Save Product"}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setDraft(defaultDraft);
-              setSelectedFile(null);
-              setError(null);
-            }}
-            className="min-h-[44px] rounded-full border border-[#e6d8ce] px-5 py-2 text-sm font-semibold"
-          >
-            Clear
-          </button>
-        </div>
-      </form>
+        <form className="space-y-6" onSubmit={handleSave}>
+          <h3 className="text-xl font-semibold">
+            {isEditing ? "Update Product" : "Create Product"}
+          </h3>
 
-      <div className="rounded-3xl bg-white p-6 shadow-soft">
-        <h3 className="text-lg font-semibold">Inventory List</h3>
-        {items.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">No products yet.</p>
-        ) : (
-          <div className="mt-4 space-y-3">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col gap-3 rounded-2xl border border-[#f0e4da] p-3 md:flex-row md:items-center md:justify-between"
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="text-xs font-semibold">
+              Name
+              <input
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                value={draft.name}
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, name: event.target.value }))
+                }
+              />
+            </label>
+            <label className="text-xs font-semibold">
+              Price (BDT)
+              <input
+                type="number"
+                min={0}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                value={draft.price}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    price: Number(event.target.value),
+                  }))
+                }
+              />
+            </label>
+            <label className="text-xs font-semibold">
+              Category
+              <select
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                value={draft.category}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    category: event.target.value as AdminProduct["category"],
+                  }))
+                }
               >
-                <div>
-                  <p className="font-semibold">{item.name}</p>
-                  <p className="text-xs text-muted">{item.id}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold">৳{item.price}</span>
-                  <span className="text-xs font-semibold text-muted">
-                    {item.active ? "Active" : "Hidden"} {item.heroFeatured ? "• Hero" : ""}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraft(item);
-                      setSelectedFile(null);
-                    }}
-                    className="min-h-[36px] rounded-full border border-[#e6d8ce] px-3 text-xs font-semibold"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete(item.id)}
-                    className="min-h-[36px] rounded-full border border-red-200 px-3 text-xs font-semibold text-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
+                <option value="">Select Category</option>
+                {categoryOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-semibold">
+              Active
+              <select
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                value={draft.active ? "true" : "false"}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    active: event.target.value === "true",
+                  }))
+                }
+              >
+                <option value="true">Active</option>
+                <option value="false">Hidden</option>
+              </select>
+            </label>
+            <label className="text-xs font-semibold">
+              Hero Featured
+              <select
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                value={draft.heroFeatured ? "true" : "false"}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    heroFeatured: event.target.value === "true",
+                  }))
+                }
+              >
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-semibold">
+              Image URL (manual fallback)
+            </label>
+            <input
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              value={draft.image}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, image: event.target.value }))
+              }
+            />
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) =>
+                  setSelectedFile(event.target.files?.[0] ?? null)
+                }
+              />
+              {uploading ? (
+                <span className="text-xs text-muted">Uploading...</span>
+              ) : null}
+            </div>
+          </div>
+
+          {draft.image ? (
+            <div className="overflow-hidden rounded-2xl border border-gray-100">
+              <Image
+                src={draft.image}
+                alt={draft.name || "Preview"}
+                width={600}
+                height={400}
+                className="h-40 w-full object-cover"
+              />
+            </div>
+          ) : null}
+
+          <div className="flex items-center gap-3">
+            <button
+              type="submit"
+              disabled={saving || uploading}
+              className="bg-black text-white rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-60"
+            >
+              {uploading
+                ? "Uploading..."
+                : saving
+                  ? "Saving..."
+                  : isEditing
+                    ? "Update Product"
+                    : "Save Product"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(defaultDraft);
+                setSelectedFile(null);
+                setError(null);
+              }}
+              className="border border-black rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+            >
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="rounded-2xl bg-white p-6 shadow-md space-y-6">
+        <h3 className="border-b pb-3 text-xl font-semibold">Inventory List</h3>
+        {items.length === 0 ? (
+          <p className="text-sm text-muted">No products yet.</p>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-gray-200">
+            <div className="max-h-[460px] overflow-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="sticky top-0 z-10 bg-gray-100 text-xs uppercase tracking-wide text-gray-600">
+                  <tr>
+                    <th className="px-4 py-3">Product</th>
+                    <th className="px-4 py-3">Price</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, index) => (
+                    <tr
+                      key={item.id}
+                      className={`transition-colors hover:bg-gray-100 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                    >
+                      <td className="px-4 py-3">
+                        <p className="font-semibold text-ink">{item.name}</p>
+                        <p className="text-xs text-muted">{item.id}</p>
+                      </td>
+                      <td className="px-4 py-3 font-semibold">৳{item.price}</td>
+                      <td className="px-4 py-3 text-xs font-semibold text-muted">
+                        {item.active ? "Active" : "Hidden"}{" "}
+                        {item.heroFeatured ? "• Hero" : ""}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDraft(item);
+                              setSelectedFile(null);
+                            }}
+                            className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleDelete(item.id)}
+                            className="bg-red-600 text-white rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
+      {toast ? (
+        <AdminToast
+          message={toast.message}
+          tone={toast.tone}
+          onClose={() => setToast(null)}
+        />
+      ) : null}
     </section>
   );
 }
