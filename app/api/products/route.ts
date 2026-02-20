@@ -7,18 +7,7 @@ import { NextResponse } from "next/server";
 import { loadInventoryArray, toStorefrontProduct } from "@/lib/server/inventoryStore";
 
 export const runtime = "edge";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-const jsonNoStore = (payload: unknown) =>
-  NextResponse.json(payload, {
-    headers: {
-      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-      Pragma: "no-cache",
-      Expires: "0",
-      "Surrogate-Control": "no-store",
-    },
-  });
+export const revalidate = 60;
 
 export async function GET(request: Request) {
   try {
@@ -29,7 +18,7 @@ export async function GET(request: Request) {
     const activeProducts = products.filter((p) => p.active);
 
     if (heroOnly) {
-      return jsonNoStore(
+      return NextResponse.json(
         activeProducts
           .filter((p) => p.heroFeatured)
           .slice(0, 3)
@@ -37,8 +26,8 @@ export async function GET(request: Request) {
       );
     }
 
-    return jsonNoStore(activeProducts.map(toStorefrontProduct));
+    return NextResponse.json(activeProducts.map(toStorefrontProduct));
   } catch {
-    return jsonNoStore([]);
+    return NextResponse.json([]);
   }
 }
