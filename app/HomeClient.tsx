@@ -75,6 +75,8 @@ const defaultFilters: Filters = {
 const storageKeys = {
   viewed: "tacin-recently-viewed",
   language: "tacin-lang",
+  announcementText: "tacin-announcement-text",
+  announcementActive: "tacin-announcement-active",
 };
 
 const statusLabels = ["New", "Popular", "Low Stock"] as const;
@@ -202,6 +204,8 @@ export default function HomePage({
   const [hasMounted, setHasMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [adminProducts, setAdminProducts] = useState<AdminProduct[]>(initialAdminProducts);
+  const [customAnnouncementText, setCustomAnnouncementText] = useState("");
+  const [isAnnouncementActive, setIsAnnouncementActive] = useState(true);
   const [cartActionLoading, setCartActionLoading] = useState<Record<number, boolean>>({});
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
@@ -249,6 +253,25 @@ export default function HomePage({
     if (storedLanguage === "en" || storedLanguage === "bn") {
       setLanguage(storedLanguage);
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const syncAnnouncement = () => {
+      const textValue = localStorage.getItem(storageKeys.announcementText) ?? "";
+      const activeValue = localStorage.getItem(storageKeys.announcementActive);
+
+      setCustomAnnouncementText(textValue);
+      setIsAnnouncementActive(activeValue !== "false");
+    };
+
+    syncAnnouncement();
+    window.addEventListener("tacin:announcement-updated", syncAnnouncement);
+
+    return () => {
+      window.removeEventListener("tacin:announcement-updated", syncAnnouncement);
+    };
   }, []);
 
   const loadPublicInventory = useCallback(async () => {
@@ -574,7 +597,7 @@ export default function HomePage({
 
   const productSource = adminProducts.filter((item) => item.active !== false);
 
-  const announcementText = useMemo(() => {
+  const defaultAnnouncementText = useMemo(() => {
     const editableAnnouncement = productSource
       .map((item) => {
         const meta = item as AdminProduct & { subtitle?: string; title?: string };
@@ -587,6 +610,9 @@ export default function HomePage({
       "Free nationwide delivery updates • WhatsApp-first support • Elegant modest fashion curated for Bangladesh"
     );
   }, [productSource]);
+
+  const announcementText =
+    customAnnouncementText.trim().length > 0 ? customAnnouncementText : defaultAnnouncementText;
 
   const filteredProducts = useMemo(() => {
     let result = [...productSource];
@@ -809,15 +835,17 @@ export default function HomePage({
         <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
       </section>
 
-      <section className="bg-black py-2 text-white">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="relative overflow-hidden whitespace-nowrap">
-            <div className="inline-block min-w-full animate-marquee text-[13px] font-medium tracking-wide">
-              {announcementText} &nbsp;&nbsp;&nbsp; {announcementText}
+      {isAnnouncementActive ? (
+        <section className="bg-black py-2 text-white">
+          <div className="mx-auto max-w-6xl px-4">
+            <div className="relative overflow-hidden whitespace-nowrap">
+              <div className="whitespace-nowrap animate-[announcementScroll_20s_linear_infinite] text-[13px] font-medium tracking-wide">
+                {announcementText} &nbsp;&nbsp;&nbsp; {announcementText}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="bg-[#F7F6F4]">
         <AnimatedWrapper className="retail-section-enter" variant="section">
@@ -1644,6 +1672,17 @@ export default function HomePage({
           </div>
         </div>
       ) : null}
+
+      <style jsx global>{`
+        @keyframes announcementScroll {
+          0% {
+            transform: translateX(0%);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+      `}</style>
     </div>
   );
 }
