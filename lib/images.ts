@@ -15,25 +15,3 @@ export const validateImageUrl = (value: string) => {
     return false;
   }
 };
-
-export const uploadToUploadcare = async (
-  file: File,
-  publicKey: string
-): Promise<string> => {
-  const formData = new FormData();
-  formData.append("UPLOADCARE_PUB_KEY", publicKey);
-  formData.append("UPLOADCARE_STORE", "1");
-  formData.append("file", file);
-
-  const response = await fetch("https://upload.uploadcare.com/base/", {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error("Upload failed");
-  }
-
-  const result = (await response.json()) as { file: string };
-  return `https://ucarecdn.com/${result.file}/`;
-};

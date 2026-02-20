@@ -74,6 +74,14 @@ const toInventoryProduct = (source: unknown): InventoryProduct | null => {
 };
 
 const normalizeInventoryCollection = (payload: unknown): InventoryProduct[] => {
+  if (typeof payload === "string") {
+    try {
+      return normalizeInventoryCollection(JSON.parse(payload));
+    } catch {
+      return [];
+    }
+  }
+
   if (Array.isArray(payload)) {
     return payload.map(toInventoryProduct).filter((p): p is InventoryProduct => Boolean(p));
   }
@@ -110,9 +118,9 @@ async function tryLegacyMigration(): Promise<InventoryProduct[] | null> {
 
 export async function loadInventoryArray(): Promise<InventoryProduct[]> {
   const canonical = await kv.get<InventoryProduct[] | unknown>(INVENTORY_PRODUCTS_KEY);
-
-  if (Array.isArray(canonical)) {
-    return normalizeInventoryCollection(canonical);
+  const normalizedCanonical = normalizeInventoryCollection(canonical);
+  if (normalizedCanonical.length > 0) {
+    return normalizedCanonical;
   }
 
   const migrated = await tryLegacyMigration();
@@ -125,7 +133,8 @@ export async function loadInventoryArray(): Promise<InventoryProduct[]> {
 }
 
 export async function saveInventoryArray(items: InventoryProduct[]) {
-  await kv.set(INVENTORY_PRODUCTS_KEY, items);
+  const normalized = normalizeInventoryCollection(items);
+  await kv.set(INVENTORY_PRODUCTS_KEY, JSON.parse(JSON.stringify(normalized)));
 }
 
 export type StorefrontProduct = {
