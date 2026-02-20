@@ -177,6 +177,25 @@ a:focus-visible {
   }
 }
 
+@keyframes checkout-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
 .animate-cart-bounce {
   animation: cart-bounce 0.45s ease-out;
 }
@@ -239,6 +258,10 @@ a:focus-visible {
   background: linear-gradient(90deg, #efe5dc 25%, #f6ede6 45%, #efe5dc 65%);
   background-size: 240px 100%;
   animation: subtle-shimmer 1.2s ease-in-out infinite;
+}
+
+.animate-checkout-shake {
+  animation: checkout-shake 320ms ease-in-out;
 }
 
 /* Phase1.5: Image Hover Motion */

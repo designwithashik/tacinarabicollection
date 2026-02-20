@@ -192,6 +192,7 @@ export default function HomePage({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRouting, setIsRouting] = useState(false);
   const [isOrderConfirmed, setIsOrderConfirmed] = useState(false);
+  const [isFieldShake, setIsFieldShake] = useState(false);
   const [transactionId, setTransactionId] = useState("");
   const [deliveryZone, setDeliveryZone] = useState<"inside" | "outside">("inside");
   const [customer, setCustomer] = useState<CustomerInfo>({
@@ -354,21 +355,17 @@ export default function HomePage({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!showCart) return;
-
-    const scrollY = window.scrollY;
-    const previousBodyStyle = document.body.style.cssText;
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.left = "0";
-    document.body.style.right = "0";
-    document.body.style.width = "100%";
-
+    document.body.style.overflow = showCart ? "hidden" : "";
     return () => {
-      document.body.style.cssText = previousBodyStyle;
-      window.scrollTo(0, scrollY);
+      document.body.style.overflow = "";
     };
   }, [showCart]);
+
+  useEffect(() => {
+    if (!isFieldShake) return;
+    const timer = window.setTimeout(() => setIsFieldShake(false), 380);
+    return () => window.clearTimeout(timer);
+  }, [isFieldShake]);
 
   useEffect(() => {
     if (showCart) {
@@ -754,9 +751,25 @@ export default function HomePage({
 
   const isCustomerInfoValid = customer.name.trim() && customer.phone.trim() && customer.address.trim();
 
+  const handlePaymentInfoOpen = () => {
+    if (!isCustomerInfoValid) {
+      setIsFieldShake(true);
+      showToast({ type: "info", message: "Please fill in all required fields." });
+      return;
+    }
+    setShowPaymentInfo(true);
+  };
+
   const checkoutSubtotal = getSafeCartSubtotal(checkoutItems);
   const deliveryFee = Number.isFinite(deliveryFees[deliveryZone]) ? deliveryFees[deliveryZone] : 0;
   const checkoutTotal = checkoutSubtotal + deliveryFee;
+  const isCheckoutBlocked =
+    isSubmitting ||
+    !isCustomerInfoValid ||
+    !isOnline ||
+    checkoutItems.length === 0 ||
+    checkoutTotal <= 0 ||
+    !Number.isFinite(checkoutTotal);
   const isSummaryLoading = !hasMounted || isCartHydrating;
   const hasPaymentProof = Boolean(transactionId.trim());
 
@@ -1258,60 +1271,74 @@ export default function HomePage({
         </div>
       ) : null}
 
-      {showCart ? (
-        <div className="fixed inset-0 z-40 flex justify-end bg-black/40">
-          <div
-            className="panel-enter h-full w-full max-w-md overflow-y-auto bg-white p-6"
-            style={{ animationDuration: "250ms" }}
-          >
-            <div className="flex items-center justify-between">
-              <h3 ref={cartHeadingRef} tabIndex={-1} className="text-base font-semibold text-ink">
-                Your Cart
-              </h3>
+      <div
+        className={clsx(
+          "fixed inset-0 z-40 flex justify-end transition-opacity duration-300",
+          showCart ? "pointer-events-auto bg-black/40 opacity-100" : "pointer-events-none bg-black/0 opacity-0",
+        )}
+      >
+        <button
+          type="button"
+          aria-label="Close cart"
+          onClick={() => setShowCart(false)}
+          className="h-full flex-1 cursor-default"
+          tabIndex={showCart ? 0 : -1}
+        />
+        <div
+          className={clsx(
+            "h-full w-full max-w-md overflow-y-auto bg-white p-6 transition-transform duration-[400ms] ease-[cubic-bezier(.22,1,.36,1)]",
+            showCart ? "translate-x-0" : "translate-x-full",
+          )}
+        >
+          <div className="flex items-center justify-between">
+            <h3 ref={cartHeadingRef} tabIndex={-1} className="text-base font-semibold text-ink">
+              Your Cart
+            </h3>
+            <button
+              type="button"
+              onClick={() => setShowCart(false)}
+              className="interactive-feedback text-[13px] font-semibold text-accent"
+            >
+              Close
+            </button>
+          </div>
+          {isCartHydrating ? (
+            <CartSkeleton />
+          ) : cartItems.length === 0 ? (
+            <div className="mt-6 rounded-2xl border border-[#f0e4da] bg-base p-4 text-center">
+              <p className="text-lg">🛍️</p>
+              <p className="mt-2 text-sm font-semibold text-ink">Your cart is empty.</p>
+              <p className="mt-1 text-[12px] text-muted">Start shopping to add items.</p>
               <button
                 type="button"
                 onClick={() => setShowCart(false)}
-                className="interactive-feedback text-[13px] font-semibold text-accent"
+                className="interactive-feedback mt-3 rounded-full border border-[#e6d8ce] px-4 py-2 text-[12px] font-semibold text-ink"
               >
-                Close
+                Browse products
               </button>
             </div>
-            {isCartHydrating ? (
-              <CartSkeleton />
-            ) : cartItems.length === 0 ? (
-              <div className="mt-6 rounded-2xl border border-[#f0e4da] bg-base p-4 text-center">
-                <p className="text-lg">🛍️</p>
-                <p className="mt-2 text-sm font-semibold text-ink">Your cart is empty.</p>
-                <p className="mt-1 text-[12px] text-muted">Start shopping to add items.</p>
-                <button
-                  type="button"
-                  onClick={() => setShowCart(false)}
-                  className="interactive-feedback mt-3 rounded-full border border-[#e6d8ce] px-4 py-2 text-[12px] font-semibold text-ink"
+          ) : (
+            <div className="mt-4 space-y-4">
+              {cartItems.map((item, index) => (
+                <div
+                  key={`${item.id}-${item.size}-${index}`}
+                  className={clsx(
+                    "flex gap-4 rounded-xl border border-[#f0e4da] bg-white p-4 shadow-sm transition duration-200",
+                    cartActionLoading[index] && "scale-[0.98] opacity-70",
+                  )}
                 >
-                  Browse products
-                </button>
-              </div>
-            ) : (
-              <div className="mt-4 space-y-4">
-                {cartItems.map((item, index) => (
-                  <div
-                    key={`${item.id}-${item.size}-${index}`}
-                    className={clsx(
-                      "flex items-center gap-4 rounded-2xl border border-[#f0e4da] p-3 transition duration-200",
-                      cartActionLoading[index] && "scale-[0.98] opacity-70",
-                    )}
-                  >
-                    <Image
-                      src={item.imageUrl ?? item.image ?? "/images/product-1.svg"}
-                      alt={item.name}
-                      width={60}
-                      height={80}
-                      className="h-[60px] w-[60px] rounded-xl object-cover"
-                    />
+                  <Image
+                    src={item.imageUrl ?? item.image ?? "/images/product-1.svg"}
+                    alt={item.name}
+                    width={80}
+                    height={80}
+                    className="h-20 w-20 rounded-lg object-cover"
+                  />
+                  <div className="flex flex-1 items-start justify-between gap-3">
                     <div className="flex-1">
-                      <p className="text-[12px] font-semibold text-ink">{item.name}</p>
+                      <p className="text-base font-medium text-ink">{item.name}</p>
                       <p className="text-[12px] text-muted">Size: {item.size} · Color: {item.color}</p>
-                      <p className="text-[12px] font-semibold text-ink">{formatPrice(item.price)}</p>
+                      <p className="mt-1 font-semibold text-ink">{formatPrice(item.price)}</p>
                       {cartQuantityFeedback[index] ? (
                         <p className="mt-1 text-xs font-semibold text-accent">{cartQuantityFeedback[index]}</p>
                       ) : null}
@@ -1322,7 +1349,7 @@ export default function HomePage({
                           type="button"
                           disabled={cartActionLoading[index]}
                           onClick={() => void updateCartQuantity(index, item.quantity - 1)}
-                          className="interactive-feedback"
+                          className="rounded-full px-2 transition-transform duration-200 hover:scale-105 active:scale-95"
                         >
                           -
                         </button>
@@ -1331,7 +1358,7 @@ export default function HomePage({
                           type="button"
                           disabled={cartActionLoading[index]}
                           onClick={() => void updateCartQuantity(index, item.quantity + 1)}
-                          className="interactive-feedback"
+                          className="rounded-full px-2 transition-transform duration-200 hover:scale-105 active:scale-95"
                         >
                           +
                         </button>
@@ -1346,27 +1373,32 @@ export default function HomePage({
                       </button>
                     </div>
                   </div>
-                ))}
-                <div className="flex items-center justify-between text-sm font-semibold">
-                  <span>{text.subtotal}</span>
-                  <span>
-                    {isCartHydrating ? <SummaryPlaceholder /> : formatPrice(getSafeCartSubtotal(cartItems))}
-                  </span>
                 </div>
-                <div className="sticky bottom-0 bg-white pt-3">
-                  <button
-                    type="button"
-                    onClick={handleCartCheckout}
-                    className="interactive-feedback min-h-[40px] w-full rounded-lg bg-black px-4 py-2.5 text-[14px] font-medium leading-[1.4] text-white active:scale-95"
-                  >
-                    {isRouting ? "Redirecting..." : text.checkout}
-                  </button>
-                </div>
+              ))}
+              <div className="flex items-center justify-between text-sm font-semibold">
+                <span>{text.subtotal}</span>
+                <motion.span
+                  key={getSafeCartSubtotal(cartItems)}
+                  initial={{ opacity: 0.45, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {isCartHydrating ? <SummaryPlaceholder /> : formatPrice(getSafeCartSubtotal(cartItems))}
+                </motion.span>
               </div>
-            )}
-          </div>
+              <div className="sticky bottom-0 bg-white pt-3">
+                <button
+                  type="button"
+                  onClick={handleCartCheckout}
+                  className="interactive-feedback min-h-[40px] w-full rounded-full bg-black px-4 py-3 text-[14px] font-semibold leading-[1.4] text-white shadow-md transition-all duration-300 hover:scale-105 active:scale-95"
+                >
+                  {isRouting ? "Redirecting..." : text.checkout}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      ) : null}
+      </div>
 
       {showCheckout ? (
         <div ref={checkoutRef} className="z-40 bg-black/40">
@@ -1396,7 +1428,7 @@ export default function HomePage({
             <div className="flex-1 overflow-visible px-4 py-6 pb-8 sm:px-6">
               {isOrderConfirmed ? (
                 <div className="mx-auto max-w-4xl px-4 py-5">
-                  <div className="text-center py-16">
+                  <div className="text-center py-16 transition-opacity duration-300 animate-fadeIn">
                     <h2 className="text-2xl font-semibold mb-4">Order Confirmed</h2>
                     <p className="text-neutral-600">We will contact you shortly via phone or WhatsApp.</p>
                   </div>
@@ -1498,10 +1530,10 @@ export default function HomePage({
                     </div>
 
                     <div>
-                      <h2 className="text-base font-semibold mb-4">Shipping Information</h2>
-                      <div className="space-y-4">
-                        <label htmlFor="checkout-name" className="sr-only">
-                          Name
+                      <h2 className="mb-4 text-base font-semibold">Shipping Information</h2>
+                      <div className={clsx("grid gap-4", isFieldShake && "animate-checkout-shake")}>
+                        <label htmlFor="checkout-name" className="text-xs font-semibold text-neutral-700">
+                          Full Name <span className="text-red-500">*</span>
                         </label>
                         <input
                           id="checkout-name"
@@ -1511,10 +1543,11 @@ export default function HomePage({
                           onChange={(event) =>
                             setCustomer((prev) => ({ ...prev, name: event.target.value }))
                           }
-                          className="w-full border border-neutral-300 rounded-lg px-4 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-neutral-900 transition-all duration-200 ease-out"
+                          aria-required="true"
+                          className="w-full rounded-lg border border-neutral-300 p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
                         />
-                        <label htmlFor="checkout-phone" className="sr-only">
-                          Phone
+                        <label htmlFor="checkout-phone" className="text-xs font-semibold text-neutral-700">
+                          Phone <span className="text-red-500">*</span>
                         </label>
                         <input
                           id="checkout-phone"
@@ -1524,10 +1557,11 @@ export default function HomePage({
                           onChange={(event) =>
                             setCustomer((prev) => ({ ...prev, phone: event.target.value }))
                           }
-                          className="w-full border border-neutral-300 rounded-lg px-4 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-neutral-900 transition-all duration-200 ease-out"
+                          aria-required="true"
+                          className="w-full rounded-lg border border-neutral-300 p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
                         />
-                        <label htmlFor="checkout-address" className="sr-only">
-                          Address
+                        <label htmlFor="checkout-address" className="text-xs font-semibold text-neutral-700">
+                          Address <span className="text-red-500">*</span>
                         </label>
                         <textarea
                           id="checkout-address"
@@ -1537,7 +1571,8 @@ export default function HomePage({
                           onChange={(event) =>
                             setCustomer((prev) => ({ ...prev, address: event.target.value }))
                           }
-                          className="w-full border border-neutral-300 rounded-lg px-4 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-neutral-900 transition-all duration-200 ease-out"
+                          aria-required="true"
+                          className="w-full rounded-lg border border-neutral-300 p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
                         />
                       </div>
 
@@ -1548,38 +1583,29 @@ export default function HomePage({
                       <div className="mt-6">
                         <button
                           type="button"
-                          onClick={() => setShowPaymentInfo(true)}
-                          disabled={
-                            isSubmitting ||
-                            !isCustomerInfoValid ||
-                            !isOnline ||
-                            checkoutItems.length === 0 ||
-                            checkoutTotal <= 0 ||
-                            !Number.isFinite(checkoutTotal)
-                          }
+                          onClick={handlePaymentInfoOpen}
+                          disabled={isCheckoutBlocked}
                           className={clsx(
-                            "interactive-feedback btn-primary w-full py-2.5 text-[14px] font-semibold mt-6",
-                            (isSubmitting || !(isCustomerInfoValid && isOnline)) &&
-                              "opacity-60 cursor-not-allowed border-[#d9cdc0] bg-[#e9dfd4] text-muted",
+                            "mt-6 w-full rounded-full bg-black py-3 text-[14px] font-semibold text-white shadow-md transition-all duration-300 hover:scale-105 active:scale-95",
+                            isCheckoutBlocked && "cursor-not-allowed opacity-60 hover:scale-100",
                           )}
                         >
-                          {isSubmitting ? "Processing..." : "Pay Now"}
+                          {isSubmitting ? (
+                            <span className="inline-flex items-center gap-2">
+                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-white" />
+                              Processing...
+                            </span>
+                          ) : (
+                            "Pay Now"
+                          )}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleWhatsappRedirect("Cash on Delivery")}
-                          disabled={
-                            isSubmitting ||
-                            !isCustomerInfoValid ||
-                            !isOnline ||
-                            checkoutItems.length === 0 ||
-                            checkoutTotal <= 0 ||
-                            !Number.isFinite(checkoutTotal)
-                          }
+                          disabled={isCheckoutBlocked}
                           className={clsx(
                             "mt-3 w-full rounded-lg bg-green-600 py-2.5 text-[14px] text-white transition hover:bg-green-700",
-                            (isSubmitting || !(isCustomerInfoValid && isOnline)) &&
-                              "cursor-not-allowed opacity-60 hover:bg-green-600",
+                            isCheckoutBlocked && "cursor-not-allowed opacity-60 hover:bg-green-600",
                           )}
                         >
                           {isSubmitting ? "Processing..." : text.orderCod}
