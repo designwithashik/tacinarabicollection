@@ -26,6 +26,9 @@ export default function AdminLayout({
             <a className="rounded-full border border-[#e6d8ce] px-3 py-2" href="/admin/analytics">
               Analytics
             </a>
+            <a className="rounded-full border border-[#e6d8ce] px-3 py-2" href="/admin/content">
+              Content
+            </a>
             <a className="rounded-full border border-[#e6d8ce] px-3 py-2" href="/admin/settings">
               Settings
             </a>

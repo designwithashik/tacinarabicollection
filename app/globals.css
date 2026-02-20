@@ -251,6 +251,47 @@ a:focus-visible {
   transform: scale(1.02);
 }
 
+
+@keyframes announcement-scroll {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-33.333%, 0, 0);
+  }
+}
+
+.animate-announcement-scroll {
+  animation: announcement-scroll var(--announcement-duration, 20s) linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.animate-announcement-scroll:hover {
+  animation-play-state: paused;
+}
+
+
+@keyframes subtotal-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+.animate-subtotal-pulse {
+  display: inline-block;
+  animation: subtotal-pulse 280ms ease-out;
+}
+
+@keyframes field-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.animate-field-shake {
+  animation: field-shake 360ms ease-out;
+}
 @media (prefers-reduced-motion: reduce) {
   .interactive-feedback:active {
     transform: none;
@@ -258,6 +299,15 @@ a:focus-visible {
 
   .product-image:hover {
     transform: none;
+  }
+
+  .animate-announcement-scroll {
+    animation: none;
+  }
+
+  .animate-subtotal-pulse,
+  .animate-field-shake {
+    animation: none;
   }
 
   .skeleton-shimmer {
@@ -274,6 +324,7 @@ a:focus-visible {
     transform: none;
   }
 }
+
 
 @media (prefers-reduced-motion: reduce) {
   * {

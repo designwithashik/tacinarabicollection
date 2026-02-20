@@ -1,146 +1,189 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import type { TouchEvent } from "react";
 import clsx from "clsx";
 
-export type HeroProduct = {
-  id: string;
-  name: string;
-  image?: string;
-  imageUrl?: string | null;
-  price?: number;
-};
+import type { CarouselItem } from "@/lib/siteContent";
 
 type HeroCarouselProps = {
-  addToCart: (product: HeroProduct) => void;
-  buyNow?: (product: HeroProduct) => void;
-  initialProducts?: HeroProduct[];
+  initialSlides?: CarouselItem[];
 };
 
-export default function HeroCarousel({ addToCart, buyNow, initialProducts = [] }: HeroCarouselProps) {
-  const handleAddToCart = useCallback((product: HeroProduct) => {
-    addToCart(product);
-  }, [addToCart]);
-  // Phase1.8: State for dynamic hero products and active slide index.
-  const [heroProducts, setHeroProducts] = useState<HeroProduct[]>(initialProducts.slice(0, 3));
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const prefersReducedMotion = useReducedMotion();
+const SWIPE_THRESHOLD = 48;
 
-  // Phase1.8: Fetch admin-controlled featured products.
+export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) {
+  const [slides, setSlides] = useState<CarouselItem[]>(
+    initialSlides.filter((item) => item.active !== false).sort((a, b) => a.order - b.order)
+  );
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const touchStartX = useRef<number | null>(null);
+  const touchCurrentX = useRef<number | null>(null);
+
   useEffect(() => {
-    const loadHeroProducts = async () => {
+    const loadSlides = async () => {
       try {
-        const res = await fetch("/api/products?hero=true", { cache: "no-store" });
+        const res = await fetch("/api/content/carousel", { cache: "no-store" });
         if (!res.ok) return;
-        const data = (await res.json()) as HeroProduct[];
-        if (Array.isArray(data) && data.length > 0) {
-          setHeroProducts(data.slice(0, 3));
+        const data = (await res.json()) as CarouselItem[];
+        if (Array.isArray(data)) {
+          setSlides(data.filter((item) => item.active !== false).sort((a, b) => a.order - b.order));
         }
       } catch {
-        setHeroProducts((current) => current);
+        setSlides([]);
       }
     };
 
-    void loadHeroProducts();
+    void loadSlides();
   }, []);
-
-  // Phase1.8: Auto-scroll slides every 6 seconds for calmer pacing.
-  useEffect(() => {
-    if (heroProducts.length < 2 || prefersReducedMotion) return;
-
-    const interval = window.setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % heroProducts.length);
-    }, 6000);
-
-    return () => window.clearInterval(interval);
-  }, [heroProducts.length, prefersReducedMotion]);
 
   useEffect(() => {
     setCurrentIndex((prev) => {
-      if (heroProducts.length === 0) return 0;
-      return prev % heroProducts.length;
+      if (slides.length === 0) return 0;
+      return prev % slides.length;
     });
-  }, [heroProducts.length]);
+  }, [slides.length]);
 
-  if (heroProducts.length === 0) {
+  useEffect(() => {
+    if (slides.length < 2 || isPaused) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % slides.length);
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [slides.length, isPaused]);
+
+  if (slides.length === 0) {
     return null;
   }
 
+  const goTo = (index: number) => {
+    const safeIndex = ((index % slides.length) + slides.length) % slides.length;
+    setCurrentIndex(safeIndex);
+  };
+
+  const goPrev = () => goTo(currentIndex - 1);
+  const goNext = () => goTo(currentIndex + 1);
+
+  const onTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    const x = event.touches[0]?.clientX;
+    touchStartX.current = typeof x === "number" ? x : null;
+    touchCurrentX.current = touchStartX.current;
+  };
+
+  const onTouchMove = (event: TouchEvent<HTMLDivElement>) => {
+    const x = event.touches[0]?.clientX;
+    if (typeof x === "number") {
+      touchCurrentX.current = x;
+    }
+  };
+
+  const onTouchEnd = () => {
+    if (touchStartX.current === null || touchCurrentX.current === null) {
+      touchStartX.current = null;
+      touchCurrentX.current = null;
+      return;
+    }
+
+    const delta = touchStartX.current - touchCurrentX.current;
+
+    if (Math.abs(delta) > SWIPE_THRESHOLD) {
+      if (delta > 0) {
+        goNext();
+      } else {
+        goPrev();
+      }
+    }
+
+    touchStartX.current = null;
+    touchCurrentX.current = null;
+  };
+
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl md:rounded-3xl">
-      {/* Phase1.8: Horizontal slide animation wrapper. */}
-      <motion.div
-        className="flex"
-        animate={{ x: `-${currentIndex * 100}%` }}
-        transition={{ type: "tween", duration: prefersReducedMotion ? 0 : 0.7, ease: "easeInOut" }}
+    <div
+      className="relative w-full overflow-hidden"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      <div
+        className="flex will-change-transform"
+        style={{
+          transform: `translate3d(-${currentIndex * 100}%, 0, 0)`,
+          transition: "transform 900ms cubic-bezier(.22,1,.36,1)",
+        }}
       >
-        {heroProducts.map((product) => (
-          <div
-            key={product.id}
-            className="relative min-w-full overflow-hidden"
+        {slides.map((slide, index) => (
+          <article
+            key={slide.id}
+            className={clsx(
+              "relative w-full flex-shrink-0 aspect-[16/9] md:aspect-[21/9] overflow-hidden transition-transform duration-[900ms]",
+              index === currentIndex ? "scale-100" : "scale-[0.985]"
+            )}
           >
-            <div className="aspect-[16/7] md:aspect-[21/8] pointer-events-none">
-              <img
-                src={product.imageUrl || product.image || "/images/product-1.svg"}
-                alt={product.name}
-                className="w-full h-auto md:h-full object-cover"
-              />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent pointer-events-none" />
+            <img
+              src={slide.imageUrl || "/images/product-1.svg"}
+              alt={slide.title || "Carousel slide"}
+              className="absolute inset-0 h-full w-full object-cover brightness-75"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
 
-            <div className="absolute inset-0 z-20 flex items-end md:items-center justify-center px-6 pb-10 md:pb-0">
-              <div className="text-center text-white max-w-xl">
-                <h2 className="text-2xl md:text-4xl font-medium tracking-wide">
-                  {product.name}
-                </h2>
-
-                <p className="mt-3 text-sm md:text-base text-white/80">
-                  A composed expression of modern Arabic-inspired lifestyle—crafted for elegant everyday living.
-                </p>
-
-                <div className="mt-5 flex justify-center">
-                  <button
-                    type="button"
-                    className="btn-primary relative z-30"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAddToCart(product);
-                    }}
+            <div className="absolute inset-0 z-20 flex items-center justify-center md:justify-start">
+              <div className="flex flex-col gap-4 max-w-xl px-6 md:px-16 text-center md:text-left text-white">
+                <p className="text-xs md:text-sm uppercase tracking-[0.2em] text-white/80">Featured Collection</p>
+                <h2 className="text-3xl md:text-5xl font-bold leading-tight">{slide.title}</h2>
+                <p className="text-base md:text-lg opacity-90">{slide.subtitle}</p>
+                <div>
+                  <a
+                    className="inline-flex items-center justify-center px-7 py-3 rounded-full bg-white text-black font-semibold shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
+                    href={slide.buttonLink || "/"}
                   >
-                    Add to Cart
-                  </button>
+                    {slide.buttonText || "Shop Now"}
+                  </a>
                 </div>
               </div>
             </div>
-          </div>
+          </article>
         ))}
-      </motion.div>
+      </div>
 
-      {buyNow ? (
-        <button
-          type="button"
-          className="absolute right-6 top-6 rounded-full border border-white/50 bg-black/30 px-3 py-1 text-xs text-white"
-          onClick={() => buyNow(heroProducts[currentIndex])}
-        >
-          Buy Now
-        </button>
+      {slides.length > 1 ? (
+        <>
+          <button
+            type="button"
+            aria-label="Previous slide"
+            className="absolute top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:bg-black/50 hover:scale-110 left-3"
+            onClick={goPrev}
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            aria-label="Next slide"
+            className="absolute top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:bg-black/50 hover:scale-110 right-3"
+            onClick={goNext}
+          >
+            ›
+          </button>
+        </>
       ) : null}
 
-      {/* Phase1.8: Subtle navigation dots. */}
-      <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2">
-        {heroProducts.map((product, index) => (
+      <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2">
+        {slides.map((slide, index) => (
           <button
-            key={`dot-${product.id}`}
+            key={`dot-${slide.id}`}
             type="button"
             aria-label={`Go to slide ${index + 1}`}
             className={clsx(
-              "h-2.5 w-2.5 rounded-full transition-opacity duration-300",
-              index === currentIndex
-                ? "bg-[var(--brand-primary)]/70"
-                : "bg-[var(--brand-secondary)]/35 hover:opacity-100 opacity-60"
+              "transition-all duration-300 rounded-full",
+              index === currentIndex ? "w-6 h-2 bg-white" : "w-2 h-2 bg-white/50"
             )}
-            onClick={() => setCurrentIndex(index)}
+            onClick={() => goTo(index)}
           />
         ))}
       </div>
