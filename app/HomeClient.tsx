@@ -820,11 +820,12 @@ export default function HomePage({
           >
             <div className="relative overflow-hidden w-full bg-black text-white">
               <div
-                className="whitespace-nowrap flex animate-announcement-scroll text-[13px] font-medium tracking-wide"
+                className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-[13px] font-medium tracking-wide"
                 style={{ "--announcement-duration": announcementDuration } as Record<string, string>}
               >
-                <span className="px-8">{announcementText}</span>
-                <span className="px-8">{announcementText}</span>
+                <span className="px-8 flex-none">{announcementText}</span>
+                <span className="px-8 flex-none">{announcementText}</span>
+                <span className="px-8 flex-none" aria-hidden="true">{announcementText}</span>
               </div>
               <div className="absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-black to-transparent pointer-events-none" />
               <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-black to-transparent pointer-events-none" />

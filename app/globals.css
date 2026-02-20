@@ -254,16 +254,17 @@ a:focus-visible {
 
 @keyframes announcement-scroll {
   0% {
-    transform: translate3d(0%, 0, 0);
+    transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translate3d(-50%, 0, 0);
+    transform: translate3d(-33.333%, 0, 0);
   }
 }
 
 .animate-announcement-scroll {
   animation: announcement-scroll var(--announcement-duration, 20s) linear infinite;
   will-change: transform;
+  transform: translateZ(0);
 }
 
 .animate-announcement-scroll:hover {
