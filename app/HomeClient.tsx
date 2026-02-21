@@ -926,6 +926,13 @@ export default function HomePage({
   const isSummaryLoading = !hasMounted || isCartHydrating;
   const hasPaymentProof = Boolean(transactionId.trim());
 
+  const trustItems = [
+    { icon: "🚚", text: "Fast Nationwide Delivery" },
+    { icon: "🔒", text: "Secure Order Handling" },
+    { icon: "💬", text: "WhatsApp Order Support" },
+    { icon: "💵", text: "Cash on Delivery" },
+  ];
+
   const visibleFilters = useMemo(() => {
     if (!filterConfig?.length) return [];
 
@@ -1199,38 +1206,21 @@ export default function HomePage({
           )}
         </SectionLoader>
 
-        <section className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-neutral-200 bg-white p-4">
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
-              🚚 Fast Nationwide Delivery
-            </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
-              Reliable delivery across Bangladesh.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
-              🔒 Secure Order Handling
-            </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
-              Safe data and verified order process.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
-              💬 WhatsApp Order Support
-            </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
-              Quick support from real agents.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
-              💵 Cash on Delivery
-            </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
-              Pay after delivery confirmation.
-            </p>
+        <section className="mt-6">
+          <div className="w-full bg-gray-100 py-3 rounded-xl border border-neutral-200">
+            <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-center gap-4 text-center px-4 text-xs sm:text-sm md:text-base">
+              {trustItems.map((item) => (
+                <div
+                  key={item.text}
+                  className="flex items-center gap-2 justify-center min-w-[120px]"
+                >
+                  <span className="text-base">{item.icon}</span>
+                  <span className="trust-text text-gray-700 font-medium whitespace-nowrap">
+                    {item.text}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
