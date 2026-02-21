@@ -908,6 +908,10 @@ export default function HomePage({
   };
 
   const checkoutSubtotal = getSafeCartSubtotal(checkoutItems);
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
   const deliveryFee = Number.isFinite(deliveryFees[deliveryZone])
     ? deliveryFees[deliveryZone]
     : 0;
@@ -1637,22 +1641,27 @@ export default function HomePage({
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center justify-between text-sm font-semibold">
-                  <span>{text.subtotal}</span>
-                  <motion.span
-                    key={getSafeCartSubtotal(cartItems)}
-                    initial={{ opacity: 0.45, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {isCartHydrating ? <SummaryPlaceholder /> : formatPrice(getSafeCartSubtotal(cartItems))}
-                  </motion.span>
-                </div>
               </>
             )}
           </div>
           {cartItems.length > 0 ? (
             <div className="sticky bottom-0 bg-white border-t border-[#f0e4da] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <div className="mt-6 border-t pt-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium">
+                    {isCartHydrating ? <SummaryPlaceholder /> : formatPrice(subtotal)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Shipping</span>
+                  <span className="font-medium">Free</span>
+                </div>
+                <div className="flex justify-between text-base font-semibold border-t pt-3">
+                  <span>Total</span>
+                  <span>{isCartHydrating ? <SummaryPlaceholder /> : formatPrice(subtotal)}</span>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={handleCartCheckout}
@@ -1716,7 +1725,7 @@ export default function HomePage({
                 <div className="mx-auto w-full max-w-4xl">
                   <div className="grid gap-5 md:grid-cols-2">
                     <div className="max-w-[680px] space-y-4">
-                      <h2 className="text-base font-semibold mb-4">
+                      <h2 className="text-black text-lg font-semibold mb-4">
                         Order Summary
                       </h2>
                       <div className="rounded-2xl border border-[#f0e4da] p-3">
@@ -1829,7 +1838,7 @@ export default function HomePage({
                     </div>
 
                     <div>
-                      <h2 className="mb-4 text-base font-semibold">
+                      <h2 className="text-black text-lg font-semibold mb-4">
                         Shipping Information
                       </h2>
                       <div
