@@ -246,8 +246,7 @@ export default function HomePage({
     Record<number, string>
   >({});
   const [language, setLanguage] = useState<Language>("en");
-  const [cartBump, setCartBump] = useState(false);
-  const prevCartCount = useRef(cartItems.length);
+  const [badgeAnimate, setBadgeAnimate] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
@@ -510,12 +509,10 @@ export default function HomePage({
   }, []);
 
   useEffect(() => {
-    if (cartItems.length > prevCartCount.current) {
-      setCartBump(true);
-      const timer = window.setTimeout(() => setCartBump(false), 450);
-      return () => window.clearTimeout(timer);
-    }
-    prevCartCount.current = cartItems.length;
+    if (cartItems.length === 0) return;
+    setBadgeAnimate(true);
+    const timeout = window.setTimeout(() => setBadgeAnimate(false), 400);
+    return () => window.clearTimeout(timeout);
   }, [cartItems.length]);
 
   const updateSize = (productId: string, size: string) => {
@@ -972,11 +969,9 @@ export default function HomePage({
               className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
               aria-label="Open cart"
             >
-              <span className={clsx(cartBump && "animate-cart-bounce")}>
-                🛍️
-              </span>
+              <span>🛍️</span>
               {hasMounted && cartItems.length > 0 ? (
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
+                <span className={clsx("absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white", badgeAnimate && "badge-animate")}>
                   {cartItems.length}
                 </span>
               ) : !hasMounted ? (
