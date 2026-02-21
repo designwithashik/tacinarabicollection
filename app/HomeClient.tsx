@@ -246,8 +246,7 @@ export default function HomePage({
     Record<number, string>
   >({});
   const [language, setLanguage] = useState<Language>("en");
-  const [cartBump, setCartBump] = useState(false);
-  const prevCartCount = useRef(cartItems.length);
+  const [badgeAnimate, setBadgeAnimate] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
@@ -510,12 +509,10 @@ export default function HomePage({
   }, []);
 
   useEffect(() => {
-    if (cartItems.length > prevCartCount.current) {
-      setCartBump(true);
-      const timer = window.setTimeout(() => setCartBump(false), 450);
-      return () => window.clearTimeout(timer);
-    }
-    prevCartCount.current = cartItems.length;
+    if (cartItems.length === 0) return;
+    setBadgeAnimate(true);
+    const timeout = window.setTimeout(() => setBadgeAnimate(false), 400);
+    return () => window.clearTimeout(timeout);
   }, [cartItems.length]);
 
   const updateSize = (productId: string, size: string) => {
@@ -907,6 +904,10 @@ export default function HomePage({
     setShowPaymentInfo(true);
   };
 
+  const cartSubtotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
   const checkoutSubtotal = getSafeCartSubtotal(checkoutItems);
   const deliveryFee = Number.isFinite(deliveryFees[deliveryZone])
     ? deliveryFees[deliveryZone]
@@ -921,6 +922,13 @@ export default function HomePage({
     !Number.isFinite(checkoutTotal);
   const isSummaryLoading = !hasMounted || isCartHydrating;
   const hasPaymentProof = Boolean(transactionId.trim());
+
+  const trustItems = [
+    { icon: "🚚", text: "Fast Nationwide Delivery" },
+    { icon: "🔒", text: "Secure Order Handling" },
+    { icon: "💬", text: "WhatsApp Order Support" },
+    { icon: "💵", text: "Cash on Delivery" },
+  ];
 
   const visibleFilters = useMemo(() => {
     if (!filterConfig?.length) return [];
@@ -972,11 +980,9 @@ export default function HomePage({
               className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
               aria-label="Open cart"
             >
-              <span className={clsx(cartBump && "animate-cart-bounce")}>
-                🛍️
-              </span>
+              <span>🛍️</span>
               {hasMounted && cartItems.length > 0 ? (
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
+                <span className={clsx("absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white", badgeAnimate && "badge-animate")}>
                   {cartItems.length}
                 </span>
               ) : !hasMounted ? (
@@ -1195,38 +1201,19 @@ export default function HomePage({
           )}
         </SectionLoader>
 
-        <section className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-neutral-200 bg-white p-4">
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
-              🚚 Fast Nationwide Delivery
-            </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
-              Reliable delivery across Bangladesh.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
-              🔒 Secure Order Handling
-            </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
-              Safe data and verified order process.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
-              💬 WhatsApp Order Support
-            </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
-              Quick support from real agents.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
-              💵 Cash on Delivery
-            </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
-              Pay after delivery confirmation.
-            </p>
+        <section className="mt-6 w-full bg-gray-100 py-3 rounded-xl border border-neutral-200">
+          <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-center gap-4 text-center px-4 text-xs sm:text-sm md:text-base">
+            {trustItems.map((item) => (
+              <div
+                key={item.text}
+                className="flex items-center gap-2 justify-center min-w-[120px]"
+              >
+                <span className="text-base">{item.icon}</span>
+                <span className="trust-text text-gray-700 font-medium whitespace-nowrap">
+                  {item.text}
+                </span>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -1637,22 +1624,25 @@ export default function HomePage({
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center justify-between text-sm font-semibold">
-                  <span>{text.subtotal}</span>
-                  <motion.span
-                    key={getSafeCartSubtotal(cartItems)}
-                    initial={{ opacity: 0.45, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {isCartHydrating ? <SummaryPlaceholder /> : formatPrice(getSafeCartSubtotal(cartItems))}
-                  </motion.span>
-                </div>
               </>
             )}
           </div>
           {cartItems.length > 0 ? (
             <div className="sticky bottom-0 bg-white border-t border-[#f0e4da] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <div className="mt-6 border-t pt-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium">{formatPrice(cartSubtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Shipping</span>
+                  <span className="font-medium">Free</span>
+                </div>
+                <div className="flex justify-between text-base font-semibold border-t pt-3">
+                  <span>Total</span>
+                  <span>{formatPrice(cartSubtotal)}</span>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={handleCartCheckout}
@@ -1716,7 +1706,7 @@ export default function HomePage({
                 <div className="mx-auto w-full max-w-4xl">
                   <div className="grid gap-5 md:grid-cols-2">
                     <div className="max-w-[680px] space-y-4">
-                      <h2 className="text-base font-semibold mb-4">
+                      <h2 className="text-black text-lg font-semibold mb-4">
                         Order Summary
                       </h2>
                       <div className="rounded-2xl border border-[#f0e4da] p-3">
@@ -1829,7 +1819,7 @@ export default function HomePage({
                     </div>
 
                     <div>
-                      <h2 className="mb-4 text-base font-semibold">
+                      <h2 className="text-black text-lg font-semibold mb-4">
                         Shipping Information
                       </h2>
                       <div

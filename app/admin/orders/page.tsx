@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import type { Order } from "../../../lib/orders";
 
 type OrderStatus = "pending" | "delivering" | "sent" | "failed";
@@ -13,6 +13,22 @@ const orderStatuses: OrderStatus[] = [
 ];
 
 const formatCurrency = (amount: number) => `৳${Number(amount || 0).toFixed(2)}`;
+
+const createRipple = (event: MouseEvent<HTMLButtonElement>) => {
+  const button = event.currentTarget;
+  const circle = document.createElement("span");
+
+  const diameter = Math.max(button.clientWidth, button.clientHeight);
+  const radius = diameter / 2;
+
+  circle.style.width = circle.style.height = `${diameter}px`;
+  circle.style.left = `${event.clientX - button.offsetLeft - radius}px`;
+  circle.style.top = `${event.clientY - button.offsetTop - radius}px`;
+
+  button.appendChild(circle);
+
+  setTimeout(() => circle.remove(), 600);
+};
 
 const normalizeOrder = (raw: unknown): Order | null => {
   if (!raw || typeof raw !== "object") return null;
@@ -160,133 +176,45 @@ export default function AdminOrders() {
     await loadOrders();
   };
 
-  const generateInvoice = async (order: Order) => {
+  const generateInvoice = (order: Order) => {
     setInvoiceError(null);
 
     try {
-      const moduleName = "jspdf";
-      const { jsPDF } = (await import(moduleName)) as {
-        jsPDF: new () => {
-          setFontSize: (size: number) => void;
-          setFont: (font: string, style: string) => void;
-          text: (
-            text: string,
-            x: number,
-            y: number,
-            options?: { align?: "left" | "center" | "right" },
-          ) => void;
-          line: (x1: number, y1: number, x2: number, y2: number) => void;
-          addPage: () => void;
-          addImage: (
-            imageData: string,
-            format: "PNG" | "JPEG",
-            x: number,
-            y: number,
-            width: number,
-            height: number,
-          ) => void;
-          save: (filename: string) => void;
-        };
-      };
-      const doc = new jsPDF();
-      const logoUrl = "/icons/icon-192.svg";
-
-      const logoDataUrl = await fetch(logoUrl)
-        .then(async (response) => {
-          if (!response.ok) return null;
-          const svgText = await response.text();
-          const svgBlob = new Blob([svgText], {
-            type: "image/svg+xml;charset=utf-8",
-          });
-          const blobUrl = URL.createObjectURL(svgBlob);
-
-          try {
-            const image = new Image();
-            image.src = blobUrl;
-            await new Promise<void>((resolve, reject) => {
-              image.onload = () => resolve();
-              image.onerror = () => reject(new Error("Logo load failed"));
-            });
-
-            const canvas = document.createElement("canvas");
-            canvas.width = image.width;
-            canvas.height = image.height;
-            const context = canvas.getContext("2d");
-            if (!context) return null;
-            context.drawImage(image, 0, 0);
-            return canvas.toDataURL("image/png");
-          } finally {
-            URL.revokeObjectURL(blobUrl);
-          }
+      const itemRows = order.items
+        .map((item, index) => {
+          const itemTotal = item.quantity * item.price;
+          return `${index + 1}. ${item.name} (${item.size}) x ${item.quantity} = ${formatCurrency(itemTotal)}`;
         })
-        .catch(() => null);
+        .join("\n");
 
-      if (logoDataUrl) {
-        doc.addImage(logoDataUrl, "PNG", 20, 15, 30, 15);
-      }
+      const invoiceText = [
+        "Tacin Arabi Collection",
+        "Official Invoice",
+        "",
+        `Invoice ID: ${order.id}`,
+        `Date: ${new Date(order.createdAt).toLocaleDateString()}`,
+        `Status: ${order.status}`,
+        `Customer: ${order.customer.name}`,
+        `Phone: ${order.customer.phone}`,
+        `Address: ${order.customer.address}`,
+        `Delivery: ${deliveryLabel(order.deliveryZone)}`,
+        `Payment: ${order.paymentMethod}`,
+        "",
+        "Items:",
+        itemRows || "No items",
+        "",
+        `Grand Total: ${formatCurrency(order.total)}`,
+      ].join("\n");
 
-      doc.setFontSize(20);
-      doc.setFont("helvetica", "bold");
-      doc.text("Tacin Arabi Collection", 60, 25);
-
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.text("Official Invoice", 190, 25, { align: "right" });
-      doc.line(20, 40, 190, 40);
-
-      doc.text(`Invoice ID: ${order.id}`, 20, 50);
-      doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 20, 58);
-      doc.text(`Status: ${order.status}`, 20, 66);
-
-      doc.line(20, 73, 190, 73);
-      doc.setFont("helvetica", "bold");
-      doc.text("Bill To:", 20, 83);
-
-      doc.setFont("helvetica", "normal");
-      doc.text(order.customer.name, 20, 91);
-      doc.text(`Phone: ${order.customer.phone}`, 20, 99);
-      doc.text(order.customer.address, 20, 107);
-
-      doc.line(20, 114, 190, 114);
-
-      let y = 124;
-      doc.setFont("helvetica", "bold");
-      doc.text("Item", 20, y);
-      doc.text("Qty", 120, y);
-      doc.text("Price", 150, y);
-      doc.text("Total", 170, y);
-
-      y += 8;
-      doc.setFont("helvetica", "normal");
-
-      order.items.forEach((item) => {
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
-
-        const itemTotal = item.price * item.quantity;
-        doc.text(item.name, 20, y);
-        doc.text(`${item.quantity}`, 120, y);
-        doc.text(`${item.price}`, 150, y);
-        doc.text(`${itemTotal}`, 170, y);
-        y += 8;
-      });
-
-      y += 6;
-      doc.line(120, y, 190, y);
-      y += 8;
-
-      doc.setFont("helvetica", "bold");
-      doc.text(`Grand Total: ${order.total}`, 150, y);
-
-      y += 20;
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text("Thank you for your order.", 20, y);
-      doc.text("Generated from Admin Dashboard", 20, y + 8);
-
-      doc.save(`Invoice-${order.id}.pdf`);
+      const blob = new Blob([invoiceText], { type: "text/plain;charset=utf-8" });
+      const fileUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = `Invoice-${order.id}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(fileUrl);
     } catch {
       setInvoiceError(
         "Something went wrong while generating invoice. Please try again.",
@@ -401,19 +329,23 @@ export default function AdminOrders() {
                         <div className="flex justify-end gap-2">
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(event) => {
+                              createRipple(event);
                               setSelectedOrder(order);
                               setShowInvoicePreview(true);
                               setInvoiceError(null);
                             }}
-                            className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                            className="button-ripple border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
                           >
                             View
                           </button>
                           <button
                             type="button"
-                            onClick={() => void deleteOrder(order.id)}
-                            className="bg-red-600 text-white rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                            onClick={(event) => {
+                              createRipple(event);
+                              void deleteOrder(order.id);
+                            }}
+                            className="button-ripple bg-red-600 text-white rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
                           >
                             Delete
                           </button>
@@ -429,14 +361,15 @@ export default function AdminOrders() {
       </div>
 
       {selectedOrder ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="admin-modal-enter w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-sm sm:items-center">
+          <div className="admin-modal-enter my-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-2xl sm:my-0">
             <div className="flex items-center justify-between border-b pb-3">
               <h4 className="text-xl font-semibold">{selectedOrder.id}</h4>
               <button
                 type="button"
-                className="border border-black rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
-                onClick={() => {
+                className="button-ripple border border-black rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+                onClick={(event) => {
+                  createRipple(event);
                   setSelectedOrder(null);
                   setShowInvoicePreview(false);
                   setInvoiceError(null);
@@ -491,8 +424,11 @@ export default function AdminOrders() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => void deleteOrder(selectedOrder.id)}
-                  className="mt-5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-95"
+                  onClick={(event) => {
+                    createRipple(event);
+                    void deleteOrder(selectedOrder.id);
+                  }}
+                  className="button-ripple mt-5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-95"
                 >
                   Delete Order
                 </button>
@@ -509,17 +445,23 @@ export default function AdminOrders() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  className="h-12 rounded-xl border border-black font-semibold transition active:scale-95"
-                  onClick={() => setShowInvoicePreview((prev) => !prev)}
+                  className="button-ripple h-12 rounded-xl border border-black font-semibold transition active:scale-95"
+                  onClick={(event) => {
+                    createRipple(event);
+                    setShowInvoicePreview((prev) => !prev);
+                  }}
                 >
                   {showInvoicePreview ? "Hide Invoice" : "View Invoice"}
                 </button>
                 <button
                   type="button"
-                  className="h-12 rounded-xl bg-black text-white font-semibold active:scale-95 transition"
-                  onClick={() => void generateInvoice(selectedOrder)}
+                  className="button-ripple h-12 rounded-xl bg-black text-white font-semibold active:scale-95 transition"
+                  onClick={(event) => {
+                    createRipple(event);
+                    generateInvoice(selectedOrder);
+                  }}
                 >
-                  Download Invoice
+                  Download Invoice (.txt)
                 </button>
               </div>
 
