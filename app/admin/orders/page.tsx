@@ -97,127 +97,136 @@ export default function AdminOrders() {
 
   const generateInvoice = async (order: Order) => {
     setInvoiceError(null);
-    const moduleName = "jspdf";
-    const { jsPDF } = (await import(moduleName)) as {
-      jsPDF: new () => {
-        setFontSize: (size: number) => void;
-        setFont: (font: string, style: string) => void;
-        text: (
-          text: string,
-          x: number,
-          y: number,
-          options?: { align?: "left" | "center" | "right" },
-        ) => void;
-        line: (x1: number, y1: number, x2: number, y2: number) => void;
-        addPage: () => void;
-        addImage: (
-          imageData: string,
-          format: "PNG" | "JPEG",
-          x: number,
-          y: number,
-          width: number,
-          height: number,
-        ) => void;
-        save: (filename: string) => void;
+
+    try {
+      const moduleName = "jspdf";
+      const { jsPDF } = (await import(moduleName)) as {
+        jsPDF: new () => {
+          setFontSize: (size: number) => void;
+          setFont: (font: string, style: string) => void;
+          text: (
+            text: string,
+            x: number,
+            y: number,
+            options?: { align?: "left" | "center" | "right" },
+          ) => void;
+          line: (x1: number, y1: number, x2: number, y2: number) => void;
+          addPage: () => void;
+          addImage: (
+            imageData: string,
+            format: "PNG" | "JPEG",
+            x: number,
+            y: number,
+            width: number,
+            height: number,
+          ) => void;
+          save: (filename: string) => void;
+        };
       };
-    };
-    const doc = new jsPDF();
-    const logoUrl = "/icons/icon-192.svg";
+      const doc = new jsPDF();
+      const logoUrl = "/icons/icon-192.svg";
 
-    const logoDataUrl = await fetch(logoUrl)
-      .then(async (response) => {
-        if (!response.ok) return null;
-        const svgText = await response.text();
-        const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
-        const blobUrl = URL.createObjectURL(svgBlob);
-
-        try {
-          const image = new Image();
-          image.src = blobUrl;
-          await new Promise<void>((resolve, reject) => {
-            image.onload = () => resolve();
-            image.onerror = () => reject(new Error("Logo load failed"));
+      const logoDataUrl = await fetch(logoUrl)
+        .then(async (response) => {
+          if (!response.ok) return null;
+          const svgText = await response.text();
+          const svgBlob = new Blob([svgText], {
+            type: "image/svg+xml;charset=utf-8",
           });
+          const blobUrl = URL.createObjectURL(svgBlob);
 
-          const canvas = document.createElement("canvas");
-          canvas.width = image.width;
-          canvas.height = image.height;
-          const context = canvas.getContext("2d");
-          if (!context) return null;
-          context.drawImage(image, 0, 0);
-          return canvas.toDataURL("image/png");
-        } finally {
-          URL.revokeObjectURL(blobUrl);
-        }
-      })
-      .catch(() => null);
+          try {
+            const image = new Image();
+            image.src = blobUrl;
+            await new Promise<void>((resolve, reject) => {
+              image.onload = () => resolve();
+              image.onerror = () => reject(new Error("Logo load failed"));
+            });
 
-    if (logoDataUrl) {
-      doc.addImage(logoDataUrl, "PNG", 20, 15, 30, 15);
-    }
+            const canvas = document.createElement("canvas");
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const context = canvas.getContext("2d");
+            if (!context) return null;
+            context.drawImage(image, 0, 0);
+            return canvas.toDataURL("image/png");
+          } finally {
+            URL.revokeObjectURL(blobUrl);
+          }
+        })
+        .catch(() => null);
 
-    doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    doc.text("Tacin Arabi Collection", 60, 25);
-
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.text("Official Invoice", 190, 25, { align: "right" });
-    doc.line(20, 40, 190, 40);
-
-    doc.text(`Invoice ID: ${order.id}`, 20, 50);
-    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 20, 58);
-    doc.text(`Status: ${order.status}`, 20, 66);
-
-    doc.line(20, 73, 190, 73);
-    doc.setFont("helvetica", "bold");
-    doc.text("Bill To:", 20, 83);
-
-    doc.setFont("helvetica", "normal");
-    doc.text(order.customer.name, 20, 91);
-    doc.text(`Phone: ${order.customer.phone}`, 20, 99);
-    doc.text(order.customer.address, 20, 107);
-
-    doc.line(20, 114, 190, 114);
-
-    let y = 124;
-    doc.setFont("helvetica", "bold");
-    doc.text("Item", 20, y);
-    doc.text("Qty", 120, y);
-    doc.text("Price", 150, y);
-    doc.text("Total", 170, y);
-
-    y += 8;
-    doc.setFont("helvetica", "normal");
-
-    order.items.forEach((item) => {
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
+      if (logoDataUrl) {
+        doc.addImage(logoDataUrl, "PNG", 20, 15, 30, 15);
       }
 
-      const itemTotal = item.price * item.quantity;
-      doc.text(item.name, 20, y);
-      doc.text(`${item.quantity}`, 120, y);
-      doc.text(`${item.price}`, 150, y);
-      doc.text(`${itemTotal}`, 170, y);
+      doc.setFontSize(20);
+      doc.setFont("helvetica", "bold");
+      doc.text("Tacin Arabi Collection", 60, 25);
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text("Official Invoice", 190, 25, { align: "right" });
+      doc.line(20, 40, 190, 40);
+
+      doc.text(`Invoice ID: ${order.id}`, 20, 50);
+      doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 20, 58);
+      doc.text(`Status: ${order.status}`, 20, 66);
+
+      doc.line(20, 73, 190, 73);
+      doc.setFont("helvetica", "bold");
+      doc.text("Bill To:", 20, 83);
+
+      doc.setFont("helvetica", "normal");
+      doc.text(order.customer.name, 20, 91);
+      doc.text(`Phone: ${order.customer.phone}`, 20, 99);
+      doc.text(order.customer.address, 20, 107);
+
+      doc.line(20, 114, 190, 114);
+
+      let y = 124;
+      doc.setFont("helvetica", "bold");
+      doc.text("Item", 20, y);
+      doc.text("Qty", 120, y);
+      doc.text("Price", 150, y);
+      doc.text("Total", 170, y);
+
       y += 8;
-    });
+      doc.setFont("helvetica", "normal");
 
-    y += 6;
-    doc.line(120, y, 190, y);
-    y += 8;
+      order.items.forEach((item) => {
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
 
-    doc.setFont("helvetica", "bold");
-    doc.text(`Grand Total: ${order.total}`, 150, y);
+        const itemTotal = item.price * item.quantity;
+        doc.text(item.name, 20, y);
+        doc.text(`${item.quantity}`, 120, y);
+        doc.text(`${item.price}`, 150, y);
+        doc.text(`${itemTotal}`, 170, y);
+        y += 8;
+      });
 
-    y += 20;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("Thank you for your order.", 20, y);
-    doc.text("Generated from Admin Dashboard", 20, y + 8);
+      y += 6;
+      doc.line(120, y, 190, y);
+      y += 8;
 
-    doc.save(`Invoice-${order.id}.pdf`);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Grand Total: ${order.total}`, 150, y);
+
+      y += 20;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("Thank you for your order.", 20, y);
+      doc.text("Generated from Admin Dashboard", 20, y + 8);
+
+      doc.save(`Invoice-${order.id}.pdf`);
+    } catch {
+      setInvoiceError(
+        "Something went wrong while generating invoice. Please try again.",
+      );
+    }
   };
 
   const filteredOrders = orders.filter((order) => {
@@ -329,7 +338,8 @@ export default function AdminOrders() {
                             type="button"
                             onClick={() => {
                               setSelectedOrder(order);
-                              setShowInvoicePreview(false);
+                              setShowInvoicePreview(true);
+                              setInvoiceError(null);
                             }}
                             className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
                           >
@@ -455,6 +465,7 @@ export default function AdminOrders() {
                   <p>Invoice ID: {selectedOrder.id}</p>
                   <p>Date: {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
                   <p>Status: {selectedOrder.status}</p>
+                  <p>Mobile: {selectedOrder.customer.phone}</p>
                   <p className="pt-2 font-semibold">Items</p>
                   {selectedOrder.items.map((item) => (
                     <p key={`preview-${selectedOrder.id}-${item.id}-${item.size}`}>
