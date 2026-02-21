@@ -11,7 +11,8 @@ const orderStatuses: OrderStatus[] = [
   "sent",
   "failed",
 ];
-import { getStoredOrders } from "../../../lib/orders";
+
+const formatCurrency = (amount: number) => `৳${Number(amount || 0).toFixed(2)}`;
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -77,6 +78,7 @@ export default function AdminOrders() {
 
     emitOrdersUpdated();
     await loadOrders();
+    setSelectedOrder((prev) => (prev && prev.id === id ? { ...prev, status } : prev));
   };
 
   const deleteOrder = async (id: string) => {
@@ -89,6 +91,84 @@ export default function AdminOrders() {
     }
     emitOrdersUpdated();
     await loadOrders();
+  };
+
+  const generateInvoice = async (order: Order) => {
+    const moduleName = "jspdf";
+    const { jsPDF } = (await import(moduleName)) as {
+      jsPDF: new () => {
+        setFontSize: (size: number) => void;
+        setFont: (font: string, style: string) => void;
+        text: (text: string, x: number, y: number) => void;
+        line: (x1: number, y1: number, x2: number, y2: number) => void;
+        addPage: () => void;
+        save: (filename: string) => void;
+      };
+    };
+    const doc = new jsPDF();
+
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("Tacin Arabi Collection", 20, 20);
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text("Official Invoice", 20, 28);
+    doc.line(20, 32, 190, 32);
+
+    doc.text(`Invoice ID: ${order.id}`, 20, 42);
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 20, 50);
+    doc.text(`Status: ${order.status}`, 20, 58);
+
+    doc.line(20, 65, 190, 65);
+    doc.setFont("helvetica", "bold");
+    doc.text("Bill To:", 20, 75);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(order.customer.name, 20, 83);
+    doc.text(`Phone: ${order.customer.phone}`, 20, 91);
+    doc.text(order.customer.address, 20, 99);
+
+    doc.line(20, 106, 190, 106);
+
+    let y = 116;
+    doc.setFont("helvetica", "bold");
+    doc.text("Item", 20, y);
+    doc.text("Qty", 120, y);
+    doc.text("Price", 150, y);
+    doc.text("Total", 170, y);
+
+    y += 8;
+    doc.setFont("helvetica", "normal");
+
+    order.items.forEach((item) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+
+      const itemTotal = item.price * item.quantity;
+      doc.text(item.name, 20, y);
+      doc.text(`${item.quantity}`, 120, y);
+      doc.text(`${item.price}`, 150, y);
+      doc.text(`${itemTotal}`, 170, y);
+      y += 8;
+    });
+
+    y += 6;
+    doc.line(120, y, 190, y);
+    y += 8;
+
+    doc.setFont("helvetica", "bold");
+    doc.text(`Grand Total: ${order.total}`, 150, y);
+
+    y += 20;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Thank you for your order.", 20, y);
+    doc.text("Generated from Admin Dashboard", 20, y + 8);
+
+    doc.save(`Invoice-${order.id}.pdf`);
   };
 
   const filteredOrders = orders.filter((order) => {
@@ -211,13 +291,6 @@ export default function AdminOrders() {
                             Delete
                           </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedOrder(order)}
-                          className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
-                        >
-                          View
-                        </button>
                       </td>
                     </tr>
                   ))}
@@ -255,6 +328,45 @@ export default function AdminOrders() {
                 <span className="font-semibold">Payment:</span>{" "}
                 {selectedOrder.paymentMethod}
               </p>
+
+              <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-1">
+                <p>
+                  <strong>Invoice ID:</strong> {selectedOrder.id}
+                </p>
+                <p>
+                  <strong>Total:</strong> {formatCurrency(selectedOrder.total)}
+                </p>
+              </div>
+
+              <div className="grid gap-2 md:grid-cols-2">
+                <label className="text-xs font-semibold">
+                  Status
+                  <select
+                    value={selectedOrder.status}
+                    onChange={(event) =>
+                      void updateStatus(
+                        selectedOrder.id,
+                        event.target.value as OrderStatus,
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-2"
+                  >
+                    {orderStatuses.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void deleteOrder(selectedOrder.id)}
+                  className="mt-5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-95"
+                >
+                  Delete Order
+                </button>
+              </div>
+
               <ul className="space-y-1 rounded-lg bg-gray-50 p-3">
                 {selectedOrder.items.map((item) => (
                   <li key={`${selectedOrder.id}-${item.id}`}>
@@ -262,6 +374,14 @@ export default function AdminOrders() {
                   </li>
                 ))}
               </ul>
+
+              <button
+                type="button"
+                className="w-full h-12 rounded-xl bg-black text-white font-semibold mt-4 active:scale-95 transition"
+                onClick={() => void generateInvoice(selectedOrder)}
+              >
+                Download Invoice
+              </button>
             </div>
           </div>
         </div>
