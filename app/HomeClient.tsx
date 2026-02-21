@@ -1643,10 +1643,6 @@ export default function HomePage({
                     {isCartHydrating ? <SummaryPlaceholder /> : formatPrice(subtotal)}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium">Free</span>
-                </div>
                 <div className="flex justify-between text-base font-semibold border-t pt-3">
                   <span>Total</span>
                   <span>{isCartHydrating ? <SummaryPlaceholder /> : formatPrice(subtotal)}</span>
