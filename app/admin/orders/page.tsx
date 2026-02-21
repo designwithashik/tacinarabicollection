@@ -11,20 +11,88 @@ const orderStatuses: OrderStatus[] = [
   "sent",
   "failed",
 ];
-import { getStoredOrders } from "../../../lib/orders";
+
+const formatCurrency = (amount: number) => `৳${Number(amount || 0).toFixed(2)}`;
+
+const normalizeOrder = (raw: unknown): Order | null => {
+  if (!raw || typeof raw !== "object") return null;
+  const source = raw as Record<string, unknown>;
+
+  const customerSource =
+    source.customer && typeof source.customer === "object"
+      ? (source.customer as Record<string, unknown>)
+      : null;
+
+  const totalValue =
+    typeof source.total === "number"
+      ? source.total
+      : typeof source.total === "string"
+        ? Number(source.total)
+        : 0;
+
+  return {
+    id: typeof source.id === "string" ? source.id : crypto.randomUUID(),
+    createdAt:
+      typeof source.createdAt === "string"
+        ? source.createdAt
+        : new Date().toISOString(),
+    items: Array.isArray(source.items) ? (source.items as Order["items"]) : [],
+    total: Number.isFinite(totalValue) ? totalValue : 0,
+    paymentMethod:
+      typeof source.paymentMethod === "string"
+        ? source.paymentMethod
+        : typeof source.payment === "string"
+          ? source.payment
+          : "COD",
+    deliveryZone:
+      source.deliveryZone === "outside" ? "outside" : "inside",
+    customer: {
+      name:
+        typeof customerSource?.name === "string"
+          ? customerSource.name
+          : typeof source.customerName === "string"
+            ? source.customerName
+            : "",
+      phone:
+        typeof customerSource?.phone === "string"
+          ? customerSource.phone
+          : typeof source.phone === "string"
+            ? source.phone
+            : "",
+      address:
+        typeof customerSource?.address === "string"
+          ? customerSource.address
+          : typeof source.address === "string"
+            ? source.address
+            : "",
+    },
+    status:
+      source.status === "pending" ||
+      source.status === "delivering" ||
+      source.status === "sent" ||
+      source.status === "failed"
+        ? source.status
+        : "pending",
+  };
+};
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [deliveryFilter, setDeliveryFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [showInvoicePreview, setShowInvoicePreview] = useState(false);
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
 
   const loadOrders = async () => {
     try {
       const response = await fetch("/api/admin/orders", { cache: "no-store" });
       if (!response.ok) return;
-      const data = (await response.json()) as Order[];
-      setOrders(Array.isArray(data) ? data : []);
+      const data = (await response.json()) as unknown[];
+      const normalized = (Array.isArray(data) ? data : [])
+        .map((item) => normalizeOrder(item))
+        .filter((item): item is Order => Boolean(item));
+      setOrders(normalized);
     } catch {
       setOrders([]);
     }
@@ -77,6 +145,7 @@ export default function AdminOrders() {
 
     emitOrdersUpdated();
     await loadOrders();
+    setSelectedOrder((prev) => (prev && prev.id === id ? { ...prev, status } : prev));
   };
 
   const deleteOrder = async (id: string) => {
@@ -89,6 +158,140 @@ export default function AdminOrders() {
     }
     emitOrdersUpdated();
     await loadOrders();
+  };
+
+  const generateInvoice = async (order: Order) => {
+    setInvoiceError(null);
+
+    try {
+      const moduleName = "jspdf";
+      const { jsPDF } = (await import(moduleName)) as {
+        jsPDF: new () => {
+          setFontSize: (size: number) => void;
+          setFont: (font: string, style: string) => void;
+          text: (
+            text: string,
+            x: number,
+            y: number,
+            options?: { align?: "left" | "center" | "right" },
+          ) => void;
+          line: (x1: number, y1: number, x2: number, y2: number) => void;
+          addPage: () => void;
+          addImage: (
+            imageData: string,
+            format: "PNG" | "JPEG",
+            x: number,
+            y: number,
+            width: number,
+            height: number,
+          ) => void;
+          save: (filename: string) => void;
+        };
+      };
+      const doc = new jsPDF();
+      const logoUrl = "/icons/icon-192.svg";
+
+      const logoDataUrl = await fetch(logoUrl)
+        .then(async (response) => {
+          if (!response.ok) return null;
+          const svgText = await response.text();
+          const svgBlob = new Blob([svgText], {
+            type: "image/svg+xml;charset=utf-8",
+          });
+          const blobUrl = URL.createObjectURL(svgBlob);
+
+          try {
+            const image = new Image();
+            image.src = blobUrl;
+            await new Promise<void>((resolve, reject) => {
+              image.onload = () => resolve();
+              image.onerror = () => reject(new Error("Logo load failed"));
+            });
+
+            const canvas = document.createElement("canvas");
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const context = canvas.getContext("2d");
+            if (!context) return null;
+            context.drawImage(image, 0, 0);
+            return canvas.toDataURL("image/png");
+          } finally {
+            URL.revokeObjectURL(blobUrl);
+          }
+        })
+        .catch(() => null);
+
+      if (logoDataUrl) {
+        doc.addImage(logoDataUrl, "PNG", 20, 15, 30, 15);
+      }
+
+      doc.setFontSize(20);
+      doc.setFont("helvetica", "bold");
+      doc.text("Tacin Arabi Collection", 60, 25);
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text("Official Invoice", 190, 25, { align: "right" });
+      doc.line(20, 40, 190, 40);
+
+      doc.text(`Invoice ID: ${order.id}`, 20, 50);
+      doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 20, 58);
+      doc.text(`Status: ${order.status}`, 20, 66);
+
+      doc.line(20, 73, 190, 73);
+      doc.setFont("helvetica", "bold");
+      doc.text("Bill To:", 20, 83);
+
+      doc.setFont("helvetica", "normal");
+      doc.text(order.customer.name, 20, 91);
+      doc.text(`Phone: ${order.customer.phone}`, 20, 99);
+      doc.text(order.customer.address, 20, 107);
+
+      doc.line(20, 114, 190, 114);
+
+      let y = 124;
+      doc.setFont("helvetica", "bold");
+      doc.text("Item", 20, y);
+      doc.text("Qty", 120, y);
+      doc.text("Price", 150, y);
+      doc.text("Total", 170, y);
+
+      y += 8;
+      doc.setFont("helvetica", "normal");
+
+      order.items.forEach((item) => {
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+
+        const itemTotal = item.price * item.quantity;
+        doc.text(item.name, 20, y);
+        doc.text(`${item.quantity}`, 120, y);
+        doc.text(`${item.price}`, 150, y);
+        doc.text(`${itemTotal}`, 170, y);
+        y += 8;
+      });
+
+      y += 6;
+      doc.line(120, y, 190, y);
+      y += 8;
+
+      doc.setFont("helvetica", "bold");
+      doc.text(`Grand Total: ${order.total}`, 150, y);
+
+      y += 20;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("Thank you for your order.", 20, y);
+      doc.text("Generated from Admin Dashboard", 20, y + 8);
+
+      doc.save(`Invoice-${order.id}.pdf`);
+    } catch {
+      setInvoiceError(
+        "Something went wrong while generating invoice. Please try again.",
+      );
+    }
   };
 
   const filteredOrders = orders.filter((order) => {
@@ -198,7 +401,11 @@ export default function AdminOrders() {
                         <div className="flex justify-end gap-2">
                           <button
                             type="button"
-                            onClick={() => setSelectedOrder(order)}
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setShowInvoicePreview(true);
+                              setInvoiceError(null);
+                            }}
                             className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
                           >
                             View
@@ -211,13 +418,6 @@ export default function AdminOrders() {
                             Delete
                           </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedOrder(order)}
-                          className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
-                        >
-                          View
-                        </button>
                       </td>
                     </tr>
                   ))}
@@ -236,7 +436,11 @@ export default function AdminOrders() {
               <button
                 type="button"
                 className="border border-black rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
-                onClick={() => setSelectedOrder(null)}
+                onClick={() => {
+                  setSelectedOrder(null);
+                  setShowInvoicePreview(false);
+                  setInvoiceError(null);
+                }}
               >
                 Close
               </button>
@@ -255,6 +459,45 @@ export default function AdminOrders() {
                 <span className="font-semibold">Payment:</span>{" "}
                 {selectedOrder.paymentMethod}
               </p>
+
+              <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-1">
+                <p>
+                  <strong>Invoice ID:</strong> {selectedOrder.id}
+                </p>
+                <p>
+                  <strong>Total:</strong> {formatCurrency(selectedOrder.total)}
+                </p>
+              </div>
+
+              <div className="grid gap-2 md:grid-cols-2">
+                <label className="text-xs font-semibold">
+                  Status
+                  <select
+                    value={selectedOrder.status}
+                    onChange={(event) =>
+                      void updateStatus(
+                        selectedOrder.id,
+                        event.target.value as OrderStatus,
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-2 py-2"
+                  >
+                    {orderStatuses.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void deleteOrder(selectedOrder.id)}
+                  className="mt-5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-95"
+                >
+                  Delete Order
+                </button>
+              </div>
+
               <ul className="space-y-1 rounded-lg bg-gray-50 p-3">
                 {selectedOrder.items.map((item) => (
                   <li key={`${selectedOrder.id}-${item.id}`}>
@@ -262,6 +505,48 @@ export default function AdminOrders() {
                   </li>
                 ))}
               </ul>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  className="h-12 rounded-xl border border-black font-semibold transition active:scale-95"
+                  onClick={() => setShowInvoicePreview((prev) => !prev)}
+                >
+                  {showInvoicePreview ? "Hide Invoice" : "View Invoice"}
+                </button>
+                <button
+                  type="button"
+                  className="h-12 rounded-xl bg-black text-white font-semibold active:scale-95 transition"
+                  onClick={() => void generateInvoice(selectedOrder)}
+                >
+                  Download Invoice
+                </button>
+              </div>
+
+              {showInvoicePreview ? (
+                <div className="rounded-xl border border-gray-200 bg-white p-4 text-xs leading-6">
+                  <p className="font-semibold">Tacin Arabi Collection</p>
+                  <p>Official Invoice</p>
+                  <p>Invoice ID: {selectedOrder.id}</p>
+                  <p>Date: {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
+                  <p>Status: {selectedOrder.status}</p>
+                  <p>Mobile: {selectedOrder.customer.phone}</p>
+                  <p className="pt-2 font-semibold">Items</p>
+                  {selectedOrder.items.map((item) => (
+                    <p key={`preview-${selectedOrder.id}-${item.id}-${item.size}`}>
+                      {item.name} · Qty {item.quantity} · ৳{item.price} · ৳
+                      {item.quantity * item.price}
+                    </p>
+                  ))}
+                  <p className="pt-2 font-semibold">
+                    Grand Total: {formatCurrency(selectedOrder.total)}
+                  </p>
+                </div>
+              ) : null}
+
+              {invoiceError ? (
+                <p className="text-xs font-semibold text-red-600">{invoiceError}</p>
+              ) : null}
             </div>
           </div>
         </div>
