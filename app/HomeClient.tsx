@@ -1634,10 +1634,6 @@ export default function HomePage({
                   <span className="text-gray-600">Subtotal</span>
                   <span className="font-medium">{formatPrice(cartSubtotal)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium">Free</span>
-                </div>
                 <div className="flex justify-between text-base font-semibold border-t pt-3">
                   <span>Total</span>
                   <span>{formatPrice(cartSubtotal)}</span>
