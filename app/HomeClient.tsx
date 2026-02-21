@@ -430,11 +430,11 @@ export default function HomePage({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    document.body.style.overflow = showCart ? "hidden" : "";
+    document.body.style.overflow = showCart || showCheckout ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [showCart]);
+  }, [showCart, showCheckout]);
 
   useEffect(() => {
     if (!isFieldShake) return;
@@ -455,24 +455,28 @@ export default function HomePage({
   }, [showCheckout]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !showCheckout) return;
-    window.history.pushState({ checkout: true }, "");
-  }, [showCheckout]);
+    if (typeof window === "undefined" || (!showCart && !showCheckout)) return;
+    window.history.pushState({ overlay: true }, "");
+  }, [showCart, showCheckout]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const handleBack = (event: PopStateEvent) => {
-      if (!showCheckout) return;
-      event.preventDefault();
-      setShowCheckout(false);
+    const handleBack = () => {
+      if (showCheckout) {
+        setShowCheckout(false);
+        return;
+      }
+      if (showCart) {
+        setShowCart(false);
+      }
     };
 
     window.addEventListener("popstate", handleBack);
     return () => {
       window.removeEventListener("popstate", handleBack);
     };
-  }, [showCheckout]);
+  }, [showCart, showCheckout]);
 
   useEffect(() => {
     localStorage.setItem(storageKeys.viewed, JSON.stringify(recentlyViewed));
@@ -665,11 +669,13 @@ export default function HomePage({
       setCheckoutItems(cartItems);
       setIsOrderConfirmed(false);
       setIsSubmitting(false);
-      setShowCheckout(true);
       setShowCart(false);
-      scrollToCheckout();
-      logEvent("begin_checkout", { items: cartItems.length });
-      setIsRouting(false);
+      window.setTimeout(() => {
+        setShowCheckout(true);
+        scrollToCheckout();
+        logEvent("begin_checkout", { items: cartItems.length });
+        setIsRouting(false);
+      }, 150);
     }, 180);
   };
 
@@ -1527,197 +1533,176 @@ export default function HomePage({
         </div>
       ) : null}
 
-      <div
-        className={clsx(
-          "fixed inset-0 z-40 flex justify-end transition-opacity duration-300",
-          showCart
-            ? "pointer-events-auto bg-black/40 opacity-100"
-            : "pointer-events-none bg-black/0 opacity-0",
-        )}
-      >
-        <button
-          type="button"
-          aria-label="Close cart"
-          onClick={() => setShowCart(false)}
-          className="h-full flex-1 cursor-default"
-          tabIndex={showCart ? 0 : -1}
-        />
-        <div
-          className={clsx(
-            "h-full w-full max-w-md overflow-y-auto bg-white p-6 transition-transform duration-[400ms] ease-[cubic-bezier(.22,1,.36,1)]",
-            showCart ? "translate-x-0" : "translate-x-full",
-          )}
-        >
-          <div className="flex items-center justify-between">
-            <h3
-              ref={cartHeadingRef}
-              tabIndex={-1}
-              className="text-base font-semibold text-ink"
+      {showCart || showCheckout ? (
+        <div className="pointer-events-none fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" />
+      ) : null}
+
+      {showCart ? (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col animate-[fadeSlideUp_0.25s_ease]">
+          <div className="flex items-center justify-between border-b border-[#f0e4da] p-4">
+            <button
+              type="button"
+              aria-label="Back"
+              onClick={() => setShowCart(false)}
+              className="interactive-feedback min-h-12 rounded-xl px-2 text-xl text-ink"
             >
+              ←
+            </button>
+            <h3 ref={cartHeadingRef} tabIndex={-1} className="text-lg font-semibold text-ink">
               Your Cart
             </h3>
             <button
               type="button"
               onClick={() => setShowCart(false)}
-              className="interactive-feedback text-[13px] font-semibold text-accent"
+              className="interactive-feedback min-h-12 rounded-xl px-2 text-[13px] font-semibold text-accent"
             >
               Close
             </button>
           </div>
-          {isCartHydrating ? (
-            <CartSkeleton />
-          ) : cartItems.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-[#f0e4da] bg-base p-4 text-center">
-              <p className="text-lg">🛍️</p>
-              <p className="mt-2 text-sm font-semibold text-ink">
-                Your cart is empty.
-              </p>
-              <p className="mt-1 text-[12px] text-muted">
-                Start shopping to add items.
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowCart(false)}
-                className="interactive-feedback mt-3 rounded-full border border-[#e6d8ce] px-4 py-2 text-[12px] font-semibold text-ink"
-              >
-                Browse products
-              </button>
-            </div>
-          ) : (
-            <div className="mt-4 space-y-4">
-              {cartItems.map((item, index) => (
-                <div
-                  key={`${item.id}-${item.size}-${index}`}
-                  className={clsx(
-                    "flex gap-4 rounded-xl border border-[#f0e4da] bg-white p-4 shadow-sm transition duration-200",
-                    cartActionLoading[index] && "scale-[0.98] opacity-70",
-                  )}
-                >
-                  <Image
-                    src={item.imageUrl ?? item.image ?? "/images/product-1.svg"}
-                    alt={item.name}
-                    width={80}
-                    height={80}
-                    className="h-20 w-20 rounded-lg object-cover"
-                  />
-                  <div className="flex flex-1 items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <p className="text-base font-medium text-ink">
-                        {item.name}
-                      </p>
-                      <p className="text-[12px] text-muted">
-                        Size: {item.size} · Color: {item.color}
-                      </p>
-                      <p className="mt-1 font-semibold text-ink">
-                        {formatPrice(item.price)}
-                      </p>
-                      {cartQuantityFeedback[index] ? (
-                        <p className="mt-1 text-xs font-semibold text-accent">
-                          {cartQuantityFeedback[index]}
-                        </p>
-                      ) : null}
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-center gap-2 rounded-full border border-[#e6d8ce] px-2 py-1">
-                        <button
-                          type="button"
-                          disabled={cartActionLoading[index]}
-                          onClick={() =>
-                            void updateCartQuantity(index, item.quantity - 1)
-                          }
-                          className="rounded-full px-2 transition-transform duration-200 hover:scale-105 active:scale-95"
-                        >
-                          -
-                        </button>
-                        <span className="text-[13px] font-semibold">
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          disabled={cartActionLoading[index]}
-                          onClick={() =>
-                            void updateCartQuantity(index, item.quantity + 1)
-                          }
-                          className="rounded-full px-2 transition-transform duration-200 hover:scale-105 active:scale-95"
-                        >
-                          +
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={cartActionLoading[index]}
-                        onClick={() => void removeCartItem(index)}
-                        className="interactive-feedback text-xs font-semibold text-accent"
-                      >
-                        {cartActionLoading[index] ? "Updating..." : "Remove"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <div className="flex items-center justify-between text-sm font-semibold">
-                <span>{text.subtotal}</span>
-                <motion.span
-                  key={getSafeCartSubtotal(cartItems)}
-                  initial={{ opacity: 0.45, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {isCartHydrating ? (
-                    <SummaryPlaceholder />
-                  ) : (
-                    formatPrice(getSafeCartSubtotal(cartItems))
-                  )}
-                </motion.span>
-              </div>
-              <div className="sticky bottom-0 bg-white pt-3">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {isCartHydrating ? (
+              <CartSkeleton />
+            ) : cartItems.length === 0 ? (
+              <div className="rounded-2xl border border-[#f0e4da] bg-base p-4 text-center">
+                <p className="text-lg">🛍️</p>
+                <p className="mt-2 text-sm font-semibold text-ink">Your cart is empty.</p>
+                <p className="mt-1 text-[12px] text-muted">Start shopping to add items.</p>
                 <button
                   type="button"
-                  onClick={handleCartCheckout}
-                  className="interactive-feedback min-h-[40px] w-full rounded-full bg-black px-4 py-3 text-[14px] font-semibold leading-[1.4] text-white shadow-md transition-all duration-300 hover:scale-105 active:scale-95"
+                  onClick={() => setShowCart(false)}
+                  className="interactive-feedback mt-3 min-h-12 rounded-xl border border-[#e6d8ce] px-4 py-2 text-[12px] font-semibold text-ink"
                 >
-                  {isRouting ? "Redirecting..." : text.checkout}
+                  Browse products
                 </button>
               </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {cartItems.map((item, index) => (
+                    <div
+                      key={`${item.id}-${item.size}-${index}`}
+                      className={clsx(
+                        "flex gap-4 rounded-xl border border-[#f0e4da] bg-white p-4 shadow-sm transition duration-200",
+                        cartActionLoading[index] && "scale-[0.98] opacity-70",
+                      )}
+                    >
+                      <Image
+                        src={item.imageUrl ?? item.image ?? "/images/product-1.svg"}
+                        alt={item.name}
+                        width={80}
+                        height={80}
+                        className="h-20 w-20 rounded-lg object-cover"
+                      />
+                      <div className="flex flex-1 items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="text-base font-medium text-ink">{item.name}</p>
+                          <p className="text-[12px] text-muted">Size: {item.size} · Color: {item.color}</p>
+                          <p className="mt-1 font-semibold text-ink">{formatPrice(item.price)}</p>
+                          {cartQuantityFeedback[index] ? (
+                            <p className="mt-1 text-xs font-semibold text-accent">
+                              {cartQuantityFeedback[index]}
+                            </p>
+                          ) : null}
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="flex items-center gap-2 rounded-full border border-[#e6d8ce] px-2 py-1">
+                            <button
+                              type="button"
+                              disabled={cartActionLoading[index]}
+                              onClick={() => void updateCartQuantity(index, item.quantity - 1)}
+                              className="rounded-full px-2 transition-transform duration-200 hover:scale-105 active:scale-95"
+                            >
+                              -
+                            </button>
+                            <span className="text-[13px] font-semibold">{item.quantity}</span>
+                            <button
+                              type="button"
+                              disabled={cartActionLoading[index]}
+                              onClick={() => void updateCartQuantity(index, item.quantity + 1)}
+                              className="rounded-full px-2 transition-transform duration-200 hover:scale-105 active:scale-95"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={cartActionLoading[index]}
+                            onClick={() => void removeCartItem(index)}
+                            className="interactive-feedback text-xs font-semibold text-accent"
+                          >
+                            {cartActionLoading[index] ? "Updating..." : "Remove"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between text-sm font-semibold">
+                  <span>{text.subtotal}</span>
+                  <motion.span
+                    key={getSafeCartSubtotal(cartItems)}
+                    initial={{ opacity: 0.45, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {isCartHydrating ? <SummaryPlaceholder /> : formatPrice(getSafeCartSubtotal(cartItems))}
+                  </motion.span>
+                </div>
+              </>
+            )}
+          </div>
+          {cartItems.length > 0 ? (
+            <div className="sticky bottom-0 bg-white border-t border-[#f0e4da] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <button
+                type="button"
+                onClick={handleCartCheckout}
+                className="interactive-feedback min-h-14 h-14 w-full rounded-xl bg-black px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 active:scale-95"
+              >
+                {isRouting ? "Redirecting..." : text.checkout}
+              </button>
             </div>
-          )}
+          ) : null}
         </div>
-      </div>
+      ) : null}
+
 
       {showCheckout ? (
-        <div ref={checkoutRef} className="z-40 bg-black/40">
-          <div className="animate-fadeIn min-h-[100dvh] flex flex-col bg-white">
-            <div className="border-b border-[#f0e4da] px-4 sm:px-6 py-4">
-              <div className="mx-auto max-w-4xl flex items-center justify-between">
-                <div>
-                  <p className="text-[12px] font-semibold text-muted">
-                    Universal Checkout
-                  </p>
-                  <h3
-                    ref={checkoutHeadingRef}
-                    tabIndex={-1}
-                    className="text-base font-semibold text-ink"
-                  >
-                    Confirm your order
-                  </h3>
-                </div>
-                <button
+        <div
+          ref={checkoutRef}
+          className="fixed inset-0 z-50 bg-white flex flex-col animate-[fadeSlideUp_0.25s_ease]"
+        >
+            <div className="flex items-center justify-between border-b border-[#f0e4da] p-4">
+            <button
+              type="button"
+              aria-label="Back"
+              onClick={() => {
+                setShowCheckout(false);
+                setIsOrderConfirmed(false);
+                setIsSubmitting(false);
+              }}
+              className="interactive-feedback min-h-12 rounded-xl px-2 text-xl text-ink"
+            >
+              ←
+            </button>
+            <h3 ref={checkoutHeadingRef} tabIndex={-1} className="text-lg font-semibold text-ink">
+              Checkout
+            </h3>
+            <button
                   type="button"
                   onClick={() => {
                     setShowCheckout(false);
                     setIsOrderConfirmed(false);
                     setIsSubmitting(false);
                   }}
-                  className="interactive-feedback text-[13px] font-semibold text-accent"
+                  className="interactive-feedback min-h-12 rounded-xl px-2 text-[13px] font-semibold text-accent"
                 >
                   Close
                 </button>
-              </div>
-            </div>
+          </div>
 
-            <div className="flex-1 overflow-visible px-4 py-6 pb-8 sm:px-6">
+          <div className="flex-1 overflow-y-auto p-4">
               {isOrderConfirmed ? (
-                <div className="mx-auto max-w-4xl px-4 py-5">
+                <div className="mx-auto w-full max-w-4xl">
                   <div className="text-center py-16 transition-opacity duration-300 animate-fadeIn">
                     <h2 className="text-2xl font-semibold mb-4">
                       Order Confirmed
@@ -1728,8 +1713,8 @@ export default function HomePage({
                   </div>
                 </div>
               ) : (
-                <div className="mx-auto max-w-4xl px-4 py-5">
-                  <div className="grid md:grid-cols-2 gap-5">
+                <div className="mx-auto w-full max-w-4xl">
+                  <div className="grid gap-5 md:grid-cols-2">
                     <div className="max-w-[680px] space-y-4">
                       <h2 className="text-base font-semibold mb-4">
                         Order Summary
@@ -1919,51 +1904,51 @@ export default function HomePage({
                         🔒 Your information is secure and will not be shared.
                       </div>
 
-                      <div className="mt-6">
-                        <button
-                          type="button"
-                          onClick={handlePaymentInfoOpen}
-                          disabled={isCheckoutBlocked}
-                          className={clsx(
-                            "mt-6 w-full rounded-full bg-black py-3 text-[14px] font-semibold text-white shadow-md transition-all duration-300 hover:scale-105 active:scale-95",
-                            isCheckoutBlocked &&
-                              "cursor-not-allowed opacity-60 hover:scale-100",
-                          )}
-                        >
-                          {isSubmitting ? (
-                            <span className="inline-flex items-center gap-2">
-                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-white" />
-                              Processing...
-                            </span>
-                          ) : (
-                            "Pay Now"
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleWhatsappRedirect("Cash on Delivery")
-                          }
-                          disabled={isCheckoutBlocked}
-                          className={clsx(
-                            "mt-3 w-full rounded-lg bg-green-600 py-2.5 text-[14px] text-white transition hover:bg-green-700",
-                            isCheckoutBlocked &&
-                              "cursor-not-allowed opacity-60 hover:bg-green-600",
-                          )}
-                        >
-                          {isSubmitting ? "Processing..." : text.orderCod}
-                        </button>
-                        <p className="mt-3 text-[12px] text-neutral-600">
-                          Cash on Delivery available nationwide. You will
-                          receive confirmation before dispatch.
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </div>
               )}
             </div>
-          </div>
+
+            {!isOrderConfirmed ? (
+              <div className="sticky bottom-0 bg-white border-t border-[#f0e4da] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                <div className="mx-auto w-full max-w-4xl">
+                  <button
+                    type="button"
+                    onClick={handlePaymentInfoOpen}
+                    disabled={isCheckoutBlocked}
+                    className={clsx(
+                      "interactive-feedback min-h-14 h-14 w-full rounded-xl bg-black px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 active:scale-95",
+                      isCheckoutBlocked && "cursor-not-allowed opacity-60",
+                    )}
+                  >
+                    {isSubmitting ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-white" />
+                        Processing...
+                      </span>
+                    ) : (
+                      "Pay Now"
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleWhatsappRedirect("Cash on Delivery")}
+                    disabled={isCheckoutBlocked}
+                    className={clsx(
+                      "interactive-feedback mt-3 min-h-14 h-14 w-full rounded-xl bg-green-600 px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 active:scale-95",
+                      isCheckoutBlocked && "cursor-not-allowed opacity-60",
+                    )}
+                  >
+                    {isSubmitting ? "Processing..." : text.orderCod}
+                  </button>
+                  <p className="mt-3 text-[12px] text-neutral-600">
+                    Cash on Delivery available nationwide. You will receive
+                    confirmation before dispatch.
+                  </p>
+                </div>
+              </div>
+            ) : null}
         </div>
       ) : null}
 
