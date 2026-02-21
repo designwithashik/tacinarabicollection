@@ -387,3 +387,9 @@ a:focus-visible {
 .admin-toast-enter {
   animation: admin-toast-in 220ms ease-out;
 }
+
+@media (max-width: 350px) {
+  .trust-text {
+    font-size: 11px;
+  }
+}
