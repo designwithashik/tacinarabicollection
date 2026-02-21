@@ -1207,19 +1207,21 @@ export default function HomePage({
         </SectionLoader>
 
         <section className="mt-6">
-          <div className="w-full bg-gray-100 py-3 rounded-xl border border-neutral-200">
-            <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-center gap-4 text-center px-4 text-xs sm:text-sm md:text-base">
-              {trustItems.map((item) => (
-                <div
-                  key={item.text}
-                  className="flex items-center gap-2 justify-center min-w-[120px]"
-                >
-                  <span className="text-base">{item.icon}</span>
-                  <span className="trust-text text-gray-700 font-medium whitespace-nowrap">
-                    {item.text}
-                  </span>
-                </div>
-              ))}
+          <div className="w-full bg-gray-100 border-y">
+            <div className="max-w-6xl mx-auto px-4 py-5">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4 text-center">
+                {trustItems.map((item) => (
+                  <div
+                    key={item.text}
+                    className="flex flex-col items-center justify-center space-y-2"
+                  >
+                    <span className="text-2xl md:text-xl">{item.icon}</span>
+                    <span className="trust-text whitespace-nowrap text-sm md:text-base font-semibold text-gray-800 leading-snug">
+                      {item.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
