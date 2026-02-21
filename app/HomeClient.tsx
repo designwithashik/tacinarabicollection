@@ -455,6 +455,26 @@ export default function HomePage({
   }, [showCheckout]);
 
   useEffect(() => {
+    if (typeof window === "undefined" || !showCheckout) return;
+    window.history.pushState({ checkout: true }, "");
+  }, [showCheckout]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleBack = (event: PopStateEvent) => {
+      if (!showCheckout) return;
+      event.preventDefault();
+      setShowCheckout(false);
+    };
+
+    window.addEventListener("popstate", handleBack);
+    return () => {
+      window.removeEventListener("popstate", handleBack);
+    };
+  }, [showCheckout]);
+
+  useEffect(() => {
     localStorage.setItem(storageKeys.viewed, JSON.stringify(recentlyViewed));
   }, [recentlyViewed]);
 
