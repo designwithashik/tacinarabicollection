@@ -99,39 +99,85 @@ export default function AdminOrders() {
       jsPDF: new () => {
         setFontSize: (size: number) => void;
         setFont: (font: string, style: string) => void;
-        text: (text: string, x: number, y: number) => void;
+        text: (
+          text: string,
+          x: number,
+          y: number,
+          options?: { align?: "left" | "center" | "right" },
+        ) => void;
         line: (x1: number, y1: number, x2: number, y2: number) => void;
         addPage: () => void;
+        addImage: (
+          imageData: string,
+          format: "PNG" | "JPEG",
+          x: number,
+          y: number,
+          width: number,
+          height: number,
+        ) => void;
         save: (filename: string) => void;
       };
     };
     const doc = new jsPDF();
+    const logoUrl = "/icons/icon-192.svg";
+
+    const logoDataUrl = await fetch(logoUrl)
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const svgText = await response.text();
+        const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+        const blobUrl = URL.createObjectURL(svgBlob);
+
+        try {
+          const image = new Image();
+          image.src = blobUrl;
+          await new Promise<void>((resolve, reject) => {
+            image.onload = () => resolve();
+            image.onerror = () => reject(new Error("Logo load failed"));
+          });
+
+          const canvas = document.createElement("canvas");
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const context = canvas.getContext("2d");
+          if (!context) return null;
+          context.drawImage(image, 0, 0);
+          return canvas.toDataURL("image/png");
+        } finally {
+          URL.revokeObjectURL(blobUrl);
+        }
+      })
+      .catch(() => null);
+
+    if (logoDataUrl) {
+      doc.addImage(logoDataUrl, "PNG", 20, 15, 30, 15);
+    }
 
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("Tacin Arabi Collection", 20, 20);
+    doc.text("Tacin Arabi Collection", 60, 25);
 
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
-    doc.text("Official Invoice", 20, 28);
-    doc.line(20, 32, 190, 32);
+    doc.text("Official Invoice", 190, 25, { align: "right" });
+    doc.line(20, 40, 190, 40);
 
-    doc.text(`Invoice ID: ${order.id}`, 20, 42);
-    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 20, 50);
-    doc.text(`Status: ${order.status}`, 20, 58);
+    doc.text(`Invoice ID: ${order.id}`, 20, 50);
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 20, 58);
+    doc.text(`Status: ${order.status}`, 20, 66);
 
-    doc.line(20, 65, 190, 65);
+    doc.line(20, 73, 190, 73);
     doc.setFont("helvetica", "bold");
-    doc.text("Bill To:", 20, 75);
+    doc.text("Bill To:", 20, 83);
 
     doc.setFont("helvetica", "normal");
-    doc.text(order.customer.name, 20, 83);
-    doc.text(`Phone: ${order.customer.phone}`, 20, 91);
-    doc.text(order.customer.address, 20, 99);
+    doc.text(order.customer.name, 20, 91);
+    doc.text(`Phone: ${order.customer.phone}`, 20, 99);
+    doc.text(order.customer.address, 20, 107);
 
-    doc.line(20, 106, 190, 106);
+    doc.line(20, 114, 190, 114);
 
-    let y = 116;
+    let y = 124;
     doc.setFont("helvetica", "bold");
     doc.text("Item", 20, y);
     doc.text("Qty", 120, y);
