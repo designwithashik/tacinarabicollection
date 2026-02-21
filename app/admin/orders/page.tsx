@@ -19,6 +19,8 @@ export default function AdminOrders() {
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [deliveryFilter, setDeliveryFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [showInvoicePreview, setShowInvoicePreview] = useState(false);
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
 
   const loadOrders = async () => {
     try {
@@ -94,6 +96,7 @@ export default function AdminOrders() {
   };
 
   const generateInvoice = async (order: Order) => {
+    setInvoiceError(null);
     const moduleName = "jspdf";
     const { jsPDF } = (await import(moduleName)) as {
       jsPDF: new () => {
@@ -324,7 +327,10 @@ export default function AdminOrders() {
                         <div className="flex justify-end gap-2">
                           <button
                             type="button"
-                            onClick={() => setSelectedOrder(order)}
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setShowInvoicePreview(false);
+                            }}
                             className="border border-black rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
                           >
                             View
@@ -355,7 +361,11 @@ export default function AdminOrders() {
               <button
                 type="button"
                 className="border border-black rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
-                onClick={() => setSelectedOrder(null)}
+                onClick={() => {
+                  setSelectedOrder(null);
+                  setShowInvoicePreview(false);
+                  setInvoiceError(null);
+                }}
               >
                 Close
               </button>
@@ -421,13 +431,46 @@ export default function AdminOrders() {
                 ))}
               </ul>
 
-              <button
-                type="button"
-                className="w-full h-12 rounded-xl bg-black text-white font-semibold mt-4 active:scale-95 transition"
-                onClick={() => void generateInvoice(selectedOrder)}
-              >
-                Download Invoice
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  className="h-12 rounded-xl border border-black font-semibold transition active:scale-95"
+                  onClick={() => setShowInvoicePreview((prev) => !prev)}
+                >
+                  {showInvoicePreview ? "Hide Invoice" : "View Invoice"}
+                </button>
+                <button
+                  type="button"
+                  className="h-12 rounded-xl bg-black text-white font-semibold active:scale-95 transition"
+                  onClick={() => void generateInvoice(selectedOrder)}
+                >
+                  Download Invoice
+                </button>
+              </div>
+
+              {showInvoicePreview ? (
+                <div className="rounded-xl border border-gray-200 bg-white p-4 text-xs leading-6">
+                  <p className="font-semibold">Tacin Arabi Collection</p>
+                  <p>Official Invoice</p>
+                  <p>Invoice ID: {selectedOrder.id}</p>
+                  <p>Date: {new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
+                  <p>Status: {selectedOrder.status}</p>
+                  <p className="pt-2 font-semibold">Items</p>
+                  {selectedOrder.items.map((item) => (
+                    <p key={`preview-${selectedOrder.id}-${item.id}-${item.size}`}>
+                      {item.name} · Qty {item.quantity} · ৳{item.price} · ৳
+                      {item.quantity * item.price}
+                    </p>
+                  ))}
+                  <p className="pt-2 font-semibold">
+                    Grand Total: {formatCurrency(selectedOrder.total)}
+                  </p>
+                </div>
+              ) : null}
+
+              {invoiceError ? (
+                <p className="text-xs font-semibold text-red-600">{invoiceError}</p>
+              ) : null}
             </div>
           </div>
         </div>
