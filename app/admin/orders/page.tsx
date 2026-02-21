@@ -14,6 +14,68 @@ const orderStatuses: OrderStatus[] = [
 
 const formatCurrency = (amount: number) => `৳${Number(amount || 0).toFixed(2)}`;
 
+const normalizeOrder = (raw: unknown): Order | null => {
+  if (!raw || typeof raw !== "object") return null;
+  const source = raw as Record<string, unknown>;
+
+  const customerSource =
+    source.customer && typeof source.customer === "object"
+      ? (source.customer as Record<string, unknown>)
+      : null;
+
+  const totalValue =
+    typeof source.total === "number"
+      ? source.total
+      : typeof source.total === "string"
+        ? Number(source.total)
+        : 0;
+
+  return {
+    id: typeof source.id === "string" ? source.id : crypto.randomUUID(),
+    createdAt:
+      typeof source.createdAt === "string"
+        ? source.createdAt
+        : new Date().toISOString(),
+    items: Array.isArray(source.items) ? (source.items as Order["items"]) : [],
+    total: Number.isFinite(totalValue) ? totalValue : 0,
+    paymentMethod:
+      typeof source.paymentMethod === "string"
+        ? source.paymentMethod
+        : typeof source.payment === "string"
+          ? source.payment
+          : "COD",
+    deliveryZone:
+      source.deliveryZone === "outside" ? "outside" : "inside",
+    customer: {
+      name:
+        typeof customerSource?.name === "string"
+          ? customerSource.name
+          : typeof source.customerName === "string"
+            ? source.customerName
+            : "",
+      phone:
+        typeof customerSource?.phone === "string"
+          ? customerSource.phone
+          : typeof source.phone === "string"
+            ? source.phone
+            : "",
+      address:
+        typeof customerSource?.address === "string"
+          ? customerSource.address
+          : typeof source.address === "string"
+            ? source.address
+            : "",
+    },
+    status:
+      source.status === "pending" ||
+      source.status === "delivering" ||
+      source.status === "sent" ||
+      source.status === "failed"
+        ? source.status
+        : "pending",
+  };
+};
+
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [paymentFilter, setPaymentFilter] = useState("all");
@@ -26,8 +88,11 @@ export default function AdminOrders() {
     try {
       const response = await fetch("/api/admin/orders", { cache: "no-store" });
       if (!response.ok) return;
-      const data = (await response.json()) as Order[];
-      setOrders(Array.isArray(data) ? data : []);
+      const data = (await response.json()) as unknown[];
+      const normalized = (Array.isArray(data) ? data : [])
+        .map((item) => normalizeOrder(item))
+        .filter((item): item is Order => Boolean(item));
+      setOrders(normalized);
     } catch {
       setOrders([]);
     }
