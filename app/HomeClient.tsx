@@ -424,8 +424,14 @@ export default function HomePage({
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const onChange = () => setPrefersReducedMotion(media.matches);
     onChange();
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
+
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", onChange);
+      return () => media.removeEventListener("change", onChange);
+    }
+
+    media.addListener(onChange);
+    return () => media.removeListener(onChange);
   }, []);
 
   useEffect(() => {
