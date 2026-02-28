@@ -1415,10 +1415,12 @@ export default function HomePage({
         <div className="mx-auto max-w-6xl px-6 py-16">
           <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-3">
             <div className="flex flex-col items-start space-y-6">
-              <img
+              <Image
                 src="/images/tacin-logo.svg"
-                alt="Tacin Arabi Collection"
-                className="h-14 w-auto object-contain md:h-16"
+                alt="Tacin Arabi Collection logo"
+                width={560}
+                height={180}
+                className="h-auto w-full max-w-[220px] object-contain sm:max-w-[300px] md:max-w-[360px]"
               />
               <p className="max-w-sm text-sm leading-relaxed text-[#555555]">
                 Curated minimal fashion edits inspired by campus aesthetics.
