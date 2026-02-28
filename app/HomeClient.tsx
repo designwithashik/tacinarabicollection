@@ -1204,18 +1204,21 @@ export default function HomePage({
 
         <section className="mt-8 w-full border-y border-[var(--border-soft)] bg-[var(--bg-soft)]">
           <div className="mx-auto max-w-6xl px-4 py-10">
-            <div className="grid grid-cols-2 gap-x-6 gap-y-8 text-center md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-6 text-center md:grid-cols-4 md:gap-x-6 md:gap-y-8">
               {[
                 { icon: "🚚", text: "Fast Nationwide Delivery" },
                 { icon: "🔒", text: "Secure Order Handling" },
                 { icon: "💬", text: "WhatsApp Order Support" },
                 { icon: "💵", text: "Cash on Delivery" },
               ].map((item) => (
-                <div key={item.text} className="flex flex-col items-center space-y-3">
-                  <span className="text-xl text-[var(--brand-primary)] md:text-2xl">
+                <div
+                  key={item.text}
+                  className="group flex flex-col items-center space-y-3 rounded-2xl border border-[var(--border-soft)] bg-white px-3 py-4 transition duration-300 hover:-translate-y-1 hover:shadow-sm"
+                >
+                  <span className="text-xl text-[var(--brand-primary)] transition-transform duration-300 group-hover:scale-110 md:text-2xl">
                     {item.icon}
                   </span>
-                  <p className="text-sm font-medium leading-snug text-[var(--text-primary)] md:text-base">
+                  <p className="text-sm font-semibold leading-snug text-[#1e1e1e] md:text-base">
                     {item.text}
                   </p>
                 </div>
