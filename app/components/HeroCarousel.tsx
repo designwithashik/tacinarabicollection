@@ -129,15 +129,15 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
             <img
               src={slide.imageUrl || "/images/product-1.svg"}
               alt={slide.title || "Carousel slide"}
-              className="absolute inset-0 h-full w-full object-cover brightness-75"
+              className="absolute inset-0 h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+            <div className="absolute inset-0 bg-white/35" />
 
             <div className="absolute inset-0 z-20 flex items-center justify-center md:justify-start">
-              <div className="flex flex-col gap-4 max-w-xl px-6 md:px-16 text-center md:text-left text-white">
-                <p className="text-xs md:text-sm uppercase tracking-[0.2em] text-white/80">Featured Collection</p>
+              <div className="flex flex-col gap-4 max-w-xl px-6 md:px-16 text-center md:text-left text-black">
+                <p className="text-xs md:text-sm uppercase tracking-[0.2em] text-black">Featured Collection</p>
                 <h2 className="text-3xl md:text-5xl font-bold leading-tight">{slide.title}</h2>
-                <p className="text-base md:text-lg opacity-90">{slide.subtitle}</p>
+                <p className="text-base md:text-lg text-black">{slide.subtitle}</p>
                 <div>
                   <a
                     className="inline-flex items-center justify-center px-7 py-3 rounded-full bg-white text-black font-semibold shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
