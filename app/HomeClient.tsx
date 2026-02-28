@@ -962,9 +962,19 @@ export default function HomePage({
               <LanguageToggle language={language} setLanguage={setLanguage} />
             </div>
 
-            <p className="text-center text-[16px] font-semibold leading-[1.4] text-neutral-900">
-              Tacin Arabi
-            </p>
+            <div className="flex items-center gap-2">
+              <Image
+                src="/images/tacin-logo.svg"
+                alt="Tacin Arabi Collection logo"
+                width={32}
+                height={32}
+                className="h-8 w-8"
+                priority
+              />
+              <p className="text-center text-[15px] font-semibold leading-[1.4] text-neutral-900">
+                Tacin Arabi
+              </p>
+            </div>
 
             <button
               type="button"
