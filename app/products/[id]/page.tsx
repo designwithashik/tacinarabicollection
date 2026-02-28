@@ -1,7 +1,13 @@
 import { notFound } from "next/navigation";
 import { products, type Product } from "../../../lib/products";
-import { loadInventoryArray, toStorefrontProduct } from "../../../lib/server/inventoryStore";
+import {
+  loadInventoryArray,
+  toStorefrontProduct,
+} from "../../../lib/server/inventoryStore";
 import ProductDetailClient from "./ProductDetailClient";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type Params = { id: string };
 
@@ -12,7 +18,9 @@ type InventoryProduct = Product & {
 const getProductById = async (id: string): Promise<Product | null> => {
   try {
     const inventory = await loadInventoryArray();
-    const fromInventory = inventory.find((item) => item.id === id && item.active !== false);
+    const fromInventory = inventory.find(
+      (item) => item.id === id && item.active !== false,
+    );
     if (fromInventory) {
       return toStorefrontProduct(fromInventory) as InventoryProduct;
     }
@@ -24,7 +32,8 @@ const getProductById = async (id: string): Promise<Product | null> => {
 };
 
 export default async function ProductPage({ params }: { params: Params }) {
-  const product = await getProductById(params.id);
+  const decodedId = decodeURIComponent(params.id);
+  const product = await getProductById(decodedId);
 
   if (!product) {
     notFound();

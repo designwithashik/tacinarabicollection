@@ -110,7 +110,7 @@ export default function QuickView({
                 {addToCartLabel}
               </button>
               <Link
-                href={`/products/${product.id}`}
+                href={`/products/${encodeURIComponent(product.id)}`}
                 onClick={onClose}
                 className="inline-flex min-h-10 w-full items-center justify-center rounded-full border border-black px-4 py-2 text-sm font-semibold text-black transition hover:bg-black hover:text-white"
               >

@@ -421,7 +421,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
                         </p>
                         <p className="text-xs font-semibold text-black sm:text-sm">৳{product.price.toLocaleString("en-BD")}</p>
                         <Link
-                          href={`/products/${product.id}`}
+                          href={`/products/${encodeURIComponent(product.id)}`}
                           className="inline-flex min-h-9 w-full items-center justify-center rounded-lg border border-black bg-black px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-black/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 sm:text-sm"
                           onClick={() => setIsProductModalOpen(false)}
                         >
