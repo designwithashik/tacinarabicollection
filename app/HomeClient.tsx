@@ -741,13 +741,12 @@ export default function HomePage({
 
   const productSource = adminProducts.filter((item) => item.active !== false);
 
-  const announcementText = announcement.text.trim() || defaultAnnouncement.text;
-  const announcementDuration =
-    announcementText.length < 90
-      ? "15s"
-      : announcementText.length > 180
-        ? "28s"
-        : "20s";
+  const trustItems = [
+    { icon: "✅", text: "Premium Quality" },
+    { icon: "🚚", text: "Fast Delivery" },
+    { icon: "💬", text: "Easy WhatsApp Support" },
+    { icon: "🔒", text: "Secure Ordering" },
+  ];
 
   const categoryFilteredProducts = useMemo(() => {
     if (!activeFilter) return productSource;
@@ -1002,34 +1001,32 @@ export default function HomePage({
       </section>
 
       {announcement.active ? (
-        <section className="bg-[var(--bg-soft)] py-2 text-[var(--text-primary)]">
+        <section className="w-full border-y border-[#EAEAEA] bg-[#F8F6F4]">
           <div
             ref={trustBarRef}
             className={clsx(
-              "mx-auto max-w-6xl px-4 transition-all duration-700 ease-out",
+              "mx-auto max-w-6xl px-4 py-6 transition-all duration-700 ease-out",
               isTrustBarInView
                 ? "translate-y-0 opacity-100"
                 : "translate-y-6 opacity-0",
             )}
           >
-            <div className="relative w-full overflow-hidden bg-[var(--bg-soft)] text-[var(--text-primary)]">
-              <div
-                className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-[13px] font-medium tracking-wide"
-                style={
-                  { "--announcement-duration": announcementDuration } as Record<
-                    string,
-                    string
-                  >
-                }
-              >
-                <span className="px-8 flex-none">{announcementText}</span>
-                <span className="px-8 flex-none">{announcementText}</span>
-                <span className="px-8 flex-none" aria-hidden="true">
-                  {announcementText}
-                </span>
-              </div>
-              <div className="pointer-events-none absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-[var(--bg-soft)] to-transparent" />
-              <div className="pointer-events-none absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-[var(--bg-soft)] to-transparent" />
+            <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
+              {trustItems.map((item) => (
+                <div
+                  key={item.text}
+                  className="flex flex-col items-center space-y-2 transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
+                    <span className="text-lg text-[var(--brand-primary)]">
+                      {item.icon}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-[#1E1E1E] md:text-base">
+                    {item.text}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
