@@ -252,6 +252,7 @@ export default function HomePage({
   const [isLoading, setIsLoading] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [adminProducts, setAdminProducts] =
     useState<AdminProduct[]>(initialAdminProducts);
   const [cartActionLoading, setCartActionLoading] = useState<
@@ -268,6 +269,9 @@ export default function HomePage({
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
   const trustBarRef = useRef<HTMLDivElement | null>(null);
+  const progressTargetRef = useRef(0);
+  const progressCurrentRef = useRef(0);
+  const progressRafRef = useRef<number | null>(null);
   const isTrustBarInView = useInView(trustBarRef, { once: true, amount: 0.35 });
 
   const showToast = (nextToast: ToastState) => {
@@ -943,6 +947,62 @@ export default function HomePage({
     }
   }, [visibleFilters, activeFilter]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const easing = 0.18;
+    const epsilon = 0.001;
+
+    const getProgress = () => {
+      const scrollTop = window.scrollY || window.pageYOffset;
+      const scrollHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
+
+      if (scrollHeight <= 0) return 0;
+
+      return Math.min(Math.max(scrollTop / scrollHeight, 0), 1);
+    };
+
+    const animateProgress = () => {
+      const next =
+        progressCurrentRef.current +
+        (progressTargetRef.current - progressCurrentRef.current) * easing;
+
+      progressCurrentRef.current = next;
+      setScrollProgress(next);
+
+      if (Math.abs(progressTargetRef.current - next) > epsilon) {
+        progressRafRef.current = window.requestAnimationFrame(animateProgress);
+      } else {
+        progressCurrentRef.current = progressTargetRef.current;
+        setScrollProgress(progressTargetRef.current);
+        progressRafRef.current = null;
+      }
+    };
+
+    const queueProgressUpdate = () => {
+      progressTargetRef.current = getProgress();
+
+      if (progressRafRef.current === null) {
+        progressRafRef.current = window.requestAnimationFrame(animateProgress);
+      }
+    };
+
+    queueProgressUpdate();
+
+    window.addEventListener("scroll", queueProgressUpdate, { passive: true });
+    window.addEventListener("resize", queueProgressUpdate);
+
+    return () => {
+      window.removeEventListener("scroll", queueProgressUpdate);
+      window.removeEventListener("resize", queueProgressUpdate);
+
+      if (progressRafRef.current !== null) {
+        window.cancelAnimationFrame(progressRafRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div
       className={clsx(
@@ -955,7 +1015,13 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 w-full border-b border-[var(--border-soft)] border-t-[3px] border-t-[var(--bar-maroon)] bg-white">
+      <header className="sticky top-0 z-50 w-full border-b border-[var(--border-soft)] bg-white">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-[var(--bar-maroon-soft)]">
+          <div
+            className="h-full origin-left bg-[var(--bar-maroon)]"
+            style={{ transform: `scaleX(${scrollProgress})` }}
+          />
+        </div>
         <nav className="relative mx-auto h-16 w-full max-w-6xl px-4 md:h-20">
           <div className="flex h-full items-center justify-center gap-3">
             <div className="absolute left-4 flex min-h-10 min-w-[104px] items-center justify-start">
