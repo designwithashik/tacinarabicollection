@@ -66,16 +66,16 @@ export default function QuickView({
         </button>
 
         <div className="grid gap-8 md:grid-cols-2">
-          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-[var(--brand-surface)]">
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-[var(--bg-main)]">
             <Image src={product.image} alt={product.name} fill className="object-cover" />
           </div>
 
           <div>
-            <h2 className="text-2xl font-medium text-[var(--brand-primary)]">{product.name}</h2>
-            <p className="mt-2 text-lg font-semibold text-[var(--brand-primary)]">{displayPrice}</p>
+            <h2 className="text-2xl font-medium text-black">{product.name}</h2>
+            <p className="mt-2 text-lg font-semibold text-black">{displayPrice}</p>
 
             <div className="mt-6">
-              <p className="text-sm font-medium text-ink">Select Size</p>
+              <p className="text-sm font-medium text-black">Select Size</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {product.sizes.map((size) => (
                   <button
@@ -85,8 +85,8 @@ export default function QuickView({
                     className={clsx(
                       "min-h-[40px] rounded-full border px-4 py-1 text-sm font-medium transition",
                       localSize === size
-                        ? "border-accent bg-accent text-white"
-                        : "border-[#e5d7cc] bg-white text-ink"
+                        ? "border-[var(--bar-maroon)] bg-[var(--bar-maroon)] text-white"
+                        : "border-[var(--border-soft)] bg-white text-black"
                     )}
                   >
                     {size}

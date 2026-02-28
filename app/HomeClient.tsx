@@ -218,6 +218,7 @@ export default function HomePage({
   const [toast, setToast] = useState<ToastState | null>(null);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [draftFilters, setDraftFilters] = useState<Filters>(defaultFilters);
+  const [scrollLineScale, setScrollLineScale] = useState(0);
   const [activeFilter, setActiveFilter] = useState<CategoryFilter | null>(null);
   const [activeSheet, setActiveSheet] = useState<DrawerTab | null>(null);
   const [detailsProduct, setDetailsProduct] = useState<Product | null>(null);
@@ -943,10 +944,43 @@ export default function HomePage({
     }
   }, [visibleFilters, activeFilter]);
 
+  useEffect(() => {
+    const updateScrollLine = () => {
+      const maxScrollable = Math.max(
+        document.documentElement.scrollHeight - window.innerHeight,
+        1,
+      );
+      const progress = Math.min(window.scrollY / maxScrollable, 1);
+      const eased = 1 - Math.pow(1 - progress, 2);
+      setScrollLineScale(eased);
+    };
+
+    let rafId = 0;
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(() => {
+        updateScrollLine();
+        rafId = 0;
+      });
+    };
+
+    updateScrollLine();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", updateScrollLine);
+
+    return () => {
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+      }
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", updateScrollLine);
+    };
+  }, []);
+
   return (
     <div
       className={clsx(
-        "min-h-[100dvh] bg-[#F7F6F4] pb-24 transition-opacity duration-300 ease-in-out",
+        "min-h-[100dvh] bg-white pb-24 transition-opacity duration-300 ease-in-out",
         isRouting && "opacity-80",
       )}
     >
@@ -955,7 +989,13 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur">
+      <header className="sticky top-0 z-50 w-full border-b border-[var(--border-soft)] bg-white">
+        <div className="h-[3px] w-full bg-[var(--bar-maroon-soft)]">
+          <div
+            className="h-full bg-[var(--bar-maroon)] transition-transform duration-300 ease-out"
+            style={{ transform: `scaleX(${Math.max(scrollLineScale, 0.06)})`, transformOrigin: "left" }}
+          />
+        </div>
         <nav className="relative mx-auto h-16 w-full max-w-6xl px-4 md:h-20">
           <div className="flex h-full items-center justify-center gap-3">
             <div className="absolute left-4 flex min-h-10 min-w-[104px] items-center justify-start">
@@ -998,11 +1038,11 @@ export default function HomePage({
         <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
           <HeroCarousel initialSlides={initialCarouselSlides} />
         </div>
-        <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
+        <div className="h-6 bg-white" />
       </section>
 
       {announcement.active ? (
-        <section className="bg-black py-2 text-white">
+        <section className="border-y border-[var(--border-soft)] bg-[var(--bar-maroon-soft)] py-2">
           <div
             ref={trustBarRef}
             className={clsx(
@@ -1012,9 +1052,9 @@ export default function HomePage({
                 : "translate-y-6 opacity-0",
             )}
           >
-            <div className="relative overflow-hidden w-full bg-black text-white">
+            <div className="relative w-full overflow-hidden text-black">
               <div
-                className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-[13px] font-medium tracking-wide"
+                className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-[13px] font-medium tracking-wide text-black"
                 style={
                   { "--announcement-duration": announcementDuration } as Record<
                     string,
@@ -1028,14 +1068,14 @@ export default function HomePage({
                   {announcementText}
                 </span>
               </div>
-              <div className="absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-black to-transparent pointer-events-none" />
-              <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-black to-transparent pointer-events-none" />
+              
+              
             </div>
           </div>
         </section>
       ) : null}
 
-      <section className="bg-[#F7F6F4]">
+      <section className="bg-white">
         <AnimatedWrapper className="retail-section-enter" variant="section">
           <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -1043,9 +1083,9 @@ export default function HomePage({
                 type="button"
                 onClick={() => setActiveFilter(null)}
                 className={clsx(
-                  "whitespace-nowrap rounded-full border border-neutral-300 px-3 py-1.5 text-[12px] transition hover:bg-neutral-900 hover:text-white",
+                  "whitespace-nowrap rounded-full border border-[var(--border-soft)] px-3 py-1.5 text-[12px] transition hover:bg-[var(--bar-maroon-soft)]",
                   activeFilter === null
-                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    ? "border-[var(--bar-maroon)] bg-[var(--bar-maroon)] text-white"
                     : "text-ink",
                 )}
               >
@@ -1057,9 +1097,9 @@ export default function HomePage({
                   type="button"
                   onClick={() => setActiveFilter(category.value)}
                   className={clsx(
-                    "whitespace-nowrap rounded-full border border-neutral-300 px-3 py-1.5 text-[12px] transition hover:bg-neutral-900 hover:text-white",
+                    "whitespace-nowrap rounded-full border border-[var(--border-soft)] px-3 py-1.5 text-[12px] transition hover:bg-[var(--bar-maroon-soft)]",
                     activeFilter === category.value
-                      ? "border-neutral-900 bg-neutral-900 text-white"
+                      ? "border-[var(--bar-maroon)] bg-[var(--bar-maroon)] text-white"
                       : category.highlight
                         ? "border-accent/70 text-ink"
                         : "text-ink",
@@ -1071,7 +1111,7 @@ export default function HomePage({
             </div>
 
             <div className="flex items-center justify-between">
-              <p className="text-[13px] text-neutral-600">
+              <p className="text-[13px] text-[var(--text-secondary)]">
                 {sortOptions.find(
                   (option) => option.id === (filters.sort ?? "newest"),
                 )?.label ?? "Newest"}
@@ -1080,14 +1120,14 @@ export default function HomePage({
                 <button
                   type="button"
                   onClick={() => openSheet("sort")}
-                  className="rounded-full border border-neutral-300 px-3 py-1 text-[13px]"
+                  className="rounded-full border border-[var(--border-soft)] px-3 py-1 text-[13px]"
                 >
                   Sort
                 </button>
                 <button
                   type="button"
                   onClick={() => openSheet("size")}
-                  className="flex items-center gap-2 rounded-full border border-neutral-300 px-3 py-1 text-[13px]"
+                  className="flex items-center gap-2 rounded-full border border-[var(--border-soft)] px-3 py-1 text-[13px]"
                 >
                   Filter
                   {filters.size.length ||
@@ -1144,7 +1184,7 @@ export default function HomePage({
               <p className="text-base font-semibold text-ink">
                 No products found.
               </p>
-              <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
+              <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
                 Adjust filters or check back soon.
               </p>
             </div>
@@ -1204,34 +1244,34 @@ export default function HomePage({
 
         <section className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-neutral-200 bg-white p-4">
           <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
+            <p className="text-[13px] font-semibold leading-[1.5] text-black">
               🚚 Fast Nationwide Delivery
             </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
+            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
               Reliable delivery across Bangladesh.
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
+            <p className="text-[13px] font-semibold leading-[1.5] text-black">
               🔒 Secure Order Handling
             </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
+            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
               Safe data and verified order process.
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
+            <p className="text-[13px] font-semibold leading-[1.5] text-black">
               💬 WhatsApp Order Support
             </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
+            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
               Quick support from real agents.
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
+            <p className="text-[13px] font-semibold leading-[1.5] text-black">
               💵 Cash on Delivery
             </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
+            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
               Pay after delivery confirmation.
             </p>
           </div>
@@ -1285,69 +1325,98 @@ export default function HomePage({
         ) : null}
       </section>
 
-      <footer className="mt-16 border-t border-neutral-200 bg-[#F3F2F0]">
-        <div className="mx-auto grid max-w-6xl gap-8 space-y-0 px-4 pb-20 pt-14 md:grid-cols-3">
-          <div>
-            <h3 className="font-heading text-[20px] font-semibold">
-              Tacin Arabi Collection
-            </h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
-              Your trusted online fashion shop in Bangladesh for kurti, modest
-              wear, and ceramic lifestyle picks—powered by WhatsApp-first
-              ordering.
-            </p>
-            <p className="mt-3 text-[13px] font-semibold text-ink">
-              WhatsApp: +8801522119189
-            </p>
-          </div>
-          <div>
-            <h4 className="text-[13px] font-semibold text-ink">
-              Store Policies
-            </h4>
-            <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-neutral-600">
-              <li>Cash on Delivery available nationwide</li>
-              <li>Delivery confirmation before dispatch</li>
-              <li>Support available 10am–10pm daily</li>
-            </ul>
-          </div>
-          <div className="mt-8 space-y-4">
-            <h3 className="text-[15px] font-semibold leading-[1.4] text-neutral-900">
-              Connect With Us
-            </h3>
-            <div className="flex items-center gap-4 text-neutral-800">
-              <a
-                href="https://www.facebook.com/tacinarabicollection"
-                target="_blank"
-                rel="noreferrer"
-                className="interactive-feedback hover:opacity-80"
-                aria-label="Facebook"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="https://www.instagram.com/tacinarabi"
-                target="_blank"
-                rel="noreferrer"
-                className="interactive-feedback hover:opacity-80"
-                aria-label="Instagram"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a
-                href="https://pin.it/5Om9YG8GY"
-                target="_blank"
-                rel="noreferrer"
-                className="interactive-feedback hover:opacity-80"
-                aria-label="Pinterest"
-              >
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-neutral-800 text-[11px] font-semibold leading-none">
-                  P
-                </span>
-              </a>
+      <footer className="border-t border-[#EAEAEA] bg-[#F8F6F4]">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-3">
+            <div className="flex flex-col items-start space-y-6">
+              <img
+                src="/images/tacin-logo.svg"
+                alt="Tacin Arabi Collection"
+                className="h-14 w-auto object-contain md:h-16"
+              />
+              <p className="max-w-sm text-sm leading-relaxed text-[#555555]">
+                Curated minimal fashion edits inspired by campus aesthetics.
+              </p>
             </div>
-            <div className="text-[14px] font-medium leading-[1.6] text-neutral-800">
-              📞 +8801522119189
+
+            <div className="space-y-6">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-black">
+                Explore
+              </h3>
+              <ul className="space-y-3 text-sm text-black">
+                <li>
+                  <a href="#product-grid" className="transition hover:opacity-70">
+                    Shop
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="transition hover:opacity-70">
+                    About
+                  </a>
+                </li>
+                <li>
+                  <a href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="transition hover:opacity-70">
+                    Contact
+                  </a>
+                </li>
+              </ul>
             </div>
+
+            <div className="space-y-6">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-black">
+                Connect
+              </h3>
+              <div className="grid grid-cols-1 gap-3 text-sm text-black sm:grid-cols-2">
+                <a
+                  href="https://www.facebook.com/tacinarabicollection"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:opacity-70"
+                  aria-label="Facebook"
+                >
+                  <Facebook className="h-4 w-4" aria-hidden="true" />
+                  <span>Facebook</span>
+                </a>
+                <a
+                  href="https://www.instagram.com/tacinarabi"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:opacity-70"
+                  aria-label="Instagram"
+                >
+                  <Instagram className="h-4 w-4" aria-hidden="true" />
+                  <span>Instagram</span>
+                </a>
+                <a
+                  href="https://pin.it/5Om9YG8GY"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:opacity-70"
+                  aria-label="Pinterest"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+                    <path d="M12 2C6.486 2 2 6.486 2 12c0 4.216 2.612 7.82 6.303 9.271-.087-.787-.166-1.994.035-2.853.182-.777 1.173-4.95 1.173-4.95s-.299-.598-.299-1.481c0-1.387.805-2.422 1.808-2.422.853 0 1.264.64 1.264 1.406 0 .857-.546 2.138-.827 3.325-.236.998.5 1.811 1.483 1.811 1.78 0 3.148-1.878 3.148-4.588 0-2.397-1.723-4.073-4.184-4.073-2.85 0-4.523 2.138-4.523 4.347 0 .861.331 1.784.746 2.286a.3.3 0 01.07.288c-.077.316-.25.999-.284 1.138-.044.184-.147.224-.34.135-1.267-.59-2.06-2.442-2.06-3.931 0-3.201 2.326-6.142 6.708-6.142 3.52 0 6.261 2.509 6.261 5.862 0 3.499-2.206 6.316-5.269 6.316-1.028 0-1.995-.535-2.324-1.168l-.632 2.407c-.228.878-.843 1.978-1.256 2.649A10.012 10.012 0 0012 22c5.514 0 10-4.486 10-10S17.514 2 12 2z"/>
+                  </svg>
+                  <span>Pinterest</span>
+                </a>
+                <a
+                  href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:opacity-70"
+                  aria-label="WhatsApp"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+                    <path d="M20.52 3.48A11.815 11.815 0 0012.03 0C5.5 0 .19 5.3.19 11.84c0 2.09.55 4.13 1.58 5.93L0 24l6.41-1.68a11.8 11.8 0 005.62 1.43h.01c6.53 0 11.84-5.3 11.84-11.84 0-3.16-1.23-6.12-3.36-8.43zM12.04 21.7h-.01a9.86 9.86 0 01-5.02-1.37l-.36-.21-3.81 1 .99-3.71-.23-.38a9.87 9.87 0 01-1.51-5.2c0-5.44 4.43-9.87 9.88-9.87 2.64 0 5.13 1.03 6.99 2.89a9.8 9.8 0 012.88 6.99c0 5.45-4.43 9.88-9.87 9.88zm5.41-7.4c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.08-.3-.15-1.27-.47-2.42-1.49-.9-.8-1.5-1.78-1.67-2.08-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.5h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.01-1.04 2.46s1.07 2.84 1.22 3.04c.15.2 2.1 3.21 5.1 4.5.71.31 1.26.5 1.69.64.71.22 1.36.19 1.88.12.57-.08 1.77-.72 2.03-1.41.25-.7.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35z"/>
+                  </svg>
+                  <span>WhatsApp</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-16 border-t border-[#EAEAEA] pt-6 text-center text-xs text-[#666666]">
+            © 2026 Tacin Arabi Collection. All rights reserved.
           </div>
         </div>
       </footer>
@@ -1663,7 +1732,7 @@ export default function HomePage({
               <button
                 type="button"
                 onClick={handleCartCheckout}
-                className="interactive-feedback min-h-14 h-14 w-full rounded-xl bg-black px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 active:scale-95"
+                className="interactive-feedback min-h-14 h-14 w-full rounded-xl bg-[var(--bar-maroon)] px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 hover:opacity-90 active:scale-95"
               >
                 {isRouting ? "Redirecting..." : text.checkout}
               </button>
@@ -1714,7 +1783,7 @@ export default function HomePage({
                     <h2 className="text-2xl font-semibold mb-4">
                       Order Confirmed
                     </h2>
-                    <p className="text-neutral-600">
+                    <p className="text-[var(--text-secondary)]">
                       We will contact you shortly via phone or WhatsApp.
                     </p>
                   </div>
@@ -1795,10 +1864,10 @@ export default function HomePage({
                         </div>
                       </div>
 
-                      <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs text-neutral-800">
+                      <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs text-black">
                         <div className="flex items-center justify-between">
                           <span>{text.subtotal}</span>
-                          <span className="text-neutral-900 font-medium">
+                          <span className="text-black font-medium">
                             {isSummaryLoading ? (
                               <SummaryPlaceholder />
                             ) : (
@@ -1808,7 +1877,7 @@ export default function HomePage({
                         </div>
                         <div className="flex items-center justify-between">
                           <span>{text.deliveryCharge}</span>
-                          <span className="text-neutral-900 font-medium">
+                          <span className="text-black font-medium">
                             {isSummaryLoading ? (
                               <SummaryPlaceholder widthClass="w-12" />
                             ) : (
@@ -1828,7 +1897,7 @@ export default function HomePage({
                         </div>
                       </div>
 
-                      <div className="text-xs text-neutral-600 mt-3 space-y-1">
+                      <div className="text-xs text-[var(--text-secondary)] mt-3 space-y-1">
                         <p>✓ Cash on Delivery Available</p>
                         <p>✓ Nationwide Delivery</p>
                         <p>✓ WhatsApp Confirmation</p>
@@ -1847,7 +1916,7 @@ export default function HomePage({
                       >
                         <label
                           htmlFor="checkout-name"
-                          className="text-xs font-semibold text-neutral-700"
+                          className="text-xs font-semibold text-[var(--text-secondary)]"
                         >
                           Full Name <span className="text-red-500">*</span>
                         </label>
@@ -1863,11 +1932,11 @@ export default function HomePage({
                             }))
                           }
                           aria-required="true"
-                          className="w-full rounded-lg border border-neutral-300 p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
+                          className="w-full rounded-lg border border-[var(--border-soft)] p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
                         />
                         <label
                           htmlFor="checkout-phone"
-                          className="text-xs font-semibold text-neutral-700"
+                          className="text-xs font-semibold text-[var(--text-secondary)]"
                         >
                           Phone <span className="text-red-500">*</span>
                         </label>
@@ -1883,11 +1952,11 @@ export default function HomePage({
                             }))
                           }
                           aria-required="true"
-                          className="w-full rounded-lg border border-neutral-300 p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
+                          className="w-full rounded-lg border border-[var(--border-soft)] p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
                         />
                         <label
                           htmlFor="checkout-address"
-                          className="text-xs font-semibold text-neutral-700"
+                          className="text-xs font-semibold text-[var(--text-secondary)]"
                         >
                           Address <span className="text-red-500">*</span>
                         </label>
@@ -1903,11 +1972,11 @@ export default function HomePage({
                             }))
                           }
                           aria-required="true"
-                          className="w-full rounded-lg border border-neutral-300 p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
+                          className="w-full rounded-lg border border-[var(--border-soft)] p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
                         />
                       </div>
 
-                      <div className="text-xs text-neutral-700 mt-4">
+                      <div className="text-xs text-[var(--text-secondary)] mt-4">
                         🔒 Your information is secure and will not be shared.
                       </div>
 
@@ -1925,7 +1994,7 @@ export default function HomePage({
                     onClick={handlePaymentInfoOpen}
                     disabled={isCheckoutBlocked}
                     className={clsx(
-                      "interactive-feedback min-h-14 h-14 w-full rounded-xl bg-black px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 active:scale-95",
+                      "interactive-feedback min-h-14 h-14 w-full rounded-xl bg-[var(--bar-maroon)] px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 hover:opacity-90 active:scale-95",
                       isCheckoutBlocked && "cursor-not-allowed opacity-60",
                     )}
                   >
@@ -1949,7 +2018,7 @@ export default function HomePage({
                   >
                     {isSubmitting ? "Processing..." : text.orderCod}
                   </button>
-                  <p className="mt-3 text-[12px] text-neutral-600">
+                  <p className="mt-3 text-[12px] text-[var(--text-secondary)]">
                     Cash on Delivery available nationwide. You will receive
                     confirmation before dispatch.
                   </p>
