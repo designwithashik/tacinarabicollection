@@ -81,6 +81,13 @@ const storageKeys = {
 
 const statusLabels = ["New", "Popular", "Low Stock"] as const;
 
+const trustItems = [
+  { icon: "🚚", text: "Fast Nationwide Delivery" },
+  { icon: "🔒", text: "Secure Order Handling" },
+  { icon: "💬", text: "WhatsApp Order Support" },
+  { icon: "💵", text: "Cash on Delivery" },
+] as const;
+
 const defaultAnnouncement: AnnouncementContent = {
   text: "Free nationwide delivery updates • WhatsApp-first support • Elegant modest fashion curated for Bangladesh",
   active: true,
@@ -1242,41 +1249,6 @@ export default function HomePage({
           )}
         </SectionLoader>
 
-        <section className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-neutral-200 bg-white p-4">
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-black">
-              🚚 Fast Nationwide Delivery
-            </p>
-            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
-              Reliable delivery across Bangladesh.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-black">
-              🔒 Secure Order Handling
-            </p>
-            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
-              Safe data and verified order process.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-black">
-              💬 WhatsApp Order Support
-            </p>
-            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
-              Quick support from real agents.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-black">
-              💵 Cash on Delivery
-            </p>
-            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
-              Pay after delivery confirmation.
-            </p>
-          </div>
-        </section>
-
         {recentlyViewed.length > 0 ? (
           <section className="mt-6">
             <div className="mb-3 flex items-center justify-between">
@@ -1323,6 +1295,27 @@ export default function HomePage({
             </div>
           </section>
         ) : null}
+      </section>
+
+      <section className="w-full border-t border-[#EAEAEA] bg-[#FAFAFA]">
+        <div className="mx-auto max-w-6xl px-6 py-12">
+          <div className="grid grid-cols-2 gap-10 text-center md:grid-cols-4">
+            {trustItems.map((item) => (
+              <div
+                key={item.text}
+                className="flex flex-col items-center space-y-4 transition duration-300 ease-out hover:-translate-y-0.5 hover:opacity-80"
+              >
+                <div className="flex h-10 w-10 items-center justify-center">
+                  <span className="text-xl text-[#5B1414]">{item.icon}</span>
+                </div>
+
+                <p className="text-sm font-medium leading-snug text-black md:text-base">
+                  {item.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       <footer className="border-t border-[#EAEAEA] bg-[#F8F6F4]">
