@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       imageUrl,
       whatsappNumber,
       heroFeatured,
+      stock,
     } = body;
 
     const existing = await loadInventoryArray();
@@ -46,6 +47,12 @@ export async function POST(request: Request) {
       colors: ["Beige"],
       sizes: ["M", "L", "XL"],
       heroFeatured: heroFeatured === true,
+      stock:
+        typeof stock === "number"
+          ? Math.max(0, Math.floor(stock))
+          : typeof stock === "string"
+            ? Math.max(0, Math.floor(Number(stock) || 0))
+            : 0,
     };
 
     const updated = [...existing, newProduct];

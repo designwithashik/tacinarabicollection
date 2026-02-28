@@ -31,6 +31,12 @@ export async function PUT(
           ? body.imageUrl
           : current.imageUrl,
       price: typeof body.price === "number" ? body.price : current.price,
+      stock:
+        typeof body.stock === "number"
+          ? Math.max(0, Math.floor(body.stock))
+          : typeof body.stock === "string"
+            ? Math.max(0, Math.floor(Number(body.stock) || 0))
+            : current.stock,
       updatedAt: Date.now(),
       heroFeatured: body.heroFeatured === true,
       id,
