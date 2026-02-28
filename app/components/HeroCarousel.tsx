@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent, TouchEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import clsx from "clsx";
 
-import type { CarouselItem } from "@/lib/siteContent";
+import type { FilterPanelItem, CarouselItem } from "@/lib/siteContent";
 
 type HeroCarouselProps = {
   initialSlides?: CarouselItem[];
@@ -26,6 +26,21 @@ const SWIPE_THRESHOLD = 48;
 const toActiveSlides = (items: CarouselItem[]) =>
   items.filter((item) => item.active !== false).sort((a, b) => a.order - b.order);
 
+const toActiveFilters = (items: FilterPanelItem[]) =>
+  items
+    .filter((item) => item.active !== false)
+    .sort((a, b) => a.order - b.order)
+    .filter((item) => item.showOnLanding !== false);
+
+const matchesFilter = (product: CarouselProduct, value: string) => {
+  const normalizedFilter = value.trim().toLowerCase();
+  if (!normalizedFilter || normalizedFilter === "all") return true;
+
+  const category = String(product.category ?? "").toLowerCase();
+  const name = product.name.toLowerCase();
+  return category.includes(normalizedFilter) || name.includes(normalizedFilter);
+};
+
 export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) {
   const [slides, setSlides] = useState<CarouselItem[]>(toActiveSlides(initialSlides));
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -34,6 +49,8 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [heroProducts, setHeroProducts] = useState<CarouselProduct[]>([]);
+  const [filters, setFilters] = useState<FilterPanelItem[]>([]);
+  const [selectedFilter, setSelectedFilter] = useState("All");
 
   const touchStartX = useRef<number | null>(null);
   const touchCurrentX = useRef<number | null>(null);
@@ -75,18 +92,47 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
   useEffect(() => {
     if (!isProductModalOpen || heroProducts.length > 0 || isLoadingProducts) return;
 
-    const loadHeroProducts = async () => {
+    const loadModalData = async () => {
       try {
         setIsLoadingProducts(true);
-        const heroRes = await fetch("/api/products?hero=true", { cache: "no-store" });
-        const fallbackRes = heroRes.ok ? null : await fetch("/api/products", { cache: "no-store" });
-        const source = heroRes.ok ? heroRes : fallbackRes;
-        if (!source?.ok) return;
 
-        const data = (await source.json()) as CarouselProduct[];
-        if (!Array.isArray(data)) return;
+        const [productsRes, filtersRes] = await Promise.all([
+          fetch("/api/products", { cache: "no-store" }),
+          fetch("/api/content/filters", { cache: "no-store" }),
+        ]);
 
-        setHeroProducts(data.slice(0, 8));
+        if (productsRes.ok) {
+          const productData = (await productsRes.json()) as CarouselProduct[];
+          if (Array.isArray(productData)) {
+            setHeroProducts(productData);
+          }
+        }
+
+        if (filtersRes.ok) {
+          const filterData = (await filtersRes.json()) as FilterPanelItem[];
+          if (Array.isArray(filterData)) {
+            const activeFilters = toActiveFilters(filterData);
+            const hasAll = activeFilters.some(
+              (item) => item.value.trim().toLowerCase() === "all",
+            );
+            setFilters(
+              hasAll
+                ? activeFilters
+                : [
+                    {
+                      id: "all",
+                      label: "All",
+                      value: "All",
+                      active: true,
+                      highlight: true,
+                      showOnLanding: true,
+                      order: 0,
+                    },
+                    ...activeFilters,
+                  ],
+            );
+          }
+        }
       } catch {
         setHeroProducts([]);
       } finally {
@@ -94,7 +140,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
       }
     };
 
-    void loadHeroProducts();
+    void loadModalData();
   }, [heroProducts.length, isLoadingProducts, isProductModalOpen]);
 
   useEffect(() => {
@@ -109,6 +155,11 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
     document.addEventListener("keydown", onEsc);
     return () => document.removeEventListener("keydown", onEsc);
   }, [isProductModalOpen]);
+
+  const visibleProducts = useMemo(
+    () => heroProducts.filter((product) => matchesFilter(product, selectedFilter)),
+    [heroProducts, selectedFilter],
+  );
 
   if (slides.length === 0) {
     return null;
@@ -293,13 +344,13 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           onClick={() => setIsProductModalOpen(false)}
         >
           <div
-            className="w-full rounded-2xl bg-white shadow-2xl sm:mx-auto sm:max-w-5xl"
+            className="w-full rounded-2xl bg-white shadow-2xl sm:mx-auto sm:max-w-6xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-black/10 px-4 py-3 sm:px-6 sm:py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 px-4 py-3 sm:px-6 sm:py-4">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-black/55">Quick Shop</p>
-                <h3 className="text-lg font-semibold text-black sm:text-xl">Choose a product</h3>
+                <h3 className="text-lg font-semibold text-black sm:text-xl">Browse all products</h3>
               </div>
               <button
                 type="button"
@@ -309,16 +360,46 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
               >
                 ✕
               </button>
+              <div className="w-full overflow-x-auto pt-1 [scrollbar-width:thin]">
+                <div className="flex min-w-max items-center gap-2">
+                  {(filters.length ? filters : [{
+                    id: "all",
+                    label: "All",
+                    value: "All",
+                    active: true,
+                    highlight: true,
+                    showOnLanding: true,
+                    order: 0,
+                  }]).map((filter) => {
+                    const isActive = selectedFilter.toLowerCase() === filter.value.toLowerCase();
+                    return (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        onClick={() => setSelectedFilter(filter.value)}
+                        className={clsx(
+                          "rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                          isActive
+                            ? "border-black bg-black text-white"
+                            : "border-black/20 bg-white text-black hover:border-black/35 hover:bg-black/5",
+                        )}
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             <div className="max-h-[72vh] overflow-y-auto p-4 sm:p-6">
               {isLoadingProducts ? (
-                <p className="text-sm text-black/70">Loading featured products…</p>
-              ) : heroProducts.length === 0 ? (
-                <p className="text-sm text-black/70">No featured products available right now.</p>
+                <p className="text-sm text-black/70">Loading products…</p>
+              ) : visibleProducts.length === 0 ? (
+                <p className="text-sm text-black/70">No products available for this filter.</p>
               ) : (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {heroProducts.map((product) => (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {visibleProducts.map((product) => (
                     <article
                       key={product.id}
                       className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm"
@@ -329,18 +410,18 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
                           alt={product.name}
                           fill
                           className="object-cover"
-                          sizes="(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 30vw"
+                          sizes="(max-width: 640px) 48vw, (max-width: 1024px) 30vw, 20vw"
                         />
                       </div>
-                      <div className="space-y-2 p-3">
+                      <div className="space-y-1.5 p-3">
                         <p className="line-clamp-2 text-sm font-semibold text-black sm:text-base">{product.name}</p>
-                        <p className="text-sm font-medium text-black/75">৳{product.price.toLocaleString("en-BD")}</p>
+                        <p className="text-xs font-medium text-black/80 sm:text-sm">৳{product.price.toLocaleString("en-BD")}</p>
                         <Link
                           href={`/products/${product.id}`}
-                          className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-black px-3 py-2 text-sm font-semibold text-white transition hover:bg-black/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
+                          className="inline-flex min-h-9 w-full items-center justify-center rounded-lg border border-black bg-black px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-black/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 sm:text-sm"
                           onClick={() => setIsProductModalOpen(false)}
                         >
-                          View product
+                          View details
                         </Link>
                       </div>
                     </article>
