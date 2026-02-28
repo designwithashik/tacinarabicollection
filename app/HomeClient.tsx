@@ -946,7 +946,7 @@ export default function HomePage({
   return (
     <div
       className={clsx(
-        "min-h-[100dvh] bg-[#F7F6F4] pb-24 transition-opacity duration-300 ease-in-out",
+        "min-h-[100dvh] bg-white pb-24 transition-opacity duration-300 ease-in-out",
         isRouting && "opacity-80",
       )}
     >
@@ -955,7 +955,7 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur">
+      <header className="sticky top-0 z-50 w-full border-b border-[var(--border-soft)] border-t-[3px] border-t-[var(--bar-maroon)] bg-white">
         <nav className="relative mx-auto h-16 w-full max-w-6xl px-4 md:h-20">
           <div className="flex h-full items-center justify-center gap-3">
             <div className="absolute left-4 flex min-h-10 min-w-[104px] items-center justify-start">
@@ -998,11 +998,11 @@ export default function HomePage({
         <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
           <HeroCarousel initialSlides={initialCarouselSlides} />
         </div>
-        <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
+        <div className="h-6 bg-white" />
       </section>
 
       {announcement.active ? (
-        <section className="bg-black py-2 text-white">
+        <section className="border-y border-[var(--border-soft)] bg-[var(--bar-maroon-soft)] py-2">
           <div
             ref={trustBarRef}
             className={clsx(
@@ -1012,9 +1012,9 @@ export default function HomePage({
                 : "translate-y-6 opacity-0",
             )}
           >
-            <div className="relative overflow-hidden w-full bg-black text-white">
+            <div className="relative w-full overflow-hidden text-black">
               <div
-                className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-[13px] font-medium tracking-wide"
+                className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-[13px] font-medium tracking-wide text-black"
                 style={
                   { "--announcement-duration": announcementDuration } as Record<
                     string,
@@ -1028,14 +1028,14 @@ export default function HomePage({
                   {announcementText}
                 </span>
               </div>
-              <div className="absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-black to-transparent pointer-events-none" />
-              <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-black to-transparent pointer-events-none" />
+              
+              
             </div>
           </div>
         </section>
       ) : null}
 
-      <section className="bg-[#F7F6F4]">
+      <section className="bg-white">
         <AnimatedWrapper className="retail-section-enter" variant="section">
           <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -1043,9 +1043,9 @@ export default function HomePage({
                 type="button"
                 onClick={() => setActiveFilter(null)}
                 className={clsx(
-                  "whitespace-nowrap rounded-full border border-neutral-300 px-3 py-1.5 text-[12px] transition hover:bg-neutral-900 hover:text-white",
+                  "whitespace-nowrap rounded-full border border-[var(--border-soft)] px-3 py-1.5 text-[12px] transition hover:bg-[var(--bar-maroon-soft)]",
                   activeFilter === null
-                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    ? "border-[var(--bar-maroon)] bg-[var(--bar-maroon)] text-white"
                     : "text-ink",
                 )}
               >
@@ -1057,9 +1057,9 @@ export default function HomePage({
                   type="button"
                   onClick={() => setActiveFilter(category.value)}
                   className={clsx(
-                    "whitespace-nowrap rounded-full border border-neutral-300 px-3 py-1.5 text-[12px] transition hover:bg-neutral-900 hover:text-white",
+                    "whitespace-nowrap rounded-full border border-[var(--border-soft)] px-3 py-1.5 text-[12px] transition hover:bg-[var(--bar-maroon-soft)]",
                     activeFilter === category.value
-                      ? "border-neutral-900 bg-neutral-900 text-white"
+                      ? "border-[var(--bar-maroon)] bg-[var(--bar-maroon)] text-white"
                       : category.highlight
                         ? "border-accent/70 text-ink"
                         : "text-ink",
@@ -1071,7 +1071,7 @@ export default function HomePage({
             </div>
 
             <div className="flex items-center justify-between">
-              <p className="text-[13px] text-neutral-600">
+              <p className="text-[13px] text-[var(--text-secondary)]">
                 {sortOptions.find(
                   (option) => option.id === (filters.sort ?? "newest"),
                 )?.label ?? "Newest"}
@@ -1080,14 +1080,14 @@ export default function HomePage({
                 <button
                   type="button"
                   onClick={() => openSheet("sort")}
-                  className="rounded-full border border-neutral-300 px-3 py-1 text-[13px]"
+                  className="rounded-full border border-[var(--border-soft)] px-3 py-1 text-[13px]"
                 >
                   Sort
                 </button>
                 <button
                   type="button"
                   onClick={() => openSheet("size")}
-                  className="flex items-center gap-2 rounded-full border border-neutral-300 px-3 py-1 text-[13px]"
+                  className="flex items-center gap-2 rounded-full border border-[var(--border-soft)] px-3 py-1 text-[13px]"
                 >
                   Filter
                   {filters.size.length ||
@@ -1144,7 +1144,7 @@ export default function HomePage({
               <p className="text-base font-semibold text-ink">
                 No products found.
               </p>
-              <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
+              <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
                 Adjust filters or check back soon.
               </p>
             </div>
@@ -1204,34 +1204,34 @@ export default function HomePage({
 
         <section className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-neutral-200 bg-white p-4">
           <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
+            <p className="text-[13px] font-semibold leading-[1.5] text-black">
               🚚 Fast Nationwide Delivery
             </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
+            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
               Reliable delivery across Bangladesh.
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
+            <p className="text-[13px] font-semibold leading-[1.5] text-black">
               🔒 Secure Order Handling
             </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
+            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
               Safe data and verified order process.
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
+            <p className="text-[13px] font-semibold leading-[1.5] text-black">
               💬 WhatsApp Order Support
             </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
+            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
               Quick support from real agents.
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-neutral-900">
+            <p className="text-[13px] font-semibold leading-[1.5] text-black">
               💵 Cash on Delivery
             </p>
-            <p className="text-[12px] leading-[1.4] text-neutral-700">
+            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
               Pay after delivery confirmation.
             </p>
           </div>
@@ -1285,13 +1285,13 @@ export default function HomePage({
         ) : null}
       </section>
 
-      <footer className="mt-16 border-t border-neutral-200 bg-[#F3F2F0]">
+      <footer className="mt-16 border-t border-[var(--border-soft)] bg-[var(--bar-maroon-soft)]">
         <div className="mx-auto grid max-w-6xl gap-8 space-y-0 px-4 pb-20 pt-14 md:grid-cols-3">
           <div>
             <h3 className="font-heading text-[20px] font-semibold">
               Tacin Arabi Collection
             </h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
+            <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
               Your trusted online fashion shop in Bangladesh for kurti, modest
               wear, and ceramic lifestyle picks—powered by WhatsApp-first
               ordering.
@@ -1304,17 +1304,17 @@ export default function HomePage({
             <h4 className="text-[13px] font-semibold text-ink">
               Store Policies
             </h4>
-            <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-neutral-600">
+            <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
               <li>Cash on Delivery available nationwide</li>
               <li>Delivery confirmation before dispatch</li>
               <li>Support available 10am–10pm daily</li>
             </ul>
           </div>
           <div className="mt-8 space-y-4">
-            <h3 className="text-[15px] font-semibold leading-[1.4] text-neutral-900">
+            <h3 className="text-[15px] font-semibold leading-[1.4] text-black">
               Connect With Us
             </h3>
-            <div className="flex items-center gap-4 text-neutral-800">
+            <div className="flex items-center gap-4 text-black">
               <a
                 href="https://www.facebook.com/tacinarabicollection"
                 target="_blank"
@@ -1345,7 +1345,7 @@ export default function HomePage({
                 </span>
               </a>
             </div>
-            <div className="text-[14px] font-medium leading-[1.6] text-neutral-800">
+            <div className="text-[14px] font-medium leading-[1.6] text-black">
               📞 +8801522119189
             </div>
           </div>
@@ -1663,7 +1663,7 @@ export default function HomePage({
               <button
                 type="button"
                 onClick={handleCartCheckout}
-                className="interactive-feedback min-h-14 h-14 w-full rounded-xl bg-black px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 active:scale-95"
+                className="interactive-feedback min-h-14 h-14 w-full rounded-xl bg-[var(--bar-maroon)] px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 hover:opacity-90 active:scale-95"
               >
                 {isRouting ? "Redirecting..." : text.checkout}
               </button>
@@ -1714,7 +1714,7 @@ export default function HomePage({
                     <h2 className="text-2xl font-semibold mb-4">
                       Order Confirmed
                     </h2>
-                    <p className="text-neutral-600">
+                    <p className="text-[var(--text-secondary)]">
                       We will contact you shortly via phone or WhatsApp.
                     </p>
                   </div>
@@ -1795,10 +1795,10 @@ export default function HomePage({
                         </div>
                       </div>
 
-                      <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs text-neutral-800">
+                      <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs text-black">
                         <div className="flex items-center justify-between">
                           <span>{text.subtotal}</span>
-                          <span className="text-neutral-900 font-medium">
+                          <span className="text-black font-medium">
                             {isSummaryLoading ? (
                               <SummaryPlaceholder />
                             ) : (
@@ -1808,7 +1808,7 @@ export default function HomePage({
                         </div>
                         <div className="flex items-center justify-between">
                           <span>{text.deliveryCharge}</span>
-                          <span className="text-neutral-900 font-medium">
+                          <span className="text-black font-medium">
                             {isSummaryLoading ? (
                               <SummaryPlaceholder widthClass="w-12" />
                             ) : (
@@ -1828,7 +1828,7 @@ export default function HomePage({
                         </div>
                       </div>
 
-                      <div className="text-xs text-neutral-600 mt-3 space-y-1">
+                      <div className="text-xs text-[var(--text-secondary)] mt-3 space-y-1">
                         <p>✓ Cash on Delivery Available</p>
                         <p>✓ Nationwide Delivery</p>
                         <p>✓ WhatsApp Confirmation</p>
@@ -1847,7 +1847,7 @@ export default function HomePage({
                       >
                         <label
                           htmlFor="checkout-name"
-                          className="text-xs font-semibold text-neutral-700"
+                          className="text-xs font-semibold text-[var(--text-secondary)]"
                         >
                           Full Name <span className="text-red-500">*</span>
                         </label>
@@ -1863,11 +1863,11 @@ export default function HomePage({
                             }))
                           }
                           aria-required="true"
-                          className="w-full rounded-lg border border-neutral-300 p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
+                          className="w-full rounded-lg border border-[var(--border-soft)] p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
                         />
                         <label
                           htmlFor="checkout-phone"
-                          className="text-xs font-semibold text-neutral-700"
+                          className="text-xs font-semibold text-[var(--text-secondary)]"
                         >
                           Phone <span className="text-red-500">*</span>
                         </label>
@@ -1883,11 +1883,11 @@ export default function HomePage({
                             }))
                           }
                           aria-required="true"
-                          className="w-full rounded-lg border border-neutral-300 p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
+                          className="w-full rounded-lg border border-[var(--border-soft)] p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
                         />
                         <label
                           htmlFor="checkout-address"
-                          className="text-xs font-semibold text-neutral-700"
+                          className="text-xs font-semibold text-[var(--text-secondary)]"
                         >
                           Address <span className="text-red-500">*</span>
                         </label>
@@ -1903,11 +1903,11 @@ export default function HomePage({
                             }))
                           }
                           aria-required="true"
-                          className="w-full rounded-lg border border-neutral-300 p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
+                          className="w-full rounded-lg border border-[var(--border-soft)] p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
                         />
                       </div>
 
-                      <div className="text-xs text-neutral-700 mt-4">
+                      <div className="text-xs text-[var(--text-secondary)] mt-4">
                         🔒 Your information is secure and will not be shared.
                       </div>
 
@@ -1925,7 +1925,7 @@ export default function HomePage({
                     onClick={handlePaymentInfoOpen}
                     disabled={isCheckoutBlocked}
                     className={clsx(
-                      "interactive-feedback min-h-14 h-14 w-full rounded-xl bg-black px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 active:scale-95",
+                      "interactive-feedback min-h-14 h-14 w-full rounded-xl bg-[var(--bar-maroon)] px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 hover:opacity-90 active:scale-95",
                       isCheckoutBlocked && "cursor-not-allowed opacity-60",
                     )}
                   >
@@ -1949,7 +1949,7 @@ export default function HomePage({
                   >
                     {isSubmitting ? "Processing..." : text.orderCod}
                   </button>
-                  <p className="mt-3 text-[12px] text-neutral-600">
+                  <p className="mt-3 text-[12px] text-[var(--text-secondary)]">
                     Cash on Delivery available nationwide. You will receive
                     confirmation before dispatch.
                   </p>

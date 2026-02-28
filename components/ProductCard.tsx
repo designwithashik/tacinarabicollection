@@ -108,7 +108,7 @@ export default function ProductCard({
     (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition-all duration-200 ease-out hover:shadow-md">
+    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-white transition-all duration-200 ease-out hover:shadow-md">
       <div
         role="button"
         tabIndex={0}
@@ -132,9 +132,8 @@ export default function ProductCard({
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             />
           ) : (
-            <div className="relative h-full w-full overflow-hidden bg-gradient-to-b from-[#f6efe3] via-[#f2e6d3] to-[#e8dcc6]">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.65),transparent_45%),radial-gradient(circle_at_70%_75%,rgba(200,169,107,0.3),transparent_42%)]" />
-              <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-white/40 bg-white/45 p-3 text-left backdrop-blur-sm">
+            <div className="relative h-full w-full overflow-hidden bg-[#fafafa]">
+                            <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-white/40 bg-white/45 p-3 text-left backdrop-blur-sm">
                 <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/70">Tacin Arabi</p>
                 <p className="mt-1 font-heading text-sm font-semibold text-charcoal/85">Luxury Placeholder</p>
               </div>
@@ -181,7 +180,7 @@ export default function ProductCard({
         </div>
 
         {typeof originalPrice === "number" && originalPrice > product.price ? (
-          <p className="text-[11px] text-[var(--brand-muted)] line-through">৳{originalPrice.toLocaleString()}</p>
+          <p className="text-[11px] text-[var(--text-secondary)] line-through">৳{originalPrice.toLocaleString()}</p>
         ) : null}
 
         <div className="flex items-center justify-between gap-2">
@@ -201,8 +200,8 @@ export default function ProductCard({
                 className={clsx(
                   "interactive-feedback text-[11px] px-2 py-1 rounded-md border transition",
                   selectedSize === size
-                    ? "border-accent bg-accent text-white"
-                    : "border-[#e5d7cc] bg-white text-ink",
+                    ? "border-[var(--bar-maroon)] bg-[var(--bar-maroon)] text-white"
+                    : "border-[var(--border-soft)] bg-white text-black",
                 )}
                 onClick={() => handleSizeChange(size)}
               >
@@ -216,10 +215,10 @@ export default function ProductCard({
         </div>
 
         <div className="flex gap-2 items-center mt-2">
-          <div className="flex items-center border border-[#e5d7cc] rounded-md px-2 py-1 bg-white">
+          <div className="flex items-center border border-[var(--border-soft)] rounded-md px-2 py-1 bg-white">
             <button
               type="button"
-              className="interactive-feedback text-[12px] font-semibold text-ink"
+              className="interactive-feedback text-[12px] font-semibold text-black"
               onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
             >
               -
@@ -227,7 +226,7 @@ export default function ProductCard({
             <span className="px-2 text-[12px] font-semibold">{quantity}</span>
             <button
               type="button"
-              className="interactive-feedback text-[12px] font-semibold text-ink"
+              className="interactive-feedback text-[12px] font-semibold text-black"
               onClick={() => onQuantityChange(quantity + 1)}
             >
               +
@@ -235,7 +234,7 @@ export default function ProductCard({
           </div>
           <button
             type="button"
-            className="interactive-feedback flex-1 min-h-[40px] rounded-lg bg-black px-4 py-2.5 text-[13px] font-semibold text-white disabled:opacity-60"
+            className="interactive-feedback flex-1 min-h-[40px] rounded-lg bg-[var(--bar-maroon)] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
             onClick={handleBuyClick}
             disabled={isRouting}
           >

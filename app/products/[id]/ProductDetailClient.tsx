@@ -58,16 +58,16 @@ export default function ProductDetailClient({ product }: Props) {
   return (
     <main className="mx-auto max-w-6xl px-6 pb-24 pt-10 md:px-10">
       <div className="grid gap-10 md:grid-cols-2">
-        <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[var(--brand-surface)]">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[var(--bg-main)]">
           <Image src={product.image} alt={product.name} fill className="object-cover" priority />
         </div>
 
         <div>
-          <h1 className="text-3xl font-medium text-[var(--brand-primary)]">{product.name}</h1>
-          <p className="mt-3 text-xl font-semibold text-[var(--brand-primary)]">{formattedPrice}</p>
+          <h1 className="text-3xl font-medium text-black">{product.name}</h1>
+          <p className="mt-3 text-xl font-semibold text-black">{formattedPrice}</p>
 
           <div className="mt-6">
-            <p className="text-sm font-medium text-ink">Select Size</p>
+            <p className="text-sm font-medium text-black">Select Size</p>
             <div className="mt-3 flex flex-wrap gap-3">
               {product.sizes.map((size) => (
                 <button
@@ -76,8 +76,8 @@ export default function ProductDetailClient({ product }: Props) {
                   onClick={() => setSelectedSize(size)}
                   className={`rounded-lg border px-4 py-2 transition-all duration-300 ${
                     selectedSize === size
-                      ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-white"
-                      : "border-[var(--brand-secondary)]/40 hover:border-[var(--brand-primary)]"
+                      ? "border-[var(--bar-maroon)] bg-[var(--bar-maroon)] text-white"
+                      : "border-[var(--border-soft)] hover:border-[var(--bar-maroon)]"
                   }`}
                 >
                   {size}
@@ -90,27 +90,27 @@ export default function ProductDetailClient({ product }: Props) {
             Add to Cart
           </button>
 
-          <div className="mt-6 rounded-xl border border-[var(--brand-secondary)]/20 bg-[var(--brand-surface)] p-4 text-sm text-[var(--brand-primary)]">
+          <div className="mt-6 rounded-xl border border-[var(--border-soft)] bg-[var(--bg-main)] p-4 text-sm text-black">
             <p>Cash on Delivery available nationwide</p>
             <p className="mt-1">Free pick-up: DU • Shahbag • Mirpur 10</p>
             <p className="mt-1">7-Day easy exchange policy</p>
           </div>
 
-          <section className="mt-8 space-y-4 text-sm text-[var(--brand-primary)]/85">
+          <section className="mt-8 space-y-4 text-sm text-black/85">
             <div>
-              <h2 className="font-medium text-[var(--brand-primary)]">Why You’ll Love It</h2>
+              <h2 className="font-medium text-black">Why You’ll Love It</h2>
               <p className="mt-1">
                 A composed silhouette designed for effortless styling across everyday and occasion wear.
               </p>
             </div>
             <div>
-              <h2 className="font-medium text-[var(--brand-primary)]">Fabric &amp; Feel</h2>
+              <h2 className="font-medium text-black">Fabric &amp; Feel</h2>
               <p className="mt-1">
                 Thoughtfully selected materials with a soft, breathable finish for comfort throughout the day.
               </p>
             </div>
             <div>
-              <h2 className="font-medium text-[var(--brand-primary)]">Delivery &amp; Exchange</h2>
+              <h2 className="font-medium text-black">Delivery &amp; Exchange</h2>
               <p className="mt-1">
                 Nationwide delivery with an easy 7-day exchange process for a confident shopping experience.
               </p>
@@ -130,7 +130,7 @@ export default function ProductDetailClient({ product }: Props) {
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-full bg-[var(--brand-primary)] px-4 py-3 text-white shadow-lg transition hover:bg-[var(--brand-primary)]/90"
+          className="rounded-full bg-[var(--bar-maroon)] px-4 py-3 text-white shadow-lg transition hover:opacity-90"
         >
           WhatsApp
         </a>
