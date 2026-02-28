@@ -956,30 +956,27 @@ export default function HomePage({
         </div>
       ) : null}
       <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur">
-        <nav className="mx-auto w-full max-w-6xl px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-h-10 min-w-[104px] items-center justify-start">
+        <nav className="relative mx-auto h-16 w-full max-w-6xl px-4 md:h-20">
+          <div className="flex h-full items-center justify-center gap-3">
+            <div className="absolute left-4 flex min-h-10 min-w-[104px] items-center justify-start">
               <LanguageToggle language={language} setLanguage={setLanguage} />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center">
               <Image
                 src="/images/tacin-logo.svg"
                 alt="Tacin Arabi Collection logo"
-                width={32}
-                height={32}
-                className="h-8 w-8"
+                width={64}
+                height={64}
+                className="h-10 w-auto object-contain sm:h-12 md:h-14 lg:h-16"
                 priority
               />
-              <p className="text-center text-[15px] font-semibold leading-[1.4] text-neutral-900">
-                Tacin Arabi
-              </p>
             </div>
 
             <button
               type="button"
               onClick={() => setShowCart(true)}
-              className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
+              className="interactive-feedback absolute right-4 flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
               aria-label="Open cart"
             >
               <span className={clsx(cartBump && "animate-cart-bounce")}>
