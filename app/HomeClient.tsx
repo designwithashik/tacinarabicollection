@@ -955,7 +955,7 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-charcoal/95 backdrop-blur">
+      <header className="sticky top-0 z-50 w-full border-b border-[var(--border-soft)] bg-white/95 shadow-sm backdrop-blur">
         <nav className="relative mx-auto h-16 w-full max-w-6xl px-4 md:h-20">
           <div className="flex h-full items-center justify-center">
             <div className="absolute left-4 flex min-h-10 items-center justify-start">
@@ -998,11 +998,11 @@ export default function HomePage({
         <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
           <HeroCarousel initialSlides={initialCarouselSlides} />
         </div>
-        <div className="h-6 bg-gradient-to-b from-transparent to-base" />
+        <div className="h-6 bg-gradient-to-b from-transparent to-[var(--bg-soft)]" />
       </section>
 
       {announcement.active ? (
-        <section className="bg-charcoal py-2 text-white">
+        <section className="bg-[var(--bg-soft)] py-2 text-[var(--text-primary)]">
           <div
             ref={trustBarRef}
             className={clsx(
@@ -1012,7 +1012,7 @@ export default function HomePage({
                 : "translate-y-6 opacity-0",
             )}
           >
-            <div className="relative w-full overflow-hidden bg-charcoal text-white">
+            <div className="relative w-full overflow-hidden bg-[var(--bg-soft)] text-[var(--text-primary)]">
               <div
                 className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-[13px] font-medium tracking-wide"
                 style={
@@ -1028,14 +1028,14 @@ export default function HomePage({
                   {announcementText}
                 </span>
               </div>
-              <div className="pointer-events-none absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-charcoal to-transparent" />
-              <div className="pointer-events-none absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-charcoal to-transparent" />
+              <div className="pointer-events-none absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-[var(--bg-soft)] to-transparent" />
+              <div className="pointer-events-none absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-[var(--bg-soft)] to-transparent" />
             </div>
           </div>
         </section>
       ) : null}
 
-      <section className="bg-base">
+      <section className="bg-[var(--bg-soft)]">
         <AnimatedWrapper className="retail-section-enter" variant="section">
           <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
             <div className="flex gap-2 overflow-x-auto pb-1">

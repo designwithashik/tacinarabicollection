@@ -7,13 +7,13 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        base: "#5B1414",
-        ink: "#F8F5F2",
+        base: "#FFFFFF",
+        ink: "#1E1E1E",
         accent: "#C47A5A",
-        card: "#6A1A1A",
-        muted: "#D9C7C0",
-        charcoal: "#3E0E0E",
-        gold: "#E5A184",
+        card: "#FFFFFF",
+        muted: "#6E6E6E",
+        charcoal: "#5B1414",
+        gold: "#C47A5A",
       },
       fontFamily: {
         heading: ["var(--font-heading)", "serif"],
@@ -21,7 +21,7 @@ module.exports = {
         body: ["var(--font-body)", "sans-serif"],
       },
       boxShadow: {
-        soft: "0 10px 25px rgba(0, 0, 0, 0.25)",
+        soft: "0 10px 25px rgba(0, 0, 0, 0.08)",
       },
     },
   },
