@@ -96,17 +96,13 @@ export default function ProductDetailClient({ product }: Props) {
             <p className="mt-1">7-Day easy exchange policy</p>
           </div>
 
-          <section className="mt-8 space-y-4 text-sm text-black/85">
+          <section className="mt-8 space-y-4 text-sm text-black/90">
             <div>
-              <h2 className="font-medium text-black">Why You’ll Love It</h2>
-              <p className="mt-1">
-                A composed silhouette designed for effortless styling across everyday and occasion wear.
-              </p>
-            </div>
-            <div>
-              <h2 className="font-medium text-black">Fabric &amp; Feel</h2>
-              <p className="mt-1">
-                Thoughtfully selected materials with a soft, breathable finish for comfort throughout the day.
+              <h2 className="font-medium text-black">Product Details</h2>
+              <p className="mt-1 whitespace-pre-line">
+                {product.description?.trim()
+                  ? product.description
+                  : "Product description will be available soon."}
               </p>
             </div>
             <div>

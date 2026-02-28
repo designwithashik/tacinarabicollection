@@ -27,6 +27,7 @@ const defaultDraft: AdminProduct = {
   active: true,
   heroFeatured: false,
   stock: 0,
+  description: "",
   updatedAt: new Date().toISOString(),
 };
 
@@ -224,6 +225,7 @@ export default function AdminInventory() {
         image: imageUrl,
         imageUrl,
         category: draft.category,
+        description: draft.description ?? "",
         colors: draft.colors,
         sizes: draft.sizes,
         active: draft.active,
@@ -442,6 +444,19 @@ export default function AdminInventory() {
                 <option value="true">Yes</option>
               </select>
             </label>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-semibold">Description</label>
+            <textarea
+              rows={4}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              value={draft.description ?? ""}
+              onChange={(event) =>
+                setDraft((prev) => ({ ...prev, description: event.target.value }))
+              }
+              placeholder="Write product details that appear on the product page."
+            />
           </div>
 
           <div className="space-y-2">

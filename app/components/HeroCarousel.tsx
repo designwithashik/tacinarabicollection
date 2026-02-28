@@ -19,6 +19,7 @@ type CarouselProduct = {
   image?: string;
   imageUrl?: string | null;
   category?: string;
+  description?: string;
 };
 
 const SWIPE_THRESHOLD = 48;
@@ -398,7 +399,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
               ) : visibleProducts.length === 0 ? (
                 <p className="text-sm text-black/70">No products available for this filter.</p>
               ) : (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {visibleProducts.map((product) => (
                     <article
                       key={product.id}
@@ -413,15 +414,18 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
                           sizes="(max-width: 640px) 48vw, (max-width: 1024px) 30vw, 20vw"
                         />
                       </div>
-                      <div className="space-y-1.5 p-3">
-                        <p className="line-clamp-2 text-sm font-semibold text-black sm:text-base">{product.name}</p>
-                        <p className="text-xs font-medium text-black/80 sm:text-sm">৳{product.price.toLocaleString("en-BD")}</p>
+                      <div className="space-y-2 bg-white p-3 sm:p-3.5">
+                        <p className="line-clamp-2 text-sm font-bold leading-snug text-black sm:text-base">{product.name}</p>
+                        <p className="line-clamp-2 text-xs leading-relaxed text-black/75">
+                          {product.description?.trim() || "No description yet."}
+                        </p>
+                        <p className="text-xs font-semibold text-black sm:text-sm">৳{product.price.toLocaleString("en-BD")}</p>
                         <Link
                           href={`/products/${product.id}`}
                           className="inline-flex min-h-9 w-full items-center justify-center rounded-lg border border-black bg-black px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-black/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 sm:text-sm"
                           onClick={() => setIsProductModalOpen(false)}
                         >
-                          View details
+                          View product
                         </Link>
                       </div>
                     </article>

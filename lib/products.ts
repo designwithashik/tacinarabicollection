@@ -7,6 +7,7 @@ export type Product = {
   colors: string[];
   sizes: string[];
   stock?: number;
+  description?: string;
 };
 
 export const products: Product[] = [

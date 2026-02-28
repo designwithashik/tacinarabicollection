@@ -159,6 +159,7 @@ export type StorefrontProduct = {
   createdAt: string;
   heroFeatured?: boolean;
   stock?: number;
+  description?: string;
 };
 
 export const toStorefrontProduct = (item: InventoryProduct): StorefrontProduct => ({
@@ -175,4 +176,5 @@ export const toStorefrontProduct = (item: InventoryProduct): StorefrontProduct =
   createdAt: new Date(item.createdAt).toISOString(),
   heroFeatured: item.heroFeatured === true,
   stock: typeof item.stock === "number" ? item.stock : undefined,
+  description: item.description?.trim() || undefined,
 });
