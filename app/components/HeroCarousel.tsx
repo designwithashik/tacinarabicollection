@@ -161,20 +161,22 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
               className="absolute inset-0 h-full w-full object-cover"
               sizes="(max-width: 768px) 100vw, 1200px"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-white/35 to-white/20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white/75 via-white/50 to-white/30" />
 
             <div className="absolute inset-0 z-20 flex items-center justify-center md:justify-start">
-              <div className="flex max-w-xl flex-col gap-4 px-6 text-center text-black md:px-16 md:text-left">
-                <p className="text-xs uppercase tracking-[0.2em] text-black md:text-sm">
+              <div className="flex max-w-[min(90vw,44rem)] flex-col gap-3 px-5 text-center text-black sm:gap-4 sm:px-6 md:px-16 md:text-left">
+                <p className="text-[clamp(0.65rem,1.4vw,0.85rem)] font-medium uppercase tracking-[0.2em] text-black/90">
                   Featured Collection
                 </p>
-                <h2 className="text-3xl font-bold leading-tight md:text-5xl">
+                <h2 className="text-[clamp(1.75rem,5.6vw,3.5rem)] font-bold leading-[1.1] tracking-tight text-black">
                   {slide.title}
                 </h2>
-                <p className="text-base text-black md:text-lg">{slide.subtitle}</p>
+                <p className="max-w-[44ch] text-[clamp(0.95rem,2.15vw,1.25rem)] leading-[1.45] text-black/85 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden">
+                  {slide.subtitle}
+                </p>
                 <div>
                   <a
-                    className="interactive-feedback inline-flex items-center justify-center rounded-full bg-white px-7 py-3 font-semibold text-black shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
+                    className="interactive-feedback inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-black hover:text-white hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 active:translate-y-0 active:scale-[0.98] sm:min-h-12 sm:px-7 sm:py-3 sm:text-base"
                     href={slide.buttonLink || "/"}
                   >
                     {slide.buttonText || "Shop Now"}
@@ -191,7 +193,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <button
             type="button"
             aria-label="Previous slide"
-            className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-black/50"
+            className="absolute left-3 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/55 text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-1/2 hover:scale-105 hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/50"
             onClick={goPrev}
           >
             ‹
@@ -199,7 +201,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <button
             type="button"
             aria-label="Next slide"
-            className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-black/50"
+            className="absolute right-3 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/55 text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-1/2 hover:scale-105 hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/50"
             onClick={goNext}
           >
             ›
@@ -207,10 +209,14 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
         </>
       ) : null}
 
-      <div
-        className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2"
-        aria-label="Slide navigation"
-      >
+      <div className="absolute inset-x-0 bottom-4 z-30 flex flex-col items-center gap-2 px-3">
+        <div className="inline-flex max-w-[92vw] items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-[0.68rem] font-medium text-white shadow-md backdrop-blur-sm sm:text-xs">
+          <span className="rounded-full bg-white/20 px-2 py-0.5 font-semibold tracking-wide text-white">
+            {currentIndex + 1}/{slides.length}
+          </span>
+          <span className="max-w-[60vw] truncate">{slides[currentIndex]?.title}</span>
+        </div>
+        <div className="flex items-center gap-2" aria-label="Slide navigation">
         {slides.map((slide, index) => (
           <button
             key={slide.id}
@@ -218,14 +224,15 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
             aria-label={`Go to slide ${index + 1}`}
             aria-current={index === currentIndex}
             className={clsx(
-              "h-2.5 rounded-full transition-all duration-300",
+              "rounded-full border border-white/30 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/55",
               index === currentIndex
-                ? "w-8 bg-white shadow"
-                : "w-2.5 bg-white/60 hover:bg-white/90",
+                ? "h-2.5 w-8 bg-white shadow"
+                : "h-2.5 w-2.5 bg-white/70 hover:scale-110 hover:bg-white",
             )}
             onClick={() => goTo(index)}
           />
         ))}
+        </div>
       </div>
 
       <p className="sr-only" aria-live="polite">
