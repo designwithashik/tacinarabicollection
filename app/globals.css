@@ -4,12 +4,22 @@
 
 :root {
   color-scheme: light;
-  --brand-primary: #2e2a27;
-  --brand-secondary: #8c7a5b;
-  --brand-accent: #c6a96b;
-  --brand-bg: #f6f2eb;
-  --brand-surface: #ffffff;
-  --brand-muted: #6e6a64;
+  --bg-main: #ffffff;
+  --bg-soft: #f8f6f4;
+
+  --text-primary: #1e1e1e;
+  --text-muted: #6e6e6e;
+
+  --brand-primary: #5b1414;
+  --brand-hover: #741b1b;
+
+  --border-soft: #eaeaea;
+
+  --brand-secondary: #8f6262;
+  --brand-accent: var(--brand-hover);
+  --brand-bg: var(--bg-soft);
+  --brand-surface: var(--bg-main);
+  --brand-muted: var(--text-muted);
 
   --radius-soft: 12px;
   --transition-smooth: all 0.3s ease;
@@ -17,25 +27,26 @@
 
 body {
   @apply font-body;
-  background-color: var(--brand-bg);
-  color: var(--brand-primary);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
 }
 
 h1,
 h2,
 h3 {
+  color: var(--brand-primary);
   font-weight: 500;
   letter-spacing: 0.02em;
 }
 
 p {
-  color: var(--brand-muted);
+  color: var(--text-muted);
   line-height: 1.7;
 }
 
-.btn-primary {
+:root .btn-primary {
   background-color: var(--brand-primary);
-  color: var(--brand-surface);
+  color: #ffffff;
   padding: 12px 22px;
   border-radius: var(--radius-soft);
   font-weight: 500;
@@ -44,24 +55,24 @@ p {
   border: 1px solid var(--brand-primary);
 }
 
-.btn-primary:hover {
-  background-color: var(--brand-accent);
-  border-color: var(--brand-accent);
-  color: #1f1f1f;
+:root .btn-primary:hover {
+  background-color: var(--brand-hover);
+  border-color: var(--brand-hover);
+  color: #ffffff;
 }
 
-.btn-secondary {
+:root .btn-secondary {
   background-color: transparent;
-  border: 1px solid var(--brand-secondary);
+  border: 1px solid var(--brand-primary);
   color: var(--brand-primary);
   padding: 12px 22px;
   border-radius: var(--radius-soft);
   transition: var(--transition-smooth);
 }
 
-.btn-secondary:hover {
-  background-color: var(--brand-secondary);
-  color: white;
+:root .btn-secondary:hover {
+  background-color: rgba(91, 20, 20, 0.06);
+  color: var(--brand-primary);
 }
 
 /* Phase1.5: Stronger Text Hierarchy */
@@ -92,7 +103,7 @@ textarea:focus-visible,
 select:focus-visible,
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid #8a4b3c;
+  outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
 }
 
