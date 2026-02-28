@@ -14,7 +14,15 @@ import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import HeroCarousel from "./components/HeroCarousel";
 import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
-import { Facebook, Instagram, SlidersHorizontal } from "lucide-react";
+import {
+  Facebook,
+  HandCoins,
+  Instagram,
+  MessageCircleMore,
+  ShieldCheck,
+  SlidersHorizontal,
+  Truck,
+} from "lucide-react";
 import type { Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import { getSafeCartSubtotal, normalizeCartItem } from "../lib/cart";
@@ -1268,41 +1276,6 @@ export default function HomePage({
           )}
         </SectionLoader>
 
-        <section className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-neutral-200 bg-white p-4">
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-black">
-              🚚 Fast Nationwide Delivery
-            </p>
-            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
-              Reliable delivery across Bangladesh.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-black">
-              🔒 Secure Order Handling
-            </p>
-            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
-              Safe data and verified order process.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-black">
-              💬 WhatsApp Order Support
-            </p>
-            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
-              Quick support from real agents.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-black">
-              💵 Cash on Delivery
-            </p>
-            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
-              Pay after delivery confirmation.
-            </p>
-          </div>
-        </section>
-
         {recentlyViewed.length > 0 ? (
           <section className="mt-6">
             <div className="mb-3 flex items-center justify-between">
@@ -1349,6 +1322,60 @@ export default function HomePage({
             </div>
           </section>
         ) : null}
+      </section>
+
+      <section className="border-t border-[#ececec] bg-[#fcfcfc]">
+        <div className="mx-auto max-w-6xl px-4 py-6 md:px-10">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
+                <Truck className="h-4 w-4 text-black/70" aria-hidden="true" />
+              </div>
+              <p className="text-[13px] font-semibold leading-[1.5] text-black">
+                Fast Nationwide Delivery
+              </p>
+              <p className="text-[12px] leading-[1.4] text-black/70">
+                Reliable delivery across Bangladesh.
+              </p>
+            </article>
+
+            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
+                <ShieldCheck className="h-4 w-4 text-black/70" aria-hidden="true" />
+              </div>
+              <p className="text-[13px] font-semibold leading-[1.5] text-black">
+                Secure Order Handling
+              </p>
+              <p className="text-[12px] leading-[1.4] text-black/70">
+                Safe data and verified order process.
+              </p>
+            </article>
+
+            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
+                <MessageCircleMore className="h-4 w-4 text-black/70" aria-hidden="true" />
+              </div>
+              <p className="text-[13px] font-semibold leading-[1.5] text-black">
+                WhatsApp Order Support
+              </p>
+              <p className="text-[12px] leading-[1.4] text-black/70">
+                Quick support from real agents.
+              </p>
+            </article>
+
+            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
+                <HandCoins className="h-4 w-4 text-black/70" aria-hidden="true" />
+              </div>
+              <p className="text-[13px] font-semibold leading-[1.5] text-black">
+                Cash on Delivery
+              </p>
+              <p className="text-[12px] leading-[1.4] text-black/70">
+                Pay after delivery confirmation.
+              </p>
+            </article>
+          </div>
+        </div>
       </section>
 
       <footer className="border-t border-[#EAEAEA] bg-[#F8F6F4]">
