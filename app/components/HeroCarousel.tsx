@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { TouchEvent } from "react";
+import type { KeyboardEvent, TouchEvent } from "react";
+import Image from "next/image";
 import clsx from "clsx";
 
 import type { CarouselItem } from "@/lib/siteContent";
@@ -14,7 +15,9 @@ const SWIPE_THRESHOLD = 48;
 
 export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) {
   const [slides, setSlides] = useState<CarouselItem[]>(
-    initialSlides.filter((item) => item.active !== false).sort((a, b) => a.order - b.order)
+    initialSlides
+      .filter((item) => item.active !== false)
+      .sort((a, b) => a.order - b.order),
   );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -29,7 +32,11 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
         if (!res.ok) return;
         const data = (await res.json()) as CarouselItem[];
         if (Array.isArray(data)) {
-          setSlides(data.filter((item) => item.active !== false).sort((a, b) => a.order - b.order));
+          setSlides(
+            data
+              .filter((item) => item.active !== false)
+              .sort((a, b) => a.order - b.order),
+          );
         }
       } catch {
         setSlides([]);
@@ -102,14 +109,33 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
     touchCurrentX.current = null;
   };
 
+  const onCarouselKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      goPrev();
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      goNext();
+    }
+  };
+
   return (
     <div
       className="relative w-full overflow-hidden"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      onFocusCapture={() => setIsPaused(true)}
+      onBlurCapture={() => setIsPaused(false)}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      onKeyDown={onCarouselKeyDown}
+      tabIndex={0}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Featured collection"
     >
       <div
         className="flex will-change-transform"
@@ -122,25 +148,33 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <article
             key={slide.id}
             className={clsx(
-              "relative w-full flex-shrink-0 aspect-[16/9] md:aspect-[21/9] overflow-hidden transition-transform duration-[900ms]",
-              index === currentIndex ? "scale-100" : "scale-[0.985]"
+              "relative w-full flex-shrink-0 aspect-[16/9] overflow-hidden md:aspect-[21/9] transition-transform duration-[900ms]",
+              index === currentIndex ? "scale-100" : "scale-[0.985]",
             )}
+            aria-hidden={index !== currentIndex}
           >
-            <img
+            <Image
               src={slide.imageUrl || "/images/product-1.svg"}
               alt={slide.title || "Carousel slide"}
+              fill
+              priority={index === 0}
               className="absolute inset-0 h-full w-full object-cover"
+              sizes="(max-width: 768px) 100vw, 1200px"
             />
-            <div className="absolute inset-0 bg-white/35" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-white/35 to-white/20" />
 
             <div className="absolute inset-0 z-20 flex items-center justify-center md:justify-start">
-              <div className="flex flex-col gap-4 max-w-xl px-6 md:px-16 text-center md:text-left text-black">
-                <p className="text-xs md:text-sm uppercase tracking-[0.2em] text-black">Featured Collection</p>
-                <h2 className="text-3xl md:text-5xl font-bold leading-tight">{slide.title}</h2>
-                <p className="text-base md:text-lg text-black">{slide.subtitle}</p>
+              <div className="flex max-w-xl flex-col gap-4 px-6 text-center text-black md:px-16 md:text-left">
+                <p className="text-xs uppercase tracking-[0.2em] text-black md:text-sm">
+                  Featured Collection
+                </p>
+                <h2 className="text-3xl font-bold leading-tight md:text-5xl">
+                  {slide.title}
+                </h2>
+                <p className="text-base text-black md:text-lg">{slide.subtitle}</p>
                 <div>
                   <a
-                    className="inline-flex items-center justify-center px-7 py-3 rounded-full bg-white text-black font-semibold shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
+                    className="interactive-feedback inline-flex items-center justify-center rounded-full bg-white px-7 py-3 font-semibold text-black shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
                     href={slide.buttonLink || "/"}
                   >
                     {slide.buttonText || "Shop Now"}
@@ -157,7 +191,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <button
             type="button"
             aria-label="Previous slide"
-            className="absolute top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:bg-black/50 hover:scale-110 left-3"
+            className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-black/50"
             onClick={goPrev}
           >
             ‹
@@ -165,7 +199,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <button
             type="button"
             aria-label="Next slide"
-            className="absolute top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:bg-black/50 hover:scale-110 right-3"
+            className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-black/50"
             onClick={goNext}
           >
             ›
@@ -173,20 +207,30 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
         </>
       ) : null}
 
-      <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2">
+      <div
+        className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2"
+        aria-label="Slide navigation"
+      >
         {slides.map((slide, index) => (
           <button
-            key={`dot-${slide.id}`}
+            key={slide.id}
             type="button"
             aria-label={`Go to slide ${index + 1}`}
+            aria-current={index === currentIndex}
             className={clsx(
-              "transition-all duration-300 rounded-full",
-              index === currentIndex ? "w-6 h-2 bg-white" : "w-2 h-2 bg-white/50"
+              "h-2.5 rounded-full transition-all duration-300",
+              index === currentIndex
+                ? "w-8 bg-white shadow"
+                : "w-2.5 bg-white/60 hover:bg-white/90",
             )}
             onClick={() => goTo(index)}
           />
         ))}
       </div>
+
+      <p className="sr-only" aria-live="polite">
+        Slide {currentIndex + 1} of {slides.length}
+      </p>
     </div>
   );
 }

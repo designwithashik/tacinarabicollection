@@ -92,6 +92,7 @@ export default function ContentClient() {
   );
   const [filters, setFilters] = useState<FilterPanelItem[]>(defaultFilters);
   const [savingFilters, setSavingFilters] = useState(false);
+  const [uploadingSlideId, setUploadingSlideId] = useState<string | null>(null);
   const [toast, setToast] = useState<{
     tone: "success" | "error" | "info";
     message: string;
@@ -100,6 +101,15 @@ export default function ContentClient() {
   const deleteCandidate = useMemo(
     () => items.find((item) => item.id === deleteCandidateId) ?? null,
     [items, deleteCandidateId],
+  );
+
+  const hasImageKitConfig = useMemo(
+    () =>
+      Boolean(
+        process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT &&
+          process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY,
+      ),
+    [],
   );
 
   const notifySiteContentUpdated = () => {
@@ -235,6 +245,73 @@ export default function ContentClient() {
       setToast({ tone: "error", message: "Unable to save announcement." });
     } finally {
       setSavingAnnouncement(false);
+    }
+  };
+
+  const uploadSlideImage = async (slideId: string, file: File) => {
+    if (!hasImageKitConfig) {
+      setError(
+        "ImageKit env is missing. Set NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT and NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY.",
+      );
+      setToast({ tone: "error", message: "Image upload is not configured." });
+      return;
+    }
+
+    setUploadingSlideId(slideId);
+    setError(null);
+
+    try {
+      const authRes = await fetch("/api/auth/imagekit");
+      const authData = (await authRes.json()) as {
+        signature?: string;
+        expire?: number;
+        token?: string;
+      };
+
+      if (
+        !authRes.ok ||
+        !authData.signature ||
+        !authData.expire ||
+        !authData.token
+      ) {
+        throw new Error("Unable to authorize image upload.");
+      }
+
+      const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
+      if (!publicKey) throw new Error("ImageKit public key missing.");
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("fileName", file.name);
+      formData.append("publicKey", publicKey);
+      formData.append("signature", authData.signature);
+      formData.append("expire", String(authData.expire));
+      formData.append("token", authData.token);
+
+      const uploadRes = await fetch(
+        "https://upload.imagekit.io/api/v1/files/upload",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      if (!uploadRes.ok) throw new Error("Upload failed.");
+
+      const result = (await uploadRes.json()) as { url?: string };
+      if (!result.url) throw new Error("Upload URL missing.");
+
+      updateSlide(slideId, { imageUrl: result.url });
+      setToast({ tone: "success", message: "Slide image uploaded." });
+    } catch (uploadError) {
+      const message =
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Unable to upload slide image.";
+      setError(message);
+      setToast({ tone: "error", message: "Unable to upload slide image." });
+    } finally {
+      setUploadingSlideId(null);
     }
   };
 
@@ -493,6 +570,30 @@ export default function ContentClient() {
                       updateSlide(item.id, { imageUrl: e.target.value })
                     }
                   />
+                  <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+                    <label className="inline-flex cursor-pointer items-center rounded-full border border-black px-4 py-2 text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95">
+                      Upload image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (!file) return;
+                          void uploadSlideImage(item.id, file);
+                          event.currentTarget.value = "";
+                        }}
+                        disabled={uploadingSlideId === item.id}
+                      />
+                    </label>
+                    <span className="text-xs text-muted">
+                      {uploadingSlideId === item.id
+                        ? "Uploading image..."
+                        : hasImageKitConfig
+                          ? "Upload directly to ImageKit"
+                          : "ImageKit not configured"}
+                    </span>
+                  </div>
                   <input
                     className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
                     placeholder="Title"
