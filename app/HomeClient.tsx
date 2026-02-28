@@ -14,7 +14,15 @@ import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import HeroCarousel from "./components/HeroCarousel";
 import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
-import { Facebook, Instagram, SlidersHorizontal } from "lucide-react";
+import {
+  Facebook,
+  HandCoins,
+  Instagram,
+  MessageCircleMore,
+  ShieldCheck,
+  SlidersHorizontal,
+  Truck,
+} from "lucide-react";
 import type { Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import { getSafeCartSubtotal, normalizeCartItem } from "../lib/cart";
@@ -252,6 +260,7 @@ export default function HomePage({
   const [isLoading, setIsLoading] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [adminProducts, setAdminProducts] =
     useState<AdminProduct[]>(initialAdminProducts);
   const [cartActionLoading, setCartActionLoading] = useState<
@@ -268,6 +277,9 @@ export default function HomePage({
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
   const trustBarRef = useRef<HTMLDivElement | null>(null);
+  const progressTargetRef = useRef(0);
+  const progressCurrentRef = useRef(0);
+  const progressRafRef = useRef<number | null>(null);
   const isTrustBarInView = useInView(trustBarRef, { once: true, amount: 0.35 });
 
   const showToast = (nextToast: ToastState) => {
@@ -943,6 +955,62 @@ export default function HomePage({
     }
   }, [visibleFilters, activeFilter]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const easing = 0.18;
+    const epsilon = 0.001;
+
+    const getProgress = () => {
+      const scrollTop = window.scrollY || window.pageYOffset;
+      const scrollHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
+
+      if (scrollHeight <= 0) return 0;
+
+      return Math.min(Math.max(scrollTop / scrollHeight, 0), 1);
+    };
+
+    const animateProgress = () => {
+      const next =
+        progressCurrentRef.current +
+        (progressTargetRef.current - progressCurrentRef.current) * easing;
+
+      progressCurrentRef.current = next;
+      setScrollProgress(next);
+
+      if (Math.abs(progressTargetRef.current - next) > epsilon) {
+        progressRafRef.current = window.requestAnimationFrame(animateProgress);
+      } else {
+        progressCurrentRef.current = progressTargetRef.current;
+        setScrollProgress(progressTargetRef.current);
+        progressRafRef.current = null;
+      }
+    };
+
+    const queueProgressUpdate = () => {
+      progressTargetRef.current = getProgress();
+
+      if (progressRafRef.current === null) {
+        progressRafRef.current = window.requestAnimationFrame(animateProgress);
+      }
+    };
+
+    queueProgressUpdate();
+
+    window.addEventListener("scroll", queueProgressUpdate, { passive: true });
+    window.addEventListener("resize", queueProgressUpdate);
+
+    return () => {
+      window.removeEventListener("scroll", queueProgressUpdate);
+      window.removeEventListener("resize", queueProgressUpdate);
+
+      if (progressRafRef.current !== null) {
+        window.cancelAnimationFrame(progressRafRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div
       className={clsx(
@@ -955,7 +1023,13 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 w-full border-b border-[var(--border-soft)] border-t-[3px] border-t-[var(--bar-maroon)] bg-white">
+      <header className="sticky top-0 z-50 w-full border-b border-[var(--border-soft)] bg-white">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-[var(--bar-maroon-soft)]">
+          <div
+            className="h-full origin-left bg-[var(--bar-maroon)]"
+            style={{ transform: `scaleX(${scrollProgress})` }}
+          />
+        </div>
         <nav className="relative mx-auto h-16 w-full max-w-6xl px-4 md:h-20">
           <div className="flex h-full items-center justify-center gap-3">
             <div className="absolute left-4 flex min-h-10 min-w-[104px] items-center justify-start">
@@ -1202,41 +1276,6 @@ export default function HomePage({
           )}
         </SectionLoader>
 
-        <section className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-neutral-200 bg-white p-4">
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-black">
-              🚚 Fast Nationwide Delivery
-            </p>
-            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
-              Reliable delivery across Bangladesh.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-black">
-              🔒 Secure Order Handling
-            </p>
-            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
-              Safe data and verified order process.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-black">
-              💬 WhatsApp Order Support
-            </p>
-            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
-              Quick support from real agents.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[13px] font-semibold leading-[1.5] text-black">
-              💵 Cash on Delivery
-            </p>
-            <p className="text-[12px] leading-[1.4] text-[var(--text-secondary)]">
-              Pay after delivery confirmation.
-            </p>
-          </div>
-        </section>
-
         {recentlyViewed.length > 0 ? (
           <section className="mt-6">
             <div className="mb-3 flex items-center justify-between">
@@ -1283,6 +1322,60 @@ export default function HomePage({
             </div>
           </section>
         ) : null}
+      </section>
+
+      <section className="border-t border-[#ececec] bg-[#fcfcfc]">
+        <div className="mx-auto max-w-6xl px-4 py-6 md:px-10">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
+                <Truck className="h-4 w-4 text-black/70" aria-hidden="true" />
+              </div>
+              <p className="text-[13px] font-semibold leading-[1.5] text-black">
+                Fast Nationwide Delivery
+              </p>
+              <p className="text-[12px] leading-[1.4] text-black/70">
+                Reliable delivery across Bangladesh.
+              </p>
+            </article>
+
+            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
+                <ShieldCheck className="h-4 w-4 text-black/70" aria-hidden="true" />
+              </div>
+              <p className="text-[13px] font-semibold leading-[1.5] text-black">
+                Secure Order Handling
+              </p>
+              <p className="text-[12px] leading-[1.4] text-black/70">
+                Safe data and verified order process.
+              </p>
+            </article>
+
+            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
+                <MessageCircleMore className="h-4 w-4 text-black/70" aria-hidden="true" />
+              </div>
+              <p className="text-[13px] font-semibold leading-[1.5] text-black">
+                WhatsApp Order Support
+              </p>
+              <p className="text-[12px] leading-[1.4] text-black/70">
+                Quick support from real agents.
+              </p>
+            </article>
+
+            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
+              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
+                <HandCoins className="h-4 w-4 text-black/70" aria-hidden="true" />
+              </div>
+              <p className="text-[13px] font-semibold leading-[1.5] text-black">
+                Cash on Delivery
+              </p>
+              <p className="text-[12px] leading-[1.4] text-black/70">
+                Pay after delivery confirmation.
+              </p>
+            </article>
+          </div>
+        </div>
       </section>
 
       <footer className="border-t border-[#EAEAEA] bg-[#F8F6F4]">
