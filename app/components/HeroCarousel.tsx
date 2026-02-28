@@ -165,18 +165,18 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
 
             <div className="absolute inset-0 z-20 flex items-center justify-center md:justify-start">
               <div className="flex max-w-[min(90vw,44rem)] flex-col gap-3 px-5 text-center text-black sm:gap-4 sm:px-6 md:px-16 md:text-left">
-                <p className="text-[clamp(0.65rem,1.4vw,0.85rem)] font-medium uppercase tracking-[0.2em] text-black/90">
+                <p className="text-[clamp(0.58rem,1.2vw,0.8rem)] font-medium uppercase tracking-[0.2em] text-black/90">
                   Featured Collection
                 </p>
-                <h2 className="text-[clamp(1.75rem,5.6vw,3.5rem)] font-bold leading-[1.1] tracking-tight text-black">
+                <h2 className="text-[clamp(1.3rem,5vw,3.25rem)] font-bold leading-[1.1] tracking-tight text-black">
                   {slide.title}
                 </h2>
-                <p className="max-w-[44ch] text-[clamp(0.95rem,2.15vw,1.25rem)] leading-[1.45] text-black/85 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden">
+                <p className="max-w-[44ch] text-[clamp(0.82rem,1.9vw,1.1rem)] leading-[1.45] text-black/85 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden">
                   {slide.subtitle}
                 </p>
                 <div>
                   <a
-                    className="interactive-feedback inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-black hover:text-white hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 active:translate-y-0 active:scale-[0.98] sm:min-h-12 sm:px-7 sm:py-3 sm:text-base"
+                    className="interactive-feedback inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-black hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 active:translate-y-0 active:scale-[0.98] sm:min-h-12 sm:px-7 sm:py-3 sm:text-base"
                     href={slide.buttonLink || "/"}
                   >
                     {slide.buttonText || "Shop Now"}
@@ -209,14 +209,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
         </>
       ) : null}
 
-      <div className="absolute inset-x-0 bottom-4 z-30 flex flex-col items-center gap-2 px-3">
-        <div className="inline-flex max-w-[92vw] items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-[0.68rem] font-medium text-white shadow-md backdrop-blur-sm sm:text-xs">
-          <span className="rounded-full bg-white/20 px-2 py-0.5 font-semibold tracking-wide text-white">
-            {currentIndex + 1}/{slides.length}
-          </span>
-          <span className="max-w-[60vw] truncate">{slides[currentIndex]?.title}</span>
-        </div>
-        <div className="flex items-center gap-2" aria-label="Slide navigation">
+      <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2" aria-label="Slide navigation">
         {slides.map((slide, index) => (
           <button
             key={slide.id}
@@ -232,7 +225,6 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
             onClick={() => goTo(index)}
           />
         ))}
-        </div>
       </div>
 
       <p className="sr-only" aria-live="polite">
