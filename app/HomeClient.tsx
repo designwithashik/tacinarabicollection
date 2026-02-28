@@ -14,7 +14,7 @@ import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import HeroCarousel from "./components/HeroCarousel";
 import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
-import { Facebook, Instagram, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import type { Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import { getSafeCartSubtotal, normalizeCartItem } from "../lib/cart";
@@ -1285,69 +1285,78 @@ export default function HomePage({
         ) : null}
       </section>
 
-      <footer className="mt-16 border-t border-[var(--border-soft)] bg-[var(--bar-maroon-soft)]">
-        <div className="mx-auto grid max-w-6xl gap-8 space-y-0 px-4 pb-20 pt-14 md:grid-cols-3">
-          <div>
-            <h3 className="font-heading text-[20px] font-semibold">
-              Tacin Arabi Collection
-            </h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
-              Your trusted online fashion shop in Bangladesh for kurti, modest
-              wear, and ceramic lifestyle picks—powered by WhatsApp-first
-              ordering.
-            </p>
-            <p className="mt-3 text-[13px] font-semibold text-ink">
-              WhatsApp: +8801522119189
-            </p>
-          </div>
-          <div>
-            <h4 className="text-[13px] font-semibold text-ink">
-              Store Policies
-            </h4>
-            <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
-              <li>Cash on Delivery available nationwide</li>
-              <li>Delivery confirmation before dispatch</li>
-              <li>Support available 10am–10pm daily</li>
-            </ul>
-          </div>
-          <div className="mt-8 space-y-4">
-            <h3 className="text-[15px] font-semibold leading-[1.4] text-black">
-              Connect With Us
-            </h3>
-            <div className="flex items-center gap-4 text-black">
-              <a
-                href="https://www.facebook.com/tacinarabicollection"
-                target="_blank"
-                rel="noreferrer"
-                className="interactive-feedback hover:opacity-80"
-                aria-label="Facebook"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="https://www.instagram.com/tacinarabi"
-                target="_blank"
-                rel="noreferrer"
-                className="interactive-feedback hover:opacity-80"
-                aria-label="Instagram"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a
-                href="https://pin.it/5Om9YG8GY"
-                target="_blank"
-                rel="noreferrer"
-                className="interactive-feedback hover:opacity-80"
-                aria-label="Pinterest"
-              >
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-neutral-800 text-[11px] font-semibold leading-none">
-                  P
-                </span>
-              </a>
+      <footer className="border-t border-[#EAEAEA] bg-[#F8F6F4]">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-3">
+            <div className="flex flex-col items-start space-y-6">
+              <img
+                src="/images/tacin-logo.svg"
+                alt="Tacin Arabi Collection"
+                className="h-14 w-auto object-contain md:h-16"
+              />
+              <p className="max-w-sm text-sm leading-relaxed text-[#555555]">
+                Curated minimal fashion edits inspired by campus aesthetics.
+              </p>
             </div>
-            <div className="text-[14px] font-medium leading-[1.6] text-black">
-              📞 +8801522119189
+
+            <div className="space-y-6">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-black">
+                Explore
+              </h3>
+              <ul className="space-y-3 text-sm text-black">
+                <li>
+                  <a href="#product-grid" className="transition hover:opacity-70">
+                    Shop
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="transition hover:opacity-70">
+                    About
+                  </a>
+                </li>
+                <li>
+                  <a href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="transition hover:opacity-70">
+                    Contact
+                  </a>
+                </li>
+              </ul>
             </div>
+
+            <div className="space-y-6">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-black">
+                Connect
+              </h3>
+              <div className="flex flex-col space-y-3 text-sm text-black md:flex-row md:space-x-6 md:space-y-0">
+                <a
+                  href="https://www.facebook.com/tacinarabicollection"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition hover:opacity-70"
+                >
+                  Facebook
+                </a>
+                <a
+                  href="https://www.instagram.com/tacinarabi"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition hover:opacity-70"
+                >
+                  Instagram
+                </a>
+                <a
+                  href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition hover:opacity-70"
+                >
+                  WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-16 border-t border-[#EAEAEA] pt-6 text-center text-xs text-[#666666]">
+            © 2026 Tacin Arabi Collection. All rights reserved.
           </div>
         </div>
       </footer>
