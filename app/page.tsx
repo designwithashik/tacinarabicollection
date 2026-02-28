@@ -68,7 +68,7 @@ export default async function HomePage() {
     "@type": "Organization",
     name: "Tacin Arabi Collection",
     url: siteUrl,
-    logo: `${siteUrl}/icons/icon-192.svg`,
+    logo: `${siteUrl}/images/tacin-logo.svg`,
     sameAs: ["https://wa.me/8801522119189"],
     contactPoint: [
       {

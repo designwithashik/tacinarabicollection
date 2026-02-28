@@ -10,14 +10,16 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#8a4b3c",
     icons: [
       {
-        src: "/icons/icon-192.svg",
+        src: "/images/tacin-logo.svg",
         sizes: "192x192",
         type: "image/svg+xml",
+        purpose: "any",
       },
       {
-        src: "/icons/icon-512.svg",
+        src: "/images/tacin-logo.svg",
         sizes: "512x512",
         type: "image/svg+xml",
+        purpose: "any",
       },
     ],
   };
