@@ -18,6 +18,7 @@ export type InventoryProduct = {
   description?: string;
   whatsappNumber?: string;
   heroFeatured?: boolean;
+  stock?: number;
 };
 
 const isRecord = (value: unknown): value is InventoryRecord =>
@@ -41,6 +42,13 @@ const toInventoryProduct = (source: unknown): InventoryProduct | null => {
       : typeof source.price === "string"
         ? Number(source.price)
         : Number.NaN;
+
+  const stock =
+    typeof source.stock === "number"
+      ? source.stock
+      : typeof source.stock === "string"
+        ? Number(source.stock)
+        : undefined;
 
   if (!id || !name || !Number.isFinite(price)) return null;
 
@@ -70,6 +78,10 @@ const toInventoryProduct = (source: unknown): InventoryProduct | null => {
     whatsappNumber:
       typeof source.whatsappNumber === "string" ? source.whatsappNumber : undefined,
     heroFeatured: source.heroFeatured === true,
+    stock:
+      typeof stock === "number" && Number.isFinite(stock)
+        ? Math.max(0, Math.floor(stock))
+        : undefined,
   };
 };
 
@@ -146,6 +158,7 @@ export type StorefrontProduct = {
   updatedAt: string;
   createdAt: string;
   heroFeatured?: boolean;
+  stock?: number;
 };
 
 export const toStorefrontProduct = (item: InventoryProduct): StorefrontProduct => ({
@@ -161,4 +174,5 @@ export const toStorefrontProduct = (item: InventoryProduct): StorefrontProduct =
   updatedAt: new Date(item.updatedAt ?? item.createdAt).toISOString(),
   createdAt: new Date(item.createdAt).toISOString(),
   heroFeatured: item.heroFeatured === true,
+  stock: typeof item.stock === "number" ? item.stock : undefined,
 });

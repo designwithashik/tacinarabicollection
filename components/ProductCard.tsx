@@ -7,8 +7,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { Product } from "../lib/products";
 import QuickView from "./QuickView";
 
-const sizes = ["M", "L", "XL"] as const;
-
 type AddState = "idle" | "loading" | "success";
 
 type Props = {
@@ -83,7 +81,7 @@ export default function ProductCard({
   };
 
   const handleAddClick = () => {
-    if (!product.id) return;
+    if (!product.id || isOutOfStock) return;
     if (!selectedSize) {
       setShowSizeError(true);
       return;
@@ -93,7 +91,7 @@ export default function ProductCard({
   };
 
   const handleBuyClick = () => {
-    if (!product.id) return;
+    if (!product.id || isOutOfStock) return;
     if (!selectedSize) {
       setShowSizeError(true);
       return;
@@ -103,6 +101,11 @@ export default function ProductCard({
   };
 
   const stockCount = (product as Product & { stock?: number }).stock;
+  const isOutOfStock = typeof stockCount === "number" && stockCount <= 0;
+  const availableSizes =
+    Array.isArray(product.sizes) && product.sizes.length > 0
+      ? product.sizes
+      : ["M", "L", "XL"];
   const originalPrice =
     (product as Product & { originalPrice?: number; compareAtPrice?: number }).originalPrice ??
     (product as Product & { compareAtPrice?: number }).compareAtPrice;
@@ -186,14 +189,23 @@ export default function ProductCard({
         <div className="flex items-center justify-between gap-2">
           <p className="break-words text-[13px] leading-[1.5] text-neutral-700">{product.category}</p>
           {typeof stockCount === "number" && stockCount <= 5 ? (
-            <span className="whitespace-nowrap rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold text-amber-800">Low Stock</span>
+            <span
+              className={clsx(
+                "whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-semibold",
+                stockCount <= 0
+                  ? "bg-rose-100 text-rose-700"
+                  : "bg-amber-100 text-amber-800",
+              )}
+            >
+              {stockCount <= 0 ? "Out of Stock" : `Only ${stockCount} left`}
+            </span>
           ) : null}
         </div>
 
         <div>
           <p className="text-[13px] font-medium leading-[1.5] text-neutral-900">Select Size</p>
           <div className="flex gap-1 flex-wrap mt-1">
-            {sizes.map((size) => (
+            {availableSizes.map((size) => (
               <button
                 key={size}
                 type="button"
@@ -204,6 +216,7 @@ export default function ProductCard({
                     : "border-[var(--border-soft)] bg-white text-black",
                 )}
                 onClick={() => handleSizeChange(size)}
+                disabled={isOutOfStock}
               >
                 {size}
               </button>
@@ -220,6 +233,7 @@ export default function ProductCard({
               type="button"
               className="interactive-feedback text-[12px] font-semibold text-black"
               onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
+              disabled={isOutOfStock}
             >
               -
             </button>
@@ -228,6 +242,7 @@ export default function ProductCard({
               type="button"
               className="interactive-feedback text-[12px] font-semibold text-black"
               onClick={() => onQuantityChange(quantity + 1)}
+              disabled={isOutOfStock}
             >
               +
             </button>
@@ -236,9 +251,9 @@ export default function ProductCard({
             type="button"
             className="interactive-feedback flex-1 min-h-[40px] rounded-lg bg-[var(--bar-maroon)] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
             onClick={handleBuyClick}
-            disabled={isRouting}
+            disabled={isRouting || isOutOfStock}
           >
-            {isRouting ? "Redirecting..." : buyNowLabel}
+            {isOutOfStock ? "Out of stock" : isRouting ? "Redirecting..." : buyNowLabel}
           </button>
         </div>
 
@@ -251,9 +266,9 @@ export default function ProductCard({
             addState === "success" ? "border-emerald-600 bg-emerald-600 text-white" : "border-neutral-300 bg-white text-neutral-900",
           )}
           onClick={handleAddClick}
-          disabled={addState === "loading" || isRouting}
+          disabled={addState === "loading" || isRouting || isOutOfStock}
         >
-          {addState === "loading" ? "Loading..." : addLabel}
+          {isOutOfStock ? "Out of stock" : addState === "loading" ? "Loading..." : addLabel}
         </button>
       </div>
 
@@ -264,6 +279,7 @@ export default function ProductCard({
           onSizeChange={onSizeChange}
           onClose={() => setQuickViewProduct(null)}
           onAddToCart={(size) => {
+            if (isOutOfStock) return;
             handleSizeChange(size);
             onAddToCart();
           }}

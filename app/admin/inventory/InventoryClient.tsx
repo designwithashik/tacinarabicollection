@@ -26,6 +26,7 @@ const defaultDraft: AdminProduct = {
   sizes: ["M", "L", "XL"],
   active: true,
   heroFeatured: false,
+  stock: 0,
   updatedAt: new Date().toISOString(),
 };
 
@@ -219,6 +220,7 @@ export default function AdminInventory() {
       const payload: Partial<AdminProduct> & { imageUrl?: string } = {
         name: draft.name,
         price: Number(draft.price),
+        stock: Math.max(0, Math.floor(Number(draft.stock ?? 0))),
         image: imageUrl,
         imageUrl,
         category: draft.category,
@@ -374,6 +376,21 @@ export default function AdminInventory() {
               />
             </label>
             <label className="text-xs font-semibold">
+              Stock
+              <input
+                type="number"
+                min={0}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                value={draft.stock ?? 0}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    stock: Math.max(0, Math.floor(Number(event.target.value) || 0)),
+                  }))
+                }
+              />
+            </label>
+            <label className="text-xs font-semibold">
               Category
               <select
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
@@ -505,6 +522,7 @@ export default function AdminInventory() {
                   <tr>
                     <th className="px-4 py-3">Product</th>
                     <th className="px-4 py-3">Price</th>
+                    <th className="px-4 py-3">Stock</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
@@ -520,6 +538,9 @@ export default function AdminInventory() {
                         <p className="text-xs text-muted">{item.id}</p>
                       </td>
                       <td className="px-4 py-3 font-semibold">৳{item.price}</td>
+                      <td className="px-4 py-3 text-xs font-semibold text-muted">
+                        {typeof item.stock === "number" ? item.stock : 0}
+                      </td>
                       <td className="px-4 py-3 text-xs font-semibold text-muted">
                         {item.active ? "Active" : "Hidden"}{" "}
                         {item.heroFeatured ? "• Hero" : ""}

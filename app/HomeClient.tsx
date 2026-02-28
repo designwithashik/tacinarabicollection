@@ -201,8 +201,16 @@ const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
 
 const getStatusLabel = (index: number) =>
   statusLabels[index % statusLabels.length];
-const getStockLabel = (index: number) =>
-  index % 3 === 2 ? "Limited stock" : "In stock";
+const getStockLabel = (product: Product & { stock?: number }, index: number) => {
+  const stockCount = typeof product.stock === "number" ? product.stock : null;
+  if (stockCount !== null) {
+    if (stockCount <= 0) return "Out of stock";
+    if (stockCount <= 5) return "Limited stock";
+    return "In stock";
+  }
+
+  return index % 3 === 2 ? "Limited stock" : "In stock";
+};
 
 type HomeClientProps = {
   initialAdminProducts?: AdminProduct[];
@@ -1291,7 +1299,7 @@ export default function HomePage({
                     addState={addStates[product.id] ?? "idle"}
                     quantityFeedback={quantityFeedback[product.id]}
                     statusLabel={getStatusLabel(index)}
-                    stockLabel={getStockLabel(index)}
+                    stockLabel={getStockLabel(product, index)}
                     sizeErrorLabel={text.sizeError}
                     isRouting={isRouting}
                   />
@@ -1338,7 +1346,7 @@ export default function HomePage({
                     addState={addStates[product.id] ?? "idle"}
                     quantityFeedback={quantityFeedback[product.id]}
                     statusLabel={getStatusLabel(index)}
-                    stockLabel={getStockLabel(index)}
+                    stockLabel={getStockLabel(product, index)}
                     sizeErrorLabel={text.sizeError}
                     isRouting={isRouting}
                   />
