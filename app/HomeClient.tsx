@@ -741,13 +741,12 @@ export default function HomePage({
 
   const productSource = adminProducts.filter((item) => item.active !== false);
 
-  const announcementText = announcement.text.trim() || defaultAnnouncement.text;
-  const announcementDuration =
-    announcementText.length < 90
-      ? "15s"
-      : announcementText.length > 180
-        ? "28s"
-        : "20s";
+  const trustItems = [
+    { icon: "✅", text: "Premium Quality" },
+    { icon: "🚚", text: "Fast Delivery" },
+    { icon: "💬", text: "Easy WhatsApp Support" },
+    { icon: "🔒", text: "Secure Ordering" },
+  ];
 
   const categoryFilteredProducts = useMemo(() => {
     if (!activeFilter) return productSource;
@@ -946,7 +945,7 @@ export default function HomePage({
   return (
     <div
       className={clsx(
-        "min-h-[100dvh] bg-[#F7F6F4] pb-24 transition-opacity duration-300 ease-in-out",
+        "min-h-[100dvh] bg-base pb-24 text-ink transition-opacity duration-300 ease-in-out",
         isRouting && "opacity-80",
       )}
     >
@@ -955,42 +954,39 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur">
-        <nav className="mx-auto w-full max-w-6xl px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-h-10 min-w-[104px] items-center justify-start">
+      <header className="sticky top-0 z-50 w-full border-b border-[var(--border-soft)] bg-white/95 shadow-sm backdrop-blur">
+        <nav className="relative mx-auto h-16 w-full max-w-6xl px-4 md:h-20">
+          <div className="flex h-full items-center justify-center">
+            <div className="absolute left-4 flex min-h-10 items-center justify-start">
               <LanguageToggle language={language} setLanguage={setLanguage} />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center">
               <Image
                 src="/images/tacin-logo.svg"
                 alt="Tacin Arabi Collection logo"
-                width={32}
-                height={32}
-                className="h-8 w-8"
+                width={64}
+                height={64}
+                className="h-10 w-auto object-contain sm:h-12 md:h-14 lg:h-16"
                 priority
               />
-              <p className="text-center text-[15px] font-semibold leading-[1.4] text-neutral-900">
-                Tacin Arabi
-              </p>
             </div>
 
             <button
               type="button"
               onClick={() => setShowCart(true)}
-              className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
+              className="interactive-feedback absolute right-4 flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
               aria-label="Open cart"
             >
               <span className={clsx(cartBump && "animate-cart-bounce")}>
                 🛍️
               </span>
               {hasMounted && cartItems.length > 0 ? (
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] text-white">
                   {cartItems.length}
                 </span>
               ) : !hasMounted ? (
-                <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-[#eadad0]" />
+                <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-accent/40" />
               ) : null}
             </button>
           </div>
@@ -1001,44 +997,42 @@ export default function HomePage({
         <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
           <HeroCarousel initialSlides={initialCarouselSlides} />
         </div>
-        <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
+        <div className="h-6 bg-gradient-to-b from-transparent to-[var(--bg-soft)]" />
       </section>
 
       {announcement.active ? (
-        <section className="bg-black py-2 text-white">
+        <section className="w-full border-y border-[#EAEAEA] bg-[#F8F6F4]">
           <div
             ref={trustBarRef}
             className={clsx(
-              "mx-auto max-w-6xl px-4 transition-all duration-700 ease-out",
+              "mx-auto max-w-6xl px-4 py-6 transition-all duration-700 ease-out",
               isTrustBarInView
                 ? "translate-y-0 opacity-100"
                 : "translate-y-6 opacity-0",
             )}
           >
-            <div className="relative overflow-hidden w-full bg-black text-white">
-              <div
-                className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-[13px] font-medium tracking-wide"
-                style={
-                  { "--announcement-duration": announcementDuration } as Record<
-                    string,
-                    string
-                  >
-                }
-              >
-                <span className="px-8 flex-none">{announcementText}</span>
-                <span className="px-8 flex-none">{announcementText}</span>
-                <span className="px-8 flex-none" aria-hidden="true">
-                  {announcementText}
-                </span>
-              </div>
-              <div className="absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-black to-transparent pointer-events-none" />
-              <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-black to-transparent pointer-events-none" />
+            <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
+              {trustItems.map((item) => (
+                <div
+                  key={item.text}
+                  className="flex flex-col items-center space-y-2 transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
+                    <span className="text-lg text-[var(--brand-primary)]">
+                      {item.icon}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-[#1E1E1E] md:text-base">
+                    {item.text}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
       ) : null}
 
-      <section className="bg-[#F7F6F4]">
+      <section className="bg-[var(--bg-soft)]">
         <AnimatedWrapper className="retail-section-enter" variant="section">
           <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
             <div className="flex gap-2 overflow-x-auto pb-1">
