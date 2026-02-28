@@ -201,8 +201,16 @@ const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
 
 const getStatusLabel = (index: number) =>
   statusLabels[index % statusLabels.length];
-const getStockLabel = (index: number) =>
-  index % 3 === 2 ? "Limited stock" : "In stock";
+const getStockLabel = (product: Product & { stock?: number }, index: number) => {
+  const stockCount = typeof product.stock === "number" ? product.stock : null;
+  if (stockCount !== null) {
+    if (stockCount <= 0) return "Out of stock";
+    if (stockCount <= 5) return "Limited stock";
+    return "In stock";
+  }
+
+  return index % 3 === 2 ? "Limited stock" : "In stock";
+};
 
 type HomeClientProps = {
   initialAdminProducts?: AdminProduct[];
@@ -296,6 +304,15 @@ export default function HomePage({
         behavior: "smooth",
         block: "start",
       });
+    });
+  };
+
+  const scrollToTop = () => {
+    if (typeof window === "undefined") return;
+
+    window.scrollTo({
+      top: 0,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
     });
   };
 
@@ -1023,20 +1040,33 @@ export default function HomePage({
           ⚠️ You are offline — checkout is disabled.
         </div>
       ) : null}
-      <header className="sticky top-0 z-50 w-full border-b border-[var(--border-soft)] bg-white">
+      <header
+        className={clsx(
+          "sticky top-0 z-50 w-full border-b border-[var(--border-soft)] bg-white/90 backdrop-blur-md transition-shadow duration-300",
+          scrollProgress > 0.01 && "shadow-[0_8px_24px_rgba(38,30,22,0.08)]",
+        )}
+      >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-[var(--bar-maroon-soft)]">
           <div
             className="h-full origin-left bg-[var(--bar-maroon)]"
             style={{ transform: `scaleX(${scrollProgress})` }}
           />
         </div>
-        <nav className="relative mx-auto h-16 w-full max-w-6xl px-4 md:h-20">
+        <nav
+          className="relative mx-auto h-16 w-full max-w-6xl px-4 md:h-20"
+          aria-label="Primary"
+        >
           <div className="flex h-full items-center justify-center gap-3">
             <div className="absolute left-4 flex min-h-10 min-w-[104px] items-center justify-start">
               <LanguageToggle language={language} setLanguage={setLanguage} />
             </div>
 
-            <div className="flex items-center justify-center">
+            <button
+              type="button"
+              onClick={scrollToTop}
+              className="interactive-feedback flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bar-maroon)] focus-visible:ring-offset-2"
+              aria-label="Scroll to top"
+            >
               <Image
                 src="/images/tacin-logo.svg"
                 alt="Tacin Arabi Collection logo"
@@ -1045,19 +1075,22 @@ export default function HomePage({
                 className="h-10 w-auto object-contain sm:h-12 md:h-14 lg:h-16"
                 priority
               />
-            </div>
+            </button>
 
             <button
               type="button"
               onClick={() => setShowCart(true)}
-              className="interactive-feedback absolute right-4 flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
+              className="interactive-feedback absolute right-4 flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bar-maroon)] focus-visible:ring-offset-2"
               aria-label="Open cart"
             >
               <span className={clsx(cartBump && "animate-cart-bounce")}>
                 🛍️
               </span>
               {hasMounted && cartItems.length > 0 ? (
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white">
+                <span
+                  className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[10px] text-white"
+                  aria-live="polite"
+                >
                   {cartItems.length}
                 </span>
               ) : !hasMounted ? (
@@ -1266,7 +1299,7 @@ export default function HomePage({
                     addState={addStates[product.id] ?? "idle"}
                     quantityFeedback={quantityFeedback[product.id]}
                     statusLabel={getStatusLabel(index)}
-                    stockLabel={getStockLabel(index)}
+                    stockLabel={getStockLabel(product, index)}
                     sizeErrorLabel={text.sizeError}
                     isRouting={isRouting}
                   />
@@ -1313,7 +1346,7 @@ export default function HomePage({
                     addState={addStates[product.id] ?? "idle"}
                     quantityFeedback={quantityFeedback[product.id]}
                     statusLabel={getStatusLabel(index)}
-                    stockLabel={getStockLabel(index)}
+                    stockLabel={getStockLabel(product, index)}
                     sizeErrorLabel={text.sizeError}
                     isRouting={isRouting}
                   />

@@ -6,6 +6,7 @@ export type Product = {
   category: "Clothing" | "Ceramic";
   colors: string[];
   sizes: string[];
+  stock?: number;
 };
 
 export const products: Product[] = [
