@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
 import Image from "next/image";
 import clsx from "clsx";
 import ProductCard from "../components/ProductCard";
@@ -14,7 +14,7 @@ import { AnimatedWrapper } from "../components/AnimatedWrapper";
 import HeroCarousel from "./components/HeroCarousel";
 import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
-import { Facebook, Instagram, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import type { Product } from "../lib/products";
 import type { CartItem } from "../lib/cart";
 import { getSafeCartSubtotal, normalizeCartItem } from "../lib/cart";
@@ -80,6 +80,13 @@ const storageKeys = {
 };
 
 const statusLabels = ["New", "Popular", "Low Stock"] as const;
+
+const trustItems = [
+  { icon: "🚚", text: "Nationwide delivery" },
+  { icon: "✅", text: "Quality checked picks" },
+  { icon: "💬", text: "WhatsApp-first support" },
+  { icon: "🔒", text: "Secure confirmation" },
+] as const;
 
 const defaultAnnouncement: AnnouncementContent = {
   text: "Free nationwide delivery updates • WhatsApp-first support • Elegant modest fashion curated for Bangladesh",
@@ -267,8 +274,6 @@ export default function HomePage({
   const cartHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
-  const trustBarRef = useRef<HTMLDivElement | null>(null);
-  const isTrustBarInView = useInView(trustBarRef, { once: true, amount: 0.35 });
 
   const showToast = (nextToast: ToastState) => {
     setToast(nextToast);
@@ -741,14 +746,6 @@ export default function HomePage({
 
   const productSource = adminProducts.filter((item) => item.active !== false);
 
-  const announcementText = announcement.text.trim() || defaultAnnouncement.text;
-  const announcementDuration =
-    announcementText.length < 90
-      ? "15s"
-      : announcementText.length > 180
-        ? "28s"
-        : "20s";
-
   const categoryFilteredProducts = useMemo(() => {
     if (!activeFilter) return productSource;
     return productSource.filter((product) => product.category === activeFilter);
@@ -946,7 +943,7 @@ export default function HomePage({
   return (
     <div
       className={clsx(
-        "min-h-[100dvh] bg-[#F7F6F4] pb-24 transition-opacity duration-300 ease-in-out",
+        "min-h-[100dvh] bg-[var(--bg-main)] pb-24 transition-opacity duration-300 ease-in-out",
         isRouting && "opacity-80",
       )}
     >
@@ -956,30 +953,27 @@ export default function HomePage({
         </div>
       ) : null}
       <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur">
-        <nav className="mx-auto w-full max-w-6xl px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-h-10 min-w-[104px] items-center justify-start">
+        <nav className="relative mx-auto h-16 w-full max-w-6xl px-4 md:h-20">
+          <div className="flex h-full items-center justify-center gap-3">
+            <div className="absolute left-4 flex min-h-10 min-w-[104px] items-center justify-start">
               <LanguageToggle language={language} setLanguage={setLanguage} />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center">
               <Image
                 src="/images/tacin-logo.svg"
                 alt="Tacin Arabi Collection logo"
-                width={32}
-                height={32}
-                className="h-8 w-8"
+                width={64}
+                height={64}
+                className="h-10 w-auto object-contain sm:h-12 md:h-14 lg:h-16"
                 priority
               />
-              <p className="text-center text-[15px] font-semibold leading-[1.4] text-neutral-900">
-                Tacin Arabi
-              </p>
             </div>
 
             <button
               type="button"
               onClick={() => setShowCart(true)}
-              className="interactive-feedback relative flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
+              className="interactive-feedback absolute right-4 flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink"
               aria-label="Open cart"
             >
               <span className={clsx(cartBump && "animate-cart-bounce")}>
@@ -1001,44 +995,29 @@ export default function HomePage({
         <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
           <HeroCarousel initialSlides={initialCarouselSlides} />
         </div>
-        <div className="h-6 bg-gradient-to-b from-transparent to-[#F7F6F4]" />
+        <div className="h-6 bg-gradient-to-b from-transparent to-[var(--bg-soft)]" />
       </section>
 
       {announcement.active ? (
-        <section className="bg-black py-2 text-white">
-          <div
-            ref={trustBarRef}
-            className={clsx(
-              "mx-auto max-w-6xl px-4 transition-all duration-700 ease-out",
-              isTrustBarInView
-                ? "translate-y-0 opacity-100"
-                : "translate-y-6 opacity-0",
-            )}
-          >
-            <div className="relative overflow-hidden w-full bg-black text-white">
-              <div
-                className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-[13px] font-medium tracking-wide"
-                style={
-                  { "--announcement-duration": announcementDuration } as Record<
-                    string,
-                    string
-                  >
-                }
-              >
-                <span className="px-8 flex-none">{announcementText}</span>
-                <span className="px-8 flex-none">{announcementText}</span>
-                <span className="px-8 flex-none" aria-hidden="true">
-                  {announcementText}
-                </span>
-              </div>
-              <div className="absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-black to-transparent pointer-events-none" />
-              <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-black to-transparent pointer-events-none" />
+        <div className="w-full border-y border-[var(--border-soft)] bg-[var(--bg-soft)]">
+          <div className="mx-auto max-w-6xl px-4 py-10">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-8 text-center md:grid-cols-4">
+              {trustItems.map((item) => (
+                <div key={item.text} className="flex flex-col items-center space-y-3">
+                  <span className="text-xl text-[var(--brand-primary)] md:text-2xl">
+                    {item.icon}
+                  </span>
+                  <p className="text-sm font-medium leading-snug text-[var(--text-primary)] md:text-base">
+                    {item.text}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
-        </section>
+        </div>
       ) : null}
 
-      <section className="bg-[#F7F6F4]">
+      <section className="bg-[var(--bg-soft)]">
         <AnimatedWrapper className="retail-section-enter" variant="section">
           <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -1288,69 +1267,68 @@ export default function HomePage({
         ) : null}
       </section>
 
-      <footer className="mt-16 border-t border-neutral-200 bg-[#F3F2F0]">
-        <div className="mx-auto grid max-w-6xl gap-8 space-y-0 px-4 pb-20 pt-14 md:grid-cols-3">
-          <div>
-            <h3 className="font-heading text-[20px] font-semibold">
-              Tacin Arabi Collection
-            </h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-neutral-600">
-              Your trusted online fashion shop in Bangladesh for kurti, modest
-              wear, and ceramic lifestyle picks—powered by WhatsApp-first
-              ordering.
-            </p>
-            <p className="mt-3 text-[13px] font-semibold text-ink">
-              WhatsApp: +8801522119189
-            </p>
-          </div>
-          <div>
-            <h4 className="text-[13px] font-semibold text-ink">
-              Store Policies
-            </h4>
-            <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-neutral-600">
-              <li>Cash on Delivery available nationwide</li>
-              <li>Delivery confirmation before dispatch</li>
-              <li>Support available 10am–10pm daily</li>
-            </ul>
-          </div>
-          <div className="mt-8 space-y-4">
-            <h3 className="text-[15px] font-semibold leading-[1.4] text-neutral-900">
-              Connect With Us
-            </h3>
-            <div className="flex items-center gap-4 text-neutral-800">
-              <a
-                href="https://www.facebook.com/tacinarabicollection"
-                target="_blank"
-                rel="noreferrer"
-                className="interactive-feedback hover:opacity-80"
-                aria-label="Facebook"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="https://www.instagram.com/tacinarabi"
-                target="_blank"
-                rel="noreferrer"
-                className="interactive-feedback hover:opacity-80"
-                aria-label="Instagram"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a
-                href="https://pin.it/5Om9YG8GY"
-                target="_blank"
-                rel="noreferrer"
-                className="interactive-feedback hover:opacity-80"
-                aria-label="Pinterest"
-              >
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-neutral-800 text-[11px] font-semibold leading-none">
-                  P
-                </span>
-              </a>
+      <footer className="mt-16 border-t border-[var(--border-soft)] bg-[var(--bg-soft)]">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <div className="grid gap-12 md:grid-cols-3">
+            <div className="space-y-6">
+              <Image
+                src="/images/tacin-logo.svg"
+                alt="Tacin Arabi Collection"
+                width={64}
+                height={64}
+                className="h-16 w-auto"
+              />
+              <p className="max-w-xs text-sm leading-relaxed text-[var(--text-muted)]">
+                Curated minimal fashion edits inspired by campus aesthetics.
+              </p>
             </div>
-            <div className="text-[14px] font-medium leading-[1.6] text-neutral-800">
-              📞 +8801522119189
+
+            <div className="space-y-6">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--brand-primary)]">
+                Explore
+              </h3>
+              <ul className="space-y-3 text-sm text-[var(--text-primary)]">
+                <li className="transition hover:text-[var(--brand-primary)]">Shop</li>
+                <li className="transition hover:text-[var(--brand-primary)]">About</li>
+                <li className="transition hover:text-[var(--brand-primary)]">Contact</li>
+              </ul>
             </div>
+
+            <div className="space-y-6">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--brand-primary)]">
+                Connect
+              </h3>
+              <div className="flex flex-wrap gap-6 text-sm text-[var(--text-primary)]">
+                <a
+                  href="https://www.facebook.com/tacinarabicollection"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="interactive-feedback transition hover:text-[var(--brand-primary)]"
+                >
+                  Facebook
+                </a>
+                <a
+                  href="https://www.instagram.com/tacinarabi"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="interactive-feedback transition hover:text-[var(--brand-primary)]"
+                >
+                  Instagram
+                </a>
+                <a
+                  href={`https://wa.me/${whatsappNumber.replace(/[^\d]/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="interactive-feedback transition hover:text-[var(--brand-primary)]"
+                >
+                  WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-16 border-t border-[var(--border-soft)] pt-6 text-center text-xs text-[var(--text-muted)]">
+            © 2026 Tacin Arabi Collection. All rights reserved.
           </div>
         </div>
       </footer>
