@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import clsx from "clsx";
 import type { Product } from "../lib/products";
 
@@ -47,14 +48,14 @@ export default function QuickView({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm sm:px-6"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label={`Quick view for ${product.name}`}
     >
       <div
-        className="animate-modalFade relative mx-6 w-full max-w-3xl rounded-2xl bg-white p-8"
+        className="animate-modalFade relative w-full max-w-3xl rounded-2xl bg-white p-5 sm:p-8"
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -65,7 +66,7 @@ export default function QuickView({
           Close
         </button>
 
-        <div className="grid gap-8 md:grid-cols-2">
+        <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
           <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-[var(--bg-main)]">
             <Image src={product.image} alt={product.name} fill className="object-cover" />
           </div>
@@ -86,7 +87,7 @@ export default function QuickView({
                       "min-h-[40px] rounded-full border px-4 py-1 text-sm font-medium transition",
                       localSize === size
                         ? "border-[var(--bar-maroon)] bg-[var(--bar-maroon)] text-white"
-                        : "border-[var(--border-soft)] bg-white text-black"
+                        : "border-[var(--border-soft)] bg-white text-black",
                     )}
                   >
                     {size}
@@ -95,7 +96,7 @@ export default function QuickView({
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-6 flex flex-col gap-2.5">
               <button
                 type="button"
                 className="btn-primary w-full"
@@ -108,6 +109,13 @@ export default function QuickView({
               >
                 {addToCartLabel}
               </button>
+              <Link
+                href={`/products/${encodeURIComponent(product.id)}`}
+                onClick={onClose}
+                className="inline-flex min-h-10 w-full items-center justify-center rounded-full border border-black px-4 py-2 text-sm font-semibold text-black transition hover:bg-black hover:text-white"
+              >
+                View full product
+              </Link>
             </div>
           </div>
         </div>
