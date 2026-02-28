@@ -57,8 +57,14 @@ export const metadata: Metadata = {
     creator: "@tacinarabi",
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/icons/icon-192.svg",
+    icon: [{ url: "/images/tacin-logo.svg", type: "image/svg+xml" }],
+    shortcut: "/images/tacin-logo.svg",
+    apple: [{ url: "/images/tacin-logo.svg", type: "image/svg+xml" }],
+  },
+  appleWebApp: {
+    title: "Tacin Arabi Collection",
+    capable: true,
+    statusBarStyle: "default",
   },
   other: {
     "mobile-web-app-capable": "yes",
