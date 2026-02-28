@@ -415,7 +415,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
                         />
                       </div>
                       <div className="space-y-2 bg-white p-3 sm:p-3.5">
-                        <p className="line-clamp-2 text-sm font-bold leading-snug text-black sm:text-base">{product.name}</p>
+                        <h4 className="line-clamp-2 text-sm font-extrabold leading-snug !text-black sm:text-base" style={{ color: "#000" }}>{product.name}</h4>
                         <p className="line-clamp-2 text-xs leading-relaxed text-black/75">
                           {product.description?.trim() || "No description yet."}
                         </p>
