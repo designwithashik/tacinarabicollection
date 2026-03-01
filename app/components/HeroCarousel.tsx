@@ -193,7 +193,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <button
             type="button"
             aria-label="Previous slide"
-            className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-black/50"
+            className="absolute left-3 top-1/2 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-black/50 sm:flex sm:h-9 sm:w-9 md:h-11 md:w-11"
             onClick={goPrev}
           >
             ‹
@@ -201,7 +201,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <button
             type="button"
             aria-label="Next slide"
-            className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-black/50"
+            className="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-black/50 sm:flex sm:h-9 sm:w-9 md:h-11 md:w-11"
             onClick={goNext}
           >
             ›
