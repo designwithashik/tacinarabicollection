@@ -163,18 +163,20 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
             />
             <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-white/35 to-white/20" />
 
-            <div className="absolute inset-0 z-20 flex items-center justify-center md:justify-start">
-              <div className="flex max-w-xl flex-col gap-4 px-6 text-center text-black md:px-16 md:text-left">
-                <p className="text-xs uppercase tracking-[0.2em] text-black md:text-sm">
+            <div className="absolute inset-0 z-20 flex items-center justify-center px-3 sm:px-5 md:justify-start md:px-0">
+              <div className="flex w-full max-w-xl flex-col gap-2.5 rounded-2xl bg-white/40 px-4 py-4 text-center text-black shadow-lg backdrop-blur-[2px] sm:gap-3 sm:px-6 sm:py-5 md:ml-16 md:w-auto md:gap-4 md:bg-transparent md:p-0 md:text-left md:shadow-none md:backdrop-blur-0">
+                <p className="text-[10px] uppercase tracking-[0.15em] text-black/90 sm:text-xs md:text-sm md:tracking-[0.2em]">
                   Featured Collection
                 </p>
-                <h2 className="text-3xl font-bold leading-tight md:text-5xl">
+                <h2 className="text-2xl font-bold leading-tight sm:text-3xl md:text-5xl">
                   {slide.title}
                 </h2>
-                <p className="text-base text-black md:text-lg">{slide.subtitle}</p>
+                <p className="line-clamp-3 text-sm leading-relaxed text-black/90 sm:text-base md:line-clamp-none md:text-lg">
+                  {slide.subtitle}
+                </p>
                 <div>
                   <a
-                    className="interactive-feedback inline-flex items-center justify-center rounded-full bg-white px-7 py-3 font-semibold text-black shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
+                    className="interactive-feedback inline-flex min-h-10 items-center justify-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-black shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95 sm:px-6 sm:text-base md:px-7 md:py-3"
                     href={slide.buttonLink || "/"}
                   >
                     {slide.buttonText || "Shop Now"}
