@@ -165,9 +165,6 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
 
             <div className="absolute inset-0 z-20 flex items-center justify-center md:justify-start">
               <div className="flex max-w-xl flex-col gap-2 px-4 py-6 text-center text-black sm:gap-3 sm:px-6 sm:py-8 md:gap-4 md:px-16 md:py-0 md:text-left">
-                <p className="text-[clamp(0.62rem,1.9vw,0.8rem)] uppercase tracking-[0.2em] text-black">
-                  Featured Collection
-                </p>
                 <h2 className="line-clamp-3 break-words text-[clamp(1.1rem,5.8vw,3rem)] font-bold leading-[1.1]">
                   {slide.title}
                 </h2>
