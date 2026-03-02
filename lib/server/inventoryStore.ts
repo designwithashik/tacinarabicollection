@@ -151,7 +151,7 @@ export type StorefrontProduct = {
   price: number;
   image: string;
   imageUrl: string | null;
-  category: "Clothing" | "Ceramic";
+  category: string;
   colors: string[];
   sizes: string[];
   active: boolean;
@@ -167,8 +167,8 @@ export const toStorefrontProduct = (item: InventoryProduct): StorefrontProduct =
   price: item.price,
   image: item.imageUrl ?? "",
   imageUrl: item.imageUrl,
-  category: item.category === "Ceramic" ? "Ceramic" : "Clothing",
-  colors: item.colors?.length ? item.colors : ["Beige"],
+  category: typeof item.category === "string" && item.category.trim() ? item.category.trim() : "Clothing",
+  colors: item.colors?.length ? item.colors : [],
   sizes: item.sizes?.length ? item.sizes : ["M", "L", "XL"],
   active: item.active,
   updatedAt: new Date(item.updatedAt ?? item.createdAt).toISOString(),

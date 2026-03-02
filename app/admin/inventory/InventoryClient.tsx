@@ -22,7 +22,7 @@ const defaultDraft: AdminProduct = {
   price: 0,
   image: "",
   category: "Clothing",
-  colors: ["Beige"],
+  colors: [],
   sizes: ["M", "L", "XL"],
   active: true,
   heroFeatured: false,
@@ -313,7 +313,9 @@ export default function AdminInventory() {
 
   const categoryOptions =
     filterOptions.length > 0
-      ? filterOptions.map((item) => ({ value: item.value, label: item.label }))
+      ? filterOptions
+          .filter((item) => item.value.toLowerCase() !== "all")
+          .map((item) => ({ value: item.value, label: item.label }))
       : derivedCategoryOptions.map((category) => ({
           value: category,
           label: category,
@@ -392,23 +394,44 @@ export default function AdminInventory() {
             </label>
             <label className="text-xs font-semibold">
               Category
-              <select
+              <input
+                list="inventory-category-options"
                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
                 value={draft.category}
+                placeholder="Clothing"
                 onChange={(event) =>
                   setDraft((prev) => ({
                     ...prev,
                     category: event.target.value as AdminProduct["category"],
                   }))
                 }
-              >
-                <option value="">Select Category</option>
+              />
+              <datalist id="inventory-category-options">
                 {categoryOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
-              </select>
+              </datalist>
+            </label>
+            <label className="text-xs font-semibold md:col-span-2">
+              Colors (comma separated)
+              <input
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                placeholder="Beige, Olive, Maroon"
+                value={draft.colors.join(", ")}
+                onChange={(event) => {
+                  const parsedColors = event.target.value
+                    .split(",")
+                    .map((color) => color.trim())
+                    .filter(Boolean);
+
+                  setDraft((prev) => ({
+                    ...prev,
+                    colors: parsedColors,
+                  }));
+                }}
+              />
             </label>
             <label className="text-xs font-semibold">
               Active

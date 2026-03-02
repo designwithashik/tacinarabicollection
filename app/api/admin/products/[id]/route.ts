@@ -23,6 +23,18 @@ export async function PUT(
       return NextResponse.json({ error: "Product not found." }, { status: 404 });
     }
 
+    const normalizedColors = Array.isArray(body.colors)
+      ? body.colors
+          .filter((item): item is string => typeof item === "string")
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : current.colors;
+
+    const normalizedCategory =
+      typeof body.category === "string" && body.category.trim()
+        ? body.category.trim()
+        : current.category;
+
     const updatedProduct = {
       ...current,
       ...body,
@@ -31,6 +43,7 @@ export async function PUT(
           ? body.imageUrl
           : current.imageUrl,
       price: typeof body.price === "number" ? body.price : current.price,
+      category: normalizedCategory,
       stock:
         typeof body.stock === "number"
           ? Math.max(0, Math.floor(body.stock))
@@ -39,6 +52,7 @@ export async function PUT(
             : current.stock,
       updatedAt: Date.now(),
       heroFeatured: body.heroFeatured === true,
+      colors: normalizedColors,
       id,
     };
 
