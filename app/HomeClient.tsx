@@ -779,8 +779,12 @@ export default function HomePage({
         : "20s";
 
   const categoryFilteredProducts = useMemo(() => {
-    if (!activeFilter) return productSource;
-    return productSource.filter((product) => product.category === activeFilter);
+    if (!activeFilter || activeFilter.toLowerCase() === "all") return productSource;
+
+    const normalizedActiveFilter = activeFilter.trim().toLowerCase();
+    return productSource.filter(
+      (product) => product.category.trim().toLowerCase() === normalizedActiveFilter,
+    );
   }, [productSource, activeFilter]);
 
   const filteredProducts = useMemo(() => {
@@ -1162,7 +1166,11 @@ export default function HomePage({
                 <button
                   key={category.id}
                   type="button"
-                  onClick={() => setActiveFilter(category.value)}
+                  onClick={() =>
+                    setActiveFilter(
+                      category.value.toLowerCase() === "all" ? null : category.value,
+                    )
+                  }
                   className={clsx(
                     "whitespace-nowrap rounded-full border border-[var(--border-soft)] px-3 py-1.5 text-[12px] transition hover:bg-[var(--bar-maroon-soft)]",
                     activeFilter === category.value
@@ -1846,7 +1854,7 @@ export default function HomePage({
             >
               ←
             </button>
-            <h3 ref={checkoutHeadingRef} tabIndex={-1} className="text-lg font-semibold text-ink">
+            <h3 ref={checkoutHeadingRef} tabIndex={-1} className="text-lg font-semibold text-black">
               Checkout
             </h3>
             <button
@@ -1878,7 +1886,7 @@ export default function HomePage({
                 <div className="mx-auto w-full max-w-4xl">
                   <div className="grid gap-5 md:grid-cols-2">
                     <div className="max-w-[680px] space-y-4">
-                      <h2 className="text-base font-semibold mb-4">
+                      <h2 className="text-base font-semibold mb-4 text-black">
                         Order Summary
                       </h2>
                       <div className="rounded-2xl border border-[#f0e4da] p-3">
@@ -1991,7 +1999,7 @@ export default function HomePage({
                     </div>
 
                     <div>
-                      <h2 className="mb-4 text-base font-semibold">
+                      <h2 className="mb-4 text-base font-semibold text-black">
                         Shipping Information
                       </h2>
                       <div

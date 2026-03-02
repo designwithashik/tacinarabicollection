@@ -168,7 +168,7 @@ export const toStorefrontProduct = (item: InventoryProduct): StorefrontProduct =
   image: item.imageUrl ?? "",
   imageUrl: item.imageUrl,
   category: item.category === "Ceramic" ? "Ceramic" : "Clothing",
-  colors: item.colors?.length ? item.colors : ["Beige"],
+  colors: item.colors?.length ? item.colors : [],
   sizes: item.sizes?.length ? item.sizes : ["M", "L", "XL"],
   active: item.active,
   updatedAt: new Date(item.updatedAt ?? item.createdAt).toISOString(),

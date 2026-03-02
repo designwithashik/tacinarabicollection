@@ -29,7 +29,15 @@ export async function POST(request: Request) {
       whatsappNumber,
       heroFeatured,
       stock,
+      colors,
     } = body;
+
+    const normalizedColors = Array.isArray(colors)
+      ? colors
+          .filter((item): item is string => typeof item === "string")
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : [];
 
     const existing = await loadInventoryArray();
 
@@ -44,7 +52,7 @@ export async function POST(request: Request) {
       category: typeof category === "string" ? category : "Clothing",
       description: typeof description === "string" ? description : "",
       whatsappNumber: typeof whatsappNumber === "string" ? whatsappNumber : "",
-      colors: ["Beige"],
+      colors: normalizedColors,
       sizes: ["M", "L", "XL"],
       heroFeatured: heroFeatured === true,
       stock:
