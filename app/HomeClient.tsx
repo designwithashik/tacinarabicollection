@@ -956,19 +956,45 @@ export default function HomePage({
   const hasPaymentProof = Boolean(transactionId.trim());
 
   const visibleFilters = useMemo(() => {
-    if (!filterConfig?.length) return [];
-
-    return filterConfig
+    const configuredFilters = (filterConfig ?? [])
       .filter((filterItem) => filterItem.active)
       .filter((filterItem) => filterItem.showOnLanding !== false)
       .sort((a, b) => a.order - b.order);
-  }, [filterConfig]);
+
+    const existingValues = new Set(
+      configuredFilters.map((filterItem) => filterItem.value.trim().toLowerCase()),
+    );
+
+    const derivedCategoryFilters: FilterPanelItem[] = [];
+    for (const product of productSource) {
+      const category = product.category?.trim();
+      if (!category) continue;
+
+      const key = category.toLowerCase();
+      if (key === "all" || existingValues.has(key)) continue;
+
+      existingValues.add(key);
+      derivedCategoryFilters.push({
+        id: `auto-${key.replace(/\s+/g, "-")}`,
+        label: category,
+        value: category,
+        active: true,
+        highlight: false,
+        showOnLanding: true,
+        order: configuredFilters.length + derivedCategoryFilters.length + 1,
+      });
+    }
+
+    return [...configuredFilters, ...derivedCategoryFilters];
+  }, [filterConfig, productSource]);
 
   useEffect(() => {
     if (!activeFilter) return;
 
+    const normalizedActiveFilter = activeFilter.trim().toLowerCase();
     const stillExists = visibleFilters.some(
-      (filterItem) => filterItem.value === activeFilter,
+      (filterItem) =>
+        filterItem.value.trim().toLowerCase() === normalizedActiveFilter,
     );
 
     if (!stillExists) {

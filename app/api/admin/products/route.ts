@@ -39,6 +39,11 @@ export async function POST(request: Request) {
           .filter(Boolean)
       : [];
 
+    const normalizedCategory =
+      typeof category === "string" && category.trim()
+        ? category.trim()
+        : "Clothing";
+
     const existing = await loadInventoryArray();
 
     const newProduct = {
@@ -49,7 +54,7 @@ export async function POST(request: Request) {
       active: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      category: typeof category === "string" ? category : "Clothing",
+      category: normalizedCategory,
       description: typeof description === "string" ? description : "",
       whatsappNumber: typeof whatsappNumber === "string" ? whatsappNumber : "",
       colors: normalizedColors,
