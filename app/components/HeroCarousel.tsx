@@ -123,7 +123,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
 
   return (
     <div
-      className="relative w-full overflow-hidden"
+      className="relative w-full overflow-hidden rounded-[var(--radius)]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocusCapture={() => setIsPaused(true)}
@@ -164,16 +164,16 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
             <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-white/35 to-white/20" />
 
             <div className="absolute inset-0 z-20 flex items-center justify-center md:justify-start">
-              <div className="flex max-w-xl flex-col gap-2 px-4 py-6 text-center text-black sm:gap-3 sm:px-6 sm:py-8 md:gap-4 md:px-16 md:py-0 md:text-left">
-                <h2 className="line-clamp-3 break-words text-[clamp(1.1rem,5.8vw,3rem)] font-bold leading-[1.1]">
+              <div className="mx-auto flex max-w-2xl flex-col space-y-4 px-6 py-8 text-center text-black md:mx-0 md:px-16 md:py-0 md:text-left">
+                <h2 className="line-clamp-3 break-words text-3xl font-semibold leading-tight tracking-tight md:text-5xl">
                   {slide.title}
                 </h2>
-                <p className="line-clamp-3 text-[clamp(0.82rem,3.3vw,1.125rem)] text-black md:line-clamp-none">
+                <p className="mt-5 line-clamp-3 text-base text-[var(--text-secondary)] md:line-clamp-none md:text-lg">
                   {slide.subtitle}
                 </p>
                 <div>
                   <a
-                    className="interactive-feedback inline-flex items-center justify-center rounded-full bg-white px-7 py-3 font-semibold text-black shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
+                    className="interactive-feedback mt-8 inline-flex items-center justify-center rounded-md bg-[var(--accent)] px-6 py-3 text-sm font-medium text-white transition hover:opacity-90"
                     href={slide.buttonLink || "/"}
                   >
                     {slide.buttonText || "Shop Now"}

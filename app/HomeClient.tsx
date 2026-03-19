@@ -1072,7 +1072,7 @@ export default function HomePage({
       ) : null}
       <header
         className={clsx(
-          "sticky top-0 z-50 w-full border-b border-[var(--border-soft)] bg-white/90 backdrop-blur-md transition-shadow duration-300",
+          "sticky top-0 z-50 w-full border-b border-[var(--border)] bg-white/80 backdrop-blur-md transition-all duration-300",
           scrollProgress > 0.01 && "shadow-[0_8px_24px_rgba(38,30,22,0.08)]",
         )}
       >
@@ -1083,11 +1083,11 @@ export default function HomePage({
           />
         </div>
         <nav
-          className="relative mx-auto h-16 w-full max-w-6xl px-4 md:h-20"
+          className="relative mx-auto h-16 w-full max-w-6xl px-6 md:h-20"
           aria-label="Primary"
         >
           <div className="flex h-full items-center justify-center gap-3">
-            <div className="absolute left-4 flex min-h-10 min-w-[104px] items-center justify-start">
+            <div className="absolute left-6 flex min-h-10 min-w-[104px] items-center justify-start">
               <LanguageToggle language={language} setLanguage={setLanguage} />
             </div>
 
@@ -1102,7 +1102,7 @@ export default function HomePage({
                 alt="Tacin Arabi Collection logo"
                 width={64}
                 height={64}
-                className="h-10 w-auto object-contain sm:h-12 md:h-14 lg:h-16"
+                className="h-12 w-auto object-contain md:h-14"
                 priority
               />
             </button>
@@ -1110,7 +1110,7 @@ export default function HomePage({
             <button
               type="button"
               onClick={() => setShowCart(true)}
-              className="interactive-feedback absolute right-4 flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bar-maroon)] focus-visible:ring-offset-2"
+              className="interactive-feedback absolute right-6 flex h-10 w-10 items-center justify-center rounded-full text-xl text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bar-maroon)] focus-visible:ring-offset-2"
               aria-label="Open cart"
             >
               <span className={clsx(cartBump && "animate-cart-bounce")}>
@@ -1131,50 +1131,52 @@ export default function HomePage({
         </nav>
       </header>
 
-      <section className="relative">
-        <div className="mx-auto max-w-6xl px-4 pt-4 md:px-10">
+      <section className="relative py-20 md:py-28">
+        <div className="mx-auto max-w-6xl px-6">
           <HeroCarousel initialSlides={initialCarouselSlides} />
         </div>
-        <div className="h-6 bg-white" />
       </section>
 
       {announcement.active ? (
-        <section className="border-y border-[var(--border-soft)] bg-[var(--bar-maroon-soft)] py-2">
+        <section className="border-y border-[var(--border)] bg-[var(--bg-soft)] py-20 md:py-28">
           <div
             ref={trustBarRef}
             className={clsx(
-              "mx-auto max-w-6xl px-4 transition-all duration-700 ease-out",
+              "mx-auto max-w-6xl px-6 transition-all duration-700 ease-out",
               isTrustBarInView
                 ? "translate-y-0 opacity-100"
                 : "translate-y-6 opacity-0",
             )}
           >
-            <div className="relative w-full overflow-hidden text-black">
-              <div
-                className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-[13px] font-medium tracking-wide text-black"
+            <div className="space-y-3 text-center">
+              <p className="text-sm font-medium tracking-[0.18em] text-[var(--accent)]">
+                Trust Bar
+              </p>
+              <div className="relative w-full overflow-hidden text-black transition hover:opacity-80">
+                <div
+                  className="inline-flex min-w-max whitespace-nowrap animate-announcement-scroll text-sm font-medium tracking-wide text-[var(--text-primary)] md:text-[15px]"
                 style={
                   { "--announcement-duration": announcementDuration } as Record<
                     string,
                     string
                   >
                 }
-              >
-                <span className="px-8 flex-none">{announcementText}</span>
-                <span className="px-8 flex-none">{announcementText}</span>
-                <span className="px-8 flex-none" aria-hidden="true">
-                  {announcementText}
-                </span>
+                >
+                  <span className="px-8 flex-none">{announcementText}</span>
+                  <span className="px-8 flex-none">{announcementText}</span>
+                  <span className="px-8 flex-none" aria-hidden="true">
+                    {announcementText}
+                  </span>
+                </div>
               </div>
-              
-              
             </div>
           </div>
         </section>
       ) : null}
 
-      <section className="bg-white">
+      <section className="bg-white py-20 md:py-28">
         <AnimatedWrapper className="retail-section-enter" variant="section">
-          <div className="mx-auto max-w-6xl space-y-3 px-4 py-4">
+          <div className="mx-auto max-w-6xl space-y-3 px-6">
             <div className="flex gap-2 overflow-x-auto pb-1">
               <button
                 type="button"
@@ -1247,8 +1249,13 @@ export default function HomePage({
         </AnimatedWrapper>
       </section>
 
-      <section id="product-grid" className="mx-auto mt-6 max-w-6xl px-4 pb-24">
-        <h2 className="mb-3 text-[18px] font-semibold">Our Collection</h2>
+      <section id="product-grid" className="mx-auto max-w-6xl px-6 py-20 md:py-28">
+        <div className="mb-10 text-center">
+          <h2 className="text-[18px] font-semibold text-[var(--text-primary)] md:text-[22px]">
+            Signature Selection
+          </h2>
+          <span className="mx-auto mt-2 block h-[2px] w-10 bg-[var(--accent)]" />
+        </div>
         {activeChips.length > 0 ? (
           <div className="mb-4 flex flex-wrap gap-2">
             {activeChips.map((chip) => (
@@ -1391,53 +1398,69 @@ export default function HomePage({
         ) : null}
       </section>
 
-      <section className="border-t border-[#ececec] bg-[#fcfcfc]">
-        <div className="mx-auto max-w-6xl px-4 py-6 md:px-10">
+      <section className="bg-[var(--bg-soft)] py-20 md:py-28">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mx-auto max-w-xl space-y-4 text-center opacity-0 animate-fadeIn">
+            <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--accent)]">
+              Lifestyle
+            </p>
+            <h2 className="text-3xl font-semibold tracking-tight leading-tight text-[var(--text-primary)] md:text-5xl">
+              Intentional pieces for everyday elegance.
+            </h2>
+            <p className="text-base leading-relaxed tracking-[0.2px] text-[var(--text-secondary)] md:text-lg">
+              Tacin Arabi Collection brings together modest fashion and curated home accents with a softer, more elevated brand feel—built for confident daily wear and thoughtful gifting.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-[var(--border)] bg-[var(--bg-soft)] py-20 md:py-28">
+        <div className="mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
-              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
-                <Truck className="h-4 w-4 text-black/70" aria-hidden="true" />
+            <article className="group space-y-3 rounded-[var(--radius)] border border-[var(--border)] bg-white p-5 transition hover:opacity-80 hover:shadow-sm">
+              <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/[0.04]">
+                <Truck className="h-[18px] w-[18px] text-black/70" aria-hidden="true" />
               </div>
-              <p className="text-[13px] font-semibold leading-[1.5] text-black">
+              <p className="text-sm font-medium leading-[1.5] text-[var(--text-primary)] md:text-[15px]">
                 Fast Nationwide Delivery
               </p>
-              <p className="text-[12px] leading-[1.4] text-black/70">
+              <p className="text-sm leading-[1.6] text-[var(--text-secondary)]">
                 Reliable delivery across Bangladesh.
               </p>
             </article>
 
-            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
-              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
-                <ShieldCheck className="h-4 w-4 text-black/70" aria-hidden="true" />
+            <article className="group space-y-3 rounded-[var(--radius)] border border-[var(--border)] bg-white p-5 transition hover:opacity-80 hover:shadow-sm">
+              <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/[0.04]">
+                <ShieldCheck className="h-[18px] w-[18px] text-black/70" aria-hidden="true" />
               </div>
-              <p className="text-[13px] font-semibold leading-[1.5] text-black">
+              <p className="text-sm font-medium leading-[1.5] text-[var(--text-primary)] md:text-[15px]">
                 Secure Order Handling
               </p>
-              <p className="text-[12px] leading-[1.4] text-black/70">
+              <p className="text-sm leading-[1.6] text-[var(--text-secondary)]">
                 Safe data and verified order process.
               </p>
             </article>
 
-            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
-              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
-                <MessageCircleMore className="h-4 w-4 text-black/70" aria-hidden="true" />
+            <article className="group space-y-3 rounded-[var(--radius)] border border-[var(--border)] bg-white p-5 transition hover:opacity-80 hover:shadow-sm">
+              <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/[0.04]">
+                <MessageCircleMore className="h-[18px] w-[18px] text-black/70" aria-hidden="true" />
               </div>
-              <p className="text-[13px] font-semibold leading-[1.5] text-black">
+              <p className="text-sm font-medium leading-[1.5] text-[var(--text-primary)] md:text-[15px]">
                 WhatsApp Order Support
               </p>
-              <p className="text-[12px] leading-[1.4] text-black/70">
+              <p className="text-sm leading-[1.6] text-[var(--text-secondary)]">
                 Quick support from real agents.
               </p>
             </article>
 
-            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
-              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
-                <HandCoins className="h-4 w-4 text-black/70" aria-hidden="true" />
+            <article className="group space-y-3 rounded-[var(--radius)] border border-[var(--border)] bg-white p-5 transition hover:opacity-80 hover:shadow-sm">
+              <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/[0.04]">
+                <HandCoins className="h-[18px] w-[18px] text-black/70" aria-hidden="true" />
               </div>
-              <p className="text-[13px] font-semibold leading-[1.5] text-black">
+              <p className="text-sm font-medium leading-[1.5] text-[var(--text-primary)] md:text-[15px]">
                 Cash on Delivery
               </p>
-              <p className="text-[12px] leading-[1.4] text-black/70">
+              <p className="text-sm leading-[1.6] text-[var(--text-secondary)]">
                 Pay after delivery confirmation.
               </p>
             </article>
@@ -1445,16 +1468,18 @@ export default function HomePage({
         </div>
       </section>
 
-      <footer className="border-t border-[#EAEAEA] bg-[#F8F6F4]">
-        <div className="mx-auto max-w-6xl px-6 py-16">
-          <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-3">
+      <footer className="border-t border-[var(--border)] bg-[var(--bg-footer)]">
+        <div className="mx-auto max-w-6xl px-6 py-20 md:py-28">
+          <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-3 md:gap-16">
             <div className="flex flex-col items-start space-y-6">
-              <img
+              <Image
                 src="/images/tacin-logo.svg"
                 alt="Tacin Arabi Collection"
-                className="h-14 w-auto object-contain md:h-16"
+                width={160}
+                height={56}
+                className="h-12 w-auto object-contain md:h-14"
               />
-              <p className="max-w-sm text-sm leading-relaxed text-[#555555]">
+              <p className="max-w-sm text-sm leading-relaxed text-[var(--text-secondary)]">
                 Curated minimal fashion edits inspired by campus aesthetics.
               </p>
             </div>
@@ -1463,19 +1488,19 @@ export default function HomePage({
               <h3 className="text-sm font-semibold uppercase tracking-wide text-black">
                 Explore
               </h3>
-              <ul className="space-y-3 text-sm text-black">
+              <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
                 <li>
-                  <a href="#product-grid" className="transition hover:opacity-70">
+                  <a href="#product-grid" className="transition hover:text-black">
                     Shop
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="transition hover:opacity-70">
+                  <a href="#" className="transition hover:text-black">
                     About
                   </a>
                 </li>
                 <li>
-                  <a href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="transition hover:opacity-70">
+                  <a href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="transition hover:text-black">
                     Contact
                   </a>
                 </li>
@@ -1486,12 +1511,12 @@ export default function HomePage({
               <h3 className="text-sm font-semibold uppercase tracking-wide text-black">
                 Connect
               </h3>
-              <div className="grid grid-cols-1 gap-3 text-sm text-black sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 text-sm text-[var(--text-secondary)] sm:grid-cols-2">
                 <a
                   href="https://www.facebook.com/tacinarabicollection"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:opacity-70"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:text-black"
                   aria-label="Facebook"
                 >
                   <Facebook className="h-4 w-4" aria-hidden="true" />
@@ -1501,7 +1526,7 @@ export default function HomePage({
                   href="https://www.instagram.com/tacinarabi"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:opacity-70"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:text-black"
                   aria-label="Instagram"
                 >
                   <Instagram className="h-4 w-4" aria-hidden="true" />
@@ -1511,7 +1536,7 @@ export default function HomePage({
                   href="https://pin.it/5Om9YG8GY"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:opacity-70"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:text-black"
                   aria-label="Pinterest"
                 >
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
@@ -1523,7 +1548,7 @@ export default function HomePage({
                   href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:opacity-70"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:text-black"
                   aria-label="WhatsApp"
                 >
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
@@ -1535,7 +1560,7 @@ export default function HomePage({
             </div>
           </div>
 
-          <div className="mt-16 border-t border-[#EAEAEA] pt-6 text-center text-xs text-[#666666]">
+          <div className="mt-16 border-t border-[var(--border)] pt-6 text-center text-xs text-[var(--text-muted)]">
             © 2026 Tacin Arabi Collection. All rights reserved.
           </div>
         </div>

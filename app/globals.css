@@ -5,10 +5,17 @@
 :root {
   color-scheme: light;
   --bg-main: #ffffff;
+  --bg-soft: #fafafa;
+  --bg-footer: #f8f6f4;
   --text-primary: #111111;
   --text-secondary: #555555;
-  --border-soft: #eaeaea;
-  --bar-maroon: #5b1414;
+  --text-muted: #777777;
+  --accent: #5b1414;
+  --border: #eaeaea;
+  --radius: 12px;
+  --transition: all 0.25s ease;
+  --border-soft: var(--border);
+  --bar-maroon: var(--accent);
   --bar-maroon-soft: #f3eaea;
 
   --brand-primary: var(--text-primary);
@@ -18,8 +25,8 @@
   --brand-surface: var(--bg-main);
   --brand-muted: var(--text-secondary);
 
-  --radius-soft: 12px;
-  --transition-smooth: all 0.3s ease;
+  --radius-soft: var(--radius);
+  --transition-smooth: var(--transition);
 }
 
 body {
@@ -48,7 +55,7 @@ h3 {
 }
 
 p {
-  color: var(--text-primary);
+  color: var(--text-secondary);
   line-height: 1.7;
 }
 
@@ -183,6 +190,15 @@ a:focus-visible {
   }
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes panel-slide-up {
   from {
     opacity: 0;
@@ -245,6 +261,10 @@ a:focus-visible {
 
 .animate-cart-bounce {
   animation: cart-bounce 0.45s ease-out;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.7s ease forwards;
 }
 
 .interactive-feedback {
