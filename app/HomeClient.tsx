@@ -19,6 +19,7 @@ import {
   HandCoins,
   Instagram,
   MessageCircleMore,
+  Sparkles,
   ShieldCheck,
   SlidersHorizontal,
   Truck,
@@ -199,6 +200,41 @@ const copy = {
 const qtyUpdatedMessage = "Qty updated";
 const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
 
+const trustSignals = [
+  {
+    title: "Nationwide delivery",
+    eyebrow: "Coverage that travels",
+    description:
+      "From Dhaka to every destination we serve, dispatch stays clear and dependable.",
+    proof: "Inside Dhaka ৳60 • Outside Dhaka ৳120",
+    icon: Truck,
+  },
+  {
+    title: "Protected payments",
+    eyebrow: "3 ways to pay",
+    description:
+      "Choose Cash on Delivery, bKash, or Nagad with a verified order confirmation flow.",
+    proof: "COD + bKash + Nagad",
+    icon: HandCoins,
+  },
+  {
+    title: "Quality assurance",
+    eyebrow: "Shop with confidence",
+    description:
+      "Every order is backed by a 7-day exchange window for a more reassuring purchase.",
+    proof: "7-day easy exchange",
+    icon: Sparkles,
+  },
+  {
+    title: "WhatsApp support",
+    eyebrow: "Human help, quickly",
+    description:
+      "Get direct order guidance, confirmation, and follow-up from the team on WhatsApp.",
+    proof: "WhatsApp-first support",
+    icon: MessageCircleMore,
+  },
+] as const;
+
 const getStatusLabel = (index: number) =>
   statusLabels[index % statusLabels.length];
 const getStockLabel = (product: Product & { stock?: number }, index: number) => {
@@ -285,10 +321,15 @@ export default function HomePage({
   const checkoutHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const checkoutRef = useRef<HTMLDivElement | null>(null);
   const trustBarRef = useRef<HTMLDivElement | null>(null);
+  const trustSignalsRef = useRef<HTMLDivElement | null>(null);
   const progressTargetRef = useRef(0);
   const progressCurrentRef = useRef(0);
   const progressRafRef = useRef<number | null>(null);
   const isTrustBarInView = useInView(trustBarRef, { once: true, amount: 0.35 });
+  const isTrustSignalsInView = useInView(trustSignalsRef, {
+    once: true,
+    amount: 0.2,
+  });
 
   const showToast = (nextToast: ToastState) => {
     setToast(nextToast);
@@ -1391,56 +1432,88 @@ export default function HomePage({
         ) : null}
       </section>
 
-      <section className="border-t border-[#ececec] bg-[#fcfcfc]">
-        <div className="mx-auto max-w-6xl px-4 py-6 md:px-10">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
-              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
-                <Truck className="h-4 w-4 text-black/70" aria-hidden="true" />
+      <section className="border-t border-[var(--border-soft)] bg-[linear-gradient(180deg,#fcf8f6_0%,#ffffff_100%)]">
+        <div className="mx-auto max-w-6xl px-4 py-10 md:px-10 md:py-14">
+          <div
+            ref={trustSignalsRef}
+            className="overflow-hidden rounded-[28px] border border-[var(--bar-maroon)]/10 bg-[var(--bar-maroon-soft)]/55 p-4 shadow-[0_18px_60px_rgba(79,22,31,0.08)] md:p-6"
+          >
+            <div className="mb-5 flex flex-col gap-3 md:mb-8 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-2xl space-y-2">
+                <span className="inline-flex w-fit items-center rounded-full border border-[var(--bar-maroon)]/15 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--bar-maroon)] shadow-sm">
+                  Shop with confidence
+                </span>
+                <div className="space-y-2">
+                  <h2 className="text-xl font-semibold tracking-[-0.02em] text-[#2f1720] md:text-3xl">
+                    Premium reassurance, built into every order.
+                  </h2>
+                  <p className="max-w-xl text-sm leading-6 text-[#5f4a52] md:text-[15px]">
+                    Delivery clarity, safe payments, quality follow-through, and direct
+                    WhatsApp support presented in a more premium shopping module.
+                  </p>
+                </div>
               </div>
-              <p className="text-[13px] font-semibold leading-[1.5] text-black">
-                Fast Nationwide Delivery
-              </p>
-              <p className="text-[12px] leading-[1.4] text-black/70">
-                Reliable delivery across Bangladesh.
-              </p>
-            </article>
 
-            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
-              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
-                <ShieldCheck className="h-4 w-4 text-black/70" aria-hidden="true" />
+              <div className="hidden md:flex items-center gap-2 rounded-full border border-[var(--bar-maroon)]/10 bg-white/85 px-4 py-2 text-[12px] font-medium text-[#6a4d56] shadow-sm">
+                <ShieldCheck className="h-4 w-4 text-[var(--bar-maroon)]" aria-hidden="true" />
+                Reassurance across checkout, delivery, and aftercare
               </div>
-              <p className="text-[13px] font-semibold leading-[1.5] text-black">
-                Secure Order Handling
-              </p>
-              <p className="text-[12px] leading-[1.4] text-black/70">
-                Safe data and verified order process.
-              </p>
-            </article>
+            </div>
 
-            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
-              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
-                <MessageCircleMore className="h-4 w-4 text-black/70" aria-hidden="true" />
-              </div>
-              <p className="text-[13px] font-semibold leading-[1.5] text-black">
-                WhatsApp Order Support
-              </p>
-              <p className="text-[12px] leading-[1.4] text-black/70">
-                Quick support from real agents.
-              </p>
-            </article>
+            <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 lg:grid-cols-4">
+              {trustSignals.map((signal, index) => {
+                const Icon = signal.icon;
 
-            <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
-              <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
-                <HandCoins className="h-4 w-4 text-black/70" aria-hidden="true" />
-              </div>
-              <p className="text-[13px] font-semibold leading-[1.5] text-black">
-                Cash on Delivery
-              </p>
-              <p className="text-[12px] leading-[1.4] text-black/70">
-                Pay after delivery confirmation.
-              </p>
-            </article>
+                return (
+                  <motion.article
+                    key={signal.title}
+                    initial={
+                      prefersReducedMotion
+                        ? false
+                        : { opacity: 0, y: 28, scale: 0.97 }
+                    }
+                    animate={
+                      prefersReducedMotion || isTrustSignalsInView
+                        ? { opacity: 1, y: 0, scale: 1 }
+                        : { opacity: 0, y: 28, scale: 0.97 }
+                    }
+                    transition={{
+                      duration: prefersReducedMotion ? 0 : 0.45,
+                      delay: prefersReducedMotion ? 0 : index * 0.1,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    className="group relative min-w-[84%] snap-center rounded-[24px] border border-[var(--bar-maroon)]/10 bg-white/95 p-5 shadow-[0_12px_34px_rgba(79,22,31,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(79,22,31,0.12)] md:min-w-0 md:p-6"
+                  >
+                    <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-[var(--bar-maroon)]/0 via-[var(--bar-maroon)]/35 to-[var(--bar-maroon)]/0" />
+                    <div className="flex h-full flex-col">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-2">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--bar-maroon)]/75">
+                            {signal.eyebrow}
+                          </p>
+                          <h3 className="text-[18px] font-semibold leading-tight text-[#2d1820]">
+                            {signal.title}
+                          </h3>
+                        </div>
+                        <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--bar-maroon-soft)] text-[var(--bar-maroon)] shadow-inner shadow-[rgba(79,22,31,0.08)]">
+                          <Icon className="h-5 w-5" aria-hidden="true" />
+                        </div>
+                      </div>
+
+                      <p className="mt-4 text-sm leading-6 text-[#5f4a52]">
+                        {signal.description}
+                      </p>
+
+                      <div className="mt-5">
+                        <span className="inline-flex items-center rounded-full bg-[var(--bar-maroon)]/8 px-3 py-1 text-[12px] font-semibold text-[var(--bar-maroon)]">
+                          {signal.proof}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.article>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
