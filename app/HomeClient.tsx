@@ -16,11 +16,15 @@ import LanguageToggle from "./components/LanguageToggle";
 import FilterDrawer, { type DrawerTab } from "../components/ui/FilterDrawer";
 import {
   Facebook,
+  Gem,
   HandCoins,
   Instagram,
+  MapPinned,
   MessageCircleMore,
+  PackageCheck,
   ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   Truck,
 } from "lucide-react";
 import type { Product } from "../lib/products";
@@ -173,6 +177,34 @@ const copy = {
     insideDhaka: "Inside Dhaka",
     outsideDhaka: "Outside Dhaka",
     sizeError: "Please select a size first",
+    signatureTitle: "A signature edit for refined modest dressing",
+    signatureNarrative:
+      "Tacin curates elevated fabrics, graceful silhouettes, and limited releases designed to feel quietly luxurious from first touch to final styling.",
+    signatureEyebrow: "Luxury essentials",
+    signatureImageAlt:
+      "A curated Tacin collage of premium textures and product details",
+    signatureCards: [
+      {
+        title: "Premium fabric",
+        description:
+          "Soft handfeel, polished drape, and dependable comfort selected for all-day wear.",
+      },
+      {
+        title: "Modest elegance",
+        description:
+          "Balanced silhouettes and thoughtful finishing that feel timeless rather than trend-led.",
+      },
+      {
+        title: "Curated drops",
+        description:
+          "Small-batch arrivals keep each collection intentional, collectible, and fresh.",
+      },
+      {
+        title: "Nationwide delivery",
+        description:
+          "Reliable fulfilment across Bangladesh with WhatsApp-first support at every step.",
+      },
+    ],
   },
   bn: {
     buyNow: "এখনই কিনুন",
@@ -193,6 +225,34 @@ const copy = {
     insideDhaka: "ঢাকার ভিতরে",
     outsideDhaka: "ঢাকার বাইরে",
     sizeError: "অনুগ্রহ করে আগে একটি সাইজ নির্বাচন করুন",
+    signatureTitle: "পরিমিত শালীন সৌন্দর্যের জন্য একটি সিগনেচার নির্বাচন",
+    signatureNarrative:
+      "Tacin প্রিমিয়াম কাপড়, মার্জিত সিলুয়েট এবং সীমিত রিলিজ একত্রে সাজায়—যাতে প্রথম স্পর্শ থেকে শেষ স্টাইলিং পর্যন্ত নীরব বিলাসিতার অনুভূতি থাকে।",
+    signatureEyebrow: "লাক্সারি এসেনশিয়ালস",
+    signatureImageAlt:
+      "প্রিমিয়াম টেক্সচার ও পণ্যের ডিটেইলসহ একটি কিউরেটেড Tacin কোলাজ",
+    signatureCards: [
+      {
+        title: "প্রিমিয়াম কাপড়",
+        description:
+          "নরম অনুভূতি, সুন্দর ফল এবং দীর্ঘক্ষণ আরামের জন্য বাছাই করা মানসম্মত ফ্যাব্রিক।",
+      },
+      {
+        title: "শালীন সৌন্দর্য",
+        description:
+          "পরিমিত কাট, ভারসাম্যপূর্ণ সিলুয়েট ও যত্নশীল ফিনিশ যা দীর্ঘদিন প্রাসঙ্গিক থাকে।",
+      },
+      {
+        title: "কিউরেটেড ড্রপস",
+        description:
+          "ছোট ব্যাচের নতুন আগমন প্রতিটি সংগ্রহকে করে আরও যত্নশীল, বিশেষ ও নতুনত্বপূর্ণ।",
+      },
+      {
+        title: "সারাদেশে ডেলিভারি",
+        description:
+          "বাংলাদেশজুড়ে নির্ভরযোগ্য ডেলিভারি এবং প্রতিটি ধাপে WhatsApp-ভিত্তিক সহায়তা।",
+      },
+    ],
   },
 };
 
@@ -201,7 +261,10 @@ const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
 
 const getStatusLabel = (index: number) =>
   statusLabels[index % statusLabels.length];
-const getStockLabel = (product: Product & { stock?: number }, index: number) => {
+const getStockLabel = (
+  product: Product & { stock?: number },
+  index: number,
+) => {
   const stockCount = typeof product.stock === "number" ? product.stock : null;
   if (stockCount !== null) {
     if (stockCount <= 0) return "Out of stock";
@@ -779,11 +842,13 @@ export default function HomePage({
         : "20s";
 
   const categoryFilteredProducts = useMemo(() => {
-    if (!activeFilter || activeFilter.toLowerCase() === "all") return productSource;
+    if (!activeFilter || activeFilter.toLowerCase() === "all")
+      return productSource;
 
     const normalizedActiveFilter = activeFilter.trim().toLowerCase();
     return productSource.filter(
-      (product) => product.category.trim().toLowerCase() === normalizedActiveFilter,
+      (product) =>
+        product.category.trim().toLowerCase() === normalizedActiveFilter,
     );
   }, [productSource, activeFilter]);
 
@@ -962,7 +1027,9 @@ export default function HomePage({
       .sort((a, b) => a.order - b.order);
 
     const existingValues = new Set(
-      configuredFilters.map((filterItem) => filterItem.value.trim().toLowerCase()),
+      configuredFilters.map((filterItem) =>
+        filterItem.value.trim().toLowerCase(),
+      ),
     );
 
     const derivedCategoryFilters: FilterPanelItem[] = [];
@@ -1165,12 +1232,114 @@ export default function HomePage({
                   {announcementText}
                 </span>
               </div>
-              
-              
             </div>
           </div>
         </section>
       ) : null}
+
+      <section className="bg-white px-4 py-8 md:px-10 md:py-12">
+        <AnimatedWrapper variant="section">
+          <div className="mx-auto grid max-w-6xl gap-6 rounded-[28px] border border-[var(--border-soft)] bg-[linear-gradient(180deg,rgba(243,234,234,0.72),rgba(255,255,255,0.96))] p-5 shadow-[0_18px_50px_rgba(17,17,17,0.05)] md:grid-cols-[1.15fr_0.85fr] md:gap-8 md:p-8">
+            <div className="space-y-5">
+              <div className="space-y-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--bar-maroon)]">
+                  {text.signatureEyebrow}
+                </p>
+                <div className="max-w-2xl space-y-3">
+                  <h2 className="text-2xl font-semibold tracking-[0.02em] text-[var(--text-primary)] md:text-[2rem]">
+                    {text.signatureTitle}
+                  </h2>
+                  <p className="max-w-xl text-[15px] leading-7 text-[var(--text-secondary)] md:text-base">
+                    {text.signatureNarrative}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {text.signatureCards.map((card, index) => {
+                  const icons = [
+                    Gem,
+                    Sparkles,
+                    ShieldCheck,
+                    MapPinned,
+                  ] as const;
+                  const Icon = icons[index % icons.length];
+
+                  return (
+                    <AnimatedWrapper
+                      key={card.title}
+                      variant="section"
+                      delay={
+                        prefersReducedMotion ? 0 : Math.min(index * 0.05, 0.16)
+                      }
+                    >
+                      <article className="h-full rounded-[22px] border border-white/70 bg-white/80 p-4 backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(17,17,17,0.08)]">
+                        <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bar-maroon-soft)] text-[var(--bar-maroon)]">
+                          <Icon className="h-4 w-4" aria-hidden="true" />
+                        </div>
+                        <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">
+                          {card.title}
+                        </h3>
+                        <p className="mt-2 text-[13px] leading-6 text-[var(--text-secondary)]">
+                          {card.description}
+                        </p>
+                      </article>
+                    </AnimatedWrapper>
+                  );
+                })}
+              </div>
+            </div>
+
+            <AnimatedWrapper
+              variant="section"
+              delay={prefersReducedMotion ? 0 : 0.08}
+              className="relative overflow-hidden rounded-[24px] border border-white/70 bg-white/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+            >
+              <div className="grid gap-3 sm:grid-cols-[1.2fr_0.8fr] md:grid-cols-1 lg:grid-cols-[1.2fr_0.8fr]">
+                <div className="relative min-h-[240px] overflow-hidden rounded-[20px] bg-[var(--bar-maroon-soft)]">
+                  <Image
+                    src="/images/product-4.svg"
+                    alt={text.signatureImageAlt}
+                    fill
+                    sizes="(min-width: 1024px) 28rem, (min-width: 768px) 40vw, 100vw"
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/15 via-black/0 to-transparent p-4">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-white/88 px-3 py-1 text-[11px] font-medium tracking-[0.2em] text-[var(--bar-maroon)] uppercase backdrop-blur-sm">
+                      <PackageCheck
+                        className="h-3.5 w-3.5"
+                        aria-hidden="true"
+                      />
+                      Tacin edit
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-3 grid-rows-2">
+                  <div className="relative min-h-[112px] overflow-hidden rounded-[18px] bg-[#f6f2ef]">
+                    <Image
+                      src="/images/product-2.svg"
+                      alt=""
+                      fill
+                      sizes="(min-width: 1024px) 12rem, (min-width: 640px) 18vw, 45vw"
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="rounded-[18px] border border-[var(--border-soft)] bg-white px-4 py-4">
+                    <p className="text-[12px] uppercase tracking-[0.22em] text-[var(--bar-maroon)]">
+                      Tacin
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                      {language === "en"
+                        ? "Designed for gift-worthy arrivals, everyday grace, and polished wardrobe building."
+                        : "উপহারযোগ্য আগমন, প্রতিদিনের সৌন্দর্য ও পরিমিত ওয়ার্ডরোব গঠনের জন্য ভাবনাপূর্ণভাবে সাজানো।"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </AnimatedWrapper>
+          </div>
+        </AnimatedWrapper>
+      </section>
 
       <section className="bg-white">
         <AnimatedWrapper className="retail-section-enter" variant="section">
@@ -1194,7 +1363,9 @@ export default function HomePage({
                   type="button"
                   onClick={() =>
                     setActiveFilter(
-                      category.value.toLowerCase() === "all" ? null : category.value,
+                      category.value.toLowerCase() === "all"
+                        ? null
+                        : category.value,
                     )
                   }
                   className={clsx(
@@ -1408,7 +1579,10 @@ export default function HomePage({
 
             <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
               <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
-                <ShieldCheck className="h-4 w-4 text-black/70" aria-hidden="true" />
+                <ShieldCheck
+                  className="h-4 w-4 text-black/70"
+                  aria-hidden="true"
+                />
               </div>
               <p className="text-[13px] font-semibold leading-[1.5] text-black">
                 Secure Order Handling
@@ -1420,7 +1594,10 @@ export default function HomePage({
 
             <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
               <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
-                <MessageCircleMore className="h-4 w-4 text-black/70" aria-hidden="true" />
+                <MessageCircleMore
+                  className="h-4 w-4 text-black/70"
+                  aria-hidden="true"
+                />
               </div>
               <p className="text-[13px] font-semibold leading-[1.5] text-black">
                 WhatsApp Order Support
@@ -1432,7 +1609,10 @@ export default function HomePage({
 
             <article className="group rounded-xl border border-[#ebebeb] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm">
               <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04]">
-                <HandCoins className="h-4 w-4 text-black/70" aria-hidden="true" />
+                <HandCoins
+                  className="h-4 w-4 text-black/70"
+                  aria-hidden="true"
+                />
               </div>
               <p className="text-[13px] font-semibold leading-[1.5] text-black">
                 Cash on Delivery
@@ -1465,7 +1645,10 @@ export default function HomePage({
               </h3>
               <ul className="space-y-3 text-sm text-black">
                 <li>
-                  <a href="#product-grid" className="transition hover:opacity-70">
+                  <a
+                    href="#product-grid"
+                    className="transition hover:opacity-70"
+                  >
                     Shop
                   </a>
                 </li>
@@ -1475,7 +1658,12 @@ export default function HomePage({
                   </a>
                 </li>
                 <li>
-                  <a href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="transition hover:opacity-70">
+                  <a
+                    href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="transition hover:opacity-70"
+                  >
                     Contact
                   </a>
                 </li>
@@ -1514,8 +1702,13 @@ export default function HomePage({
                   className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:opacity-70"
                   aria-label="Pinterest"
                 >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
-                    <path d="M12 2C6.486 2 2 6.486 2 12c0 4.216 2.612 7.82 6.303 9.271-.087-.787-.166-1.994.035-2.853.182-.777 1.173-4.95 1.173-4.95s-.299-.598-.299-1.481c0-1.387.805-2.422 1.808-2.422.853 0 1.264.64 1.264 1.406 0 .857-.546 2.138-.827 3.325-.236.998.5 1.811 1.483 1.811 1.78 0 3.148-1.878 3.148-4.588 0-2.397-1.723-4.073-4.184-4.073-2.85 0-4.523 2.138-4.523 4.347 0 .861.331 1.784.746 2.286a.3.3 0 01.07.288c-.077.316-.25.999-.284 1.138-.044.184-.147.224-.34.135-1.267-.59-2.06-2.442-2.06-3.931 0-3.201 2.326-6.142 6.708-6.142 3.52 0 6.261 2.509 6.261 5.862 0 3.499-2.206 6.316-5.269 6.316-1.028 0-1.995-.535-2.324-1.168l-.632 2.407c-.228.878-.843 1.978-1.256 2.649A10.012 10.012 0 0012 22c5.514 0 10-4.486 10-10S17.514 2 12 2z"/>
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 2C6.486 2 2 6.486 2 12c0 4.216 2.612 7.82 6.303 9.271-.087-.787-.166-1.994.035-2.853.182-.777 1.173-4.95 1.173-4.95s-.299-.598-.299-1.481c0-1.387.805-2.422 1.808-2.422.853 0 1.264.64 1.264 1.406 0 .857-.546 2.138-.827 3.325-.236.998.5 1.811 1.483 1.811 1.78 0 3.148-1.878 3.148-4.588 0-2.397-1.723-4.073-4.184-4.073-2.85 0-4.523 2.138-4.523 4.347 0 .861.331 1.784.746 2.286a.3.3 0 01.07.288c-.077.316-.25.999-.284 1.138-.044.184-.147.224-.34.135-1.267-.59-2.06-2.442-2.06-3.931 0-3.201 2.326-6.142 6.708-6.142 3.52 0 6.261 2.509 6.261 5.862 0 3.499-2.206 6.316-5.269 6.316-1.028 0-1.995-.535-2.324-1.168l-.632 2.407c-.228.878-.843 1.978-1.256 2.649A10.012 10.012 0 0012 22c5.514 0 10-4.486 10-10S17.514 2 12 2z" />
                   </svg>
                   <span>Pinterest</span>
                 </a>
@@ -1526,8 +1719,13 @@ export default function HomePage({
                   className="inline-flex min-h-10 items-center gap-2 rounded-md px-1 py-1 transition hover:opacity-70"
                   aria-label="WhatsApp"
                 >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
-                    <path d="M20.52 3.48A11.815 11.815 0 0012.03 0C5.5 0 .19 5.3.19 11.84c0 2.09.55 4.13 1.58 5.93L0 24l6.41-1.68a11.8 11.8 0 005.62 1.43h.01c6.53 0 11.84-5.3 11.84-11.84 0-3.16-1.23-6.12-3.36-8.43zM12.04 21.7h-.01a9.86 9.86 0 01-5.02-1.37l-.36-.21-3.81 1 .99-3.71-.23-.38a9.87 9.87 0 01-1.51-5.2c0-5.44 4.43-9.87 9.88-9.87 2.64 0 5.13 1.03 6.99 2.89a9.8 9.8 0 012.88 6.99c0 5.45-4.43 9.88-9.87 9.88zm5.41-7.4c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.08-.3-.15-1.27-.47-2.42-1.49-.9-.8-1.5-1.78-1.67-2.08-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.5h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.01-1.04 2.46s1.07 2.84 1.22 3.04c.15.2 2.1 3.21 5.1 4.5.71.31 1.26.5 1.69.64.71.22 1.36.19 1.88.12.57-.08 1.77-.72 2.03-1.41.25-.7.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35z"/>
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="M20.52 3.48A11.815 11.815 0 0012.03 0C5.5 0 .19 5.3.19 11.84c0 2.09.55 4.13 1.58 5.93L0 24l6.41-1.68a11.8 11.8 0 005.62 1.43h.01c6.53 0 11.84-5.3 11.84-11.84 0-3.16-1.23-6.12-3.36-8.43zM12.04 21.7h-.01a9.86 9.86 0 01-5.02-1.37l-.36-.21-3.81 1 .99-3.71-.23-.38a9.87 9.87 0 01-1.51-5.2c0-5.44 4.43-9.87 9.88-9.87 2.64 0 5.13 1.03 6.99 2.89a9.8 9.8 0 012.88 6.99c0 5.45-4.43 9.88-9.87 9.88zm5.41-7.4c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.08-.3-.15-1.27-.47-2.42-1.49-.9-.8-1.5-1.78-1.67-2.08-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.5h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.01-1.04 2.46s1.07 2.84 1.22 3.04c.15.2 2.1 3.21 5.1 4.5.71.31 1.26.5 1.69.64.71.22 1.36.19 1.88.12.57-.08 1.77-.72 2.03-1.41.25-.7.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35z" />
                   </svg>
                   <span>WhatsApp</span>
                 </a>
@@ -1744,7 +1942,11 @@ export default function HomePage({
             >
               ←
             </button>
-            <h3 ref={cartHeadingRef} tabIndex={-1} className="text-lg font-semibold text-ink">
+            <h3
+              ref={cartHeadingRef}
+              tabIndex={-1}
+              className="text-lg font-semibold text-ink"
+            >
               Your Cart
             </h3>
             <button
@@ -1761,8 +1963,12 @@ export default function HomePage({
             ) : cartItems.length === 0 ? (
               <div className="rounded-2xl border border-[#f0e4da] bg-base p-4 text-center">
                 <p className="text-lg">🛍️</p>
-                <p className="mt-2 text-sm font-semibold text-ink">Your cart is empty.</p>
-                <p className="mt-1 text-[12px] text-muted">Start shopping to add items.</p>
+                <p className="mt-2 text-sm font-semibold text-ink">
+                  Your cart is empty.
+                </p>
+                <p className="mt-1 text-[12px] text-muted">
+                  Start shopping to add items.
+                </p>
                 <button
                   type="button"
                   onClick={() => setShowCart(false)}
@@ -1783,7 +1989,9 @@ export default function HomePage({
                       )}
                     >
                       <Image
-                        src={item.imageUrl ?? item.image ?? "/images/product-1.svg"}
+                        src={
+                          item.imageUrl ?? item.image ?? "/images/product-1.svg"
+                        }
                         alt={item.name}
                         width={80}
                         height={80}
@@ -1791,9 +1999,15 @@ export default function HomePage({
                       />
                       <div className="flex flex-1 items-start justify-between gap-3">
                         <div className="flex-1">
-                          <p className="text-base font-medium text-ink">{item.name}</p>
-                          <p className="text-[12px] text-muted">Size: {item.size} · Color: {item.color}</p>
-                          <p className="mt-1 font-semibold text-ink">{formatPrice(item.price)}</p>
+                          <p className="text-base font-medium text-ink">
+                            {item.name}
+                          </p>
+                          <p className="text-[12px] text-muted">
+                            Size: {item.size} · Color: {item.color}
+                          </p>
+                          <p className="mt-1 font-semibold text-ink">
+                            {formatPrice(item.price)}
+                          </p>
                           {cartQuantityFeedback[index] ? (
                             <p className="mt-1 text-xs font-semibold text-accent">
                               {cartQuantityFeedback[index]}
@@ -1805,16 +2019,28 @@ export default function HomePage({
                             <button
                               type="button"
                               disabled={cartActionLoading[index]}
-                              onClick={() => void updateCartQuantity(index, item.quantity - 1)}
+                              onClick={() =>
+                                void updateCartQuantity(
+                                  index,
+                                  item.quantity - 1,
+                                )
+                              }
                               className="rounded-full px-2 transition-transform duration-200 hover:scale-105 active:scale-95"
                             >
                               -
                             </button>
-                            <span className="text-[13px] font-semibold">{item.quantity}</span>
+                            <span className="text-[13px] font-semibold">
+                              {item.quantity}
+                            </span>
                             <button
                               type="button"
                               disabled={cartActionLoading[index]}
-                              onClick={() => void updateCartQuantity(index, item.quantity + 1)}
+                              onClick={() =>
+                                void updateCartQuantity(
+                                  index,
+                                  item.quantity + 1,
+                                )
+                              }
                               className="rounded-full px-2 transition-transform duration-200 hover:scale-105 active:scale-95"
                             >
                               +
@@ -1826,7 +2052,9 @@ export default function HomePage({
                             onClick={() => void removeCartItem(index)}
                             className="interactive-feedback text-xs font-semibold text-accent"
                           >
-                            {cartActionLoading[index] ? "Updating..." : "Remove"}
+                            {cartActionLoading[index]
+                              ? "Updating..."
+                              : "Remove"}
                           </button>
                         </div>
                       </div>
@@ -1841,7 +2069,11 @@ export default function HomePage({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    {isCartHydrating ? <SummaryPlaceholder /> : formatPrice(getSafeCartSubtotal(cartItems))}
+                    {isCartHydrating ? (
+                      <SummaryPlaceholder />
+                    ) : (
+                      formatPrice(getSafeCartSubtotal(cartItems))
+                    )}
                   </motion.span>
                 </div>
               </>
@@ -1861,13 +2093,12 @@ export default function HomePage({
         </div>
       ) : null}
 
-
       {showCheckout ? (
         <div
           ref={checkoutRef}
           className="fixed inset-0 z-50 bg-white flex flex-col animate-[fadeSlideUp_0.25s_ease]"
         >
-            <div className="flex items-center justify-between border-b border-[#f0e4da] p-4">
+          <div className="flex items-center justify-between border-b border-[#f0e4da] p-4">
             <button
               type="button"
               aria-label="Back"
@@ -1880,271 +2111,274 @@ export default function HomePage({
             >
               ←
             </button>
-            <h3 ref={checkoutHeadingRef} tabIndex={-1} className="text-lg font-semibold text-black">
+            <h3
+              ref={checkoutHeadingRef}
+              tabIndex={-1}
+              className="text-lg font-semibold text-black"
+            >
               Checkout
             </h3>
             <button
-                  type="button"
-                  onClick={() => {
-                    setShowCheckout(false);
-                    setIsOrderConfirmed(false);
-                    setIsSubmitting(false);
-                  }}
-                  className="interactive-feedback min-h-12 rounded-xl px-2 text-[13px] font-semibold text-accent"
-                >
-                  Close
-                </button>
+              type="button"
+              onClick={() => {
+                setShowCheckout(false);
+                setIsOrderConfirmed(false);
+                setIsSubmitting(false);
+              }}
+              className="interactive-feedback min-h-12 rounded-xl px-2 text-[13px] font-semibold text-accent"
+            >
+              Close
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-              {isOrderConfirmed ? (
-                <div className="mx-auto w-full max-w-4xl">
-                  <div className="text-center py-16 transition-opacity duration-300 animate-fadeIn">
-                    <h2 className="text-2xl font-semibold mb-4">
-                      Order Confirmed
-                    </h2>
-                    <p className="text-[var(--text-secondary)]">
-                      We will contact you shortly via phone or WhatsApp.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="mx-auto w-full max-w-4xl">
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <div className="max-w-[680px] space-y-4">
-                      <h2 className="text-base font-semibold mb-4 text-black">
-                        Order Summary
-                      </h2>
-                      <div className="rounded-2xl border border-[#f0e4da] p-3">
-                        <div className="space-y-3 text-[13px]">
-                          {checkoutItems.map((item, index) => (
-                            <div
-                              key={`${item.id}-${item.size}-${index}`}
-                              className="flex items-center justify-between gap-3 rounded-2xl border border-[#f0e4da] p-3"
-                            >
-                              <div className="flex items-center gap-3 min-w-0">
-                                <Image
-                                  src={
-                                    item.imageUrl ||
-                                    item.image ||
-                                    "/images/product-1.svg"
-                                  }
-                                  alt={item.name}
-                                  width={60}
-                                  height={86}
-                                  className="rounded-lg object-cover w-[60px] h-[86px] shrink-0"
-                                  unoptimized={false}
-                                />
-                                <div className="min-w-0">
-                                  <p className="font-semibold text-ink break-words">
-                                    {item.name}
-                                  </p>
-                                  <p className="text-[12px] text-muted">
-                                    Size: {item.size} · Qty: {item.quantity}
-                                  </p>
-                                </div>
-                              </div>
-                              <p className="font-semibold text-ink whitespace-nowrap">
-                                {formatPrice(item.price * item.quantity)}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl border border-[#f0e4da] p-3">
-                        <p className="text-[12px] font-semibold text-ink">
-                          {text.deliveryZone}
-                        </p>
-                        <div className="mt-2 flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setDeliveryZone("inside")}
-                            className={clsx(
-                              "interactive-feedback min-h-[40px] flex-1 rounded-lg border px-3 py-1.5 text-[12px] font-semibold",
-                              deliveryZone === "inside"
-                                ? "border-accent bg-accent text-white"
-                                : "border-[#e6d8ce]",
-                            )}
-                          >
-                            {text.insideDhaka}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeliveryZone("outside")}
-                            className={clsx(
-                              "interactive-feedback min-h-[40px] flex-1 rounded-lg border px-3 py-1.5 text-[12px] font-semibold",
-                              deliveryZone === "outside"
-                                ? "border-accent bg-accent text-white"
-                                : "border-[#e6d8ce]",
-                            )}
-                          >
-                            {text.outsideDhaka}
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs text-black">
-                        <div className="flex items-center justify-between">
-                          <span>{text.subtotal}</span>
-                          <span className="text-black font-medium">
-                            {isSummaryLoading ? (
-                              <SummaryPlaceholder />
-                            ) : (
-                              formatPrice(checkoutSubtotal)
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>{text.deliveryCharge}</span>
-                          <span className="text-black font-medium">
-                            {isSummaryLoading ? (
-                              <SummaryPlaceholder widthClass="w-12" />
-                            ) : (
-                              formatPrice(deliveryFee)
-                            )}
-                          </span>
-                        </div>
-                        <div className="mt-3 flex justify-between border-t pt-3 text-[16px] font-semibold">
-                          <span>{text.totalPayable}</span>
-                          <span className="text-black">
-                            {isSummaryLoading ? (
-                              <SummaryPlaceholder />
-                            ) : (
-                              formatPrice(checkoutTotal)
-                            )}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="text-xs text-[var(--text-secondary)] mt-3 space-y-1">
-                        <p>✓ Cash on Delivery Available</p>
-                        <p>✓ Nationwide Delivery</p>
-                        <p>✓ WhatsApp Confirmation</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h2 className="mb-4 text-base font-semibold text-black">
-                        Shipping Information
-                      </h2>
-                      <div
-                        className={clsx(
-                          "grid gap-4",
-                          isFieldShake && "animate-checkout-shake",
-                        )}
-                      >
-                        <label
-                          htmlFor="checkout-name"
-                          className="text-xs font-semibold text-[var(--text-secondary)]"
-                        >
-                          Full Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          id="checkout-name"
-                          type="text"
-                          placeholder="Name"
-                          value={customer.name}
-                          onChange={(event) =>
-                            setCustomer((prev) => ({
-                              ...prev,
-                              name: event.target.value,
-                            }))
-                          }
-                          aria-required="true"
-                          className="w-full rounded-lg border border-[var(--border-soft)] p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
-                        />
-                        <label
-                          htmlFor="checkout-phone"
-                          className="text-xs font-semibold text-[var(--text-secondary)]"
-                        >
-                          Phone <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          id="checkout-phone"
-                          type="tel"
-                          placeholder="Phone"
-                          value={customer.phone}
-                          onChange={(event) =>
-                            setCustomer((prev) => ({
-                              ...prev,
-                              phone: event.target.value,
-                            }))
-                          }
-                          aria-required="true"
-                          className="w-full rounded-lg border border-[var(--border-soft)] p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
-                        />
-                        <label
-                          htmlFor="checkout-address"
-                          className="text-xs font-semibold text-[var(--text-secondary)]"
-                        >
-                          Address <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                          id="checkout-address"
-                          placeholder="Address"
-                          rows={3}
-                          value={customer.address}
-                          onChange={(event) =>
-                            setCustomer((prev) => ({
-                              ...prev,
-                              address: event.target.value,
-                            }))
-                          }
-                          aria-required="true"
-                          className="w-full rounded-lg border border-[var(--border-soft)] p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
-                        />
-                      </div>
-
-                      <div className="text-xs text-[var(--text-secondary)] mt-4">
-                        🔒 Your information is secure and will not be shared.
-                      </div>
-
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {!isOrderConfirmed ? (
-              <div className="sticky bottom-0 bg-white border-t border-[#f0e4da] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-                <div className="mx-auto w-full max-w-4xl">
-                  <button
-                    type="button"
-                    onClick={handlePaymentInfoOpen}
-                    disabled={isCheckoutBlocked}
-                    className={clsx(
-                      "interactive-feedback min-h-14 h-14 w-full rounded-xl bg-[var(--bar-maroon)] px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 hover:opacity-90 active:scale-95",
-                      isCheckoutBlocked && "cursor-not-allowed opacity-60",
-                    )}
-                  >
-                    {isSubmitting ? (
-                      <span className="inline-flex items-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-white" />
-                        Processing...
-                      </span>
-                    ) : (
-                      "Pay Now"
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleWhatsappRedirect("Cash on Delivery")}
-                    disabled={isCheckoutBlocked}
-                    className={clsx(
-                      "interactive-feedback mt-3 min-h-14 h-14 w-full rounded-xl bg-green-600 px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 active:scale-95",
-                      isCheckoutBlocked && "cursor-not-allowed opacity-60",
-                    )}
-                  >
-                    {isSubmitting ? "Processing..." : text.orderCod}
-                  </button>
-                  <p className="mt-3 text-[12px] text-[var(--text-secondary)]">
-                    Cash on Delivery available nationwide. You will receive
-                    confirmation before dispatch.
+            {isOrderConfirmed ? (
+              <div className="mx-auto w-full max-w-4xl">
+                <div className="text-center py-16 transition-opacity duration-300 animate-fadeIn">
+                  <h2 className="text-2xl font-semibold mb-4">
+                    Order Confirmed
+                  </h2>
+                  <p className="text-[var(--text-secondary)]">
+                    We will contact you shortly via phone or WhatsApp.
                   </p>
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <div className="mx-auto w-full max-w-4xl">
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div className="max-w-[680px] space-y-4">
+                    <h2 className="text-base font-semibold mb-4 text-black">
+                      Order Summary
+                    </h2>
+                    <div className="rounded-2xl border border-[#f0e4da] p-3">
+                      <div className="space-y-3 text-[13px]">
+                        {checkoutItems.map((item, index) => (
+                          <div
+                            key={`${item.id}-${item.size}-${index}`}
+                            className="flex items-center justify-between gap-3 rounded-2xl border border-[#f0e4da] p-3"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Image
+                                src={
+                                  item.imageUrl ||
+                                  item.image ||
+                                  "/images/product-1.svg"
+                                }
+                                alt={item.name}
+                                width={60}
+                                height={86}
+                                className="rounded-lg object-cover w-[60px] h-[86px] shrink-0"
+                                unoptimized={false}
+                              />
+                              <div className="min-w-0">
+                                <p className="font-semibold text-ink break-words">
+                                  {item.name}
+                                </p>
+                                <p className="text-[12px] text-muted">
+                                  Size: {item.size} · Qty: {item.quantity}
+                                </p>
+                              </div>
+                            </div>
+                            <p className="font-semibold text-ink whitespace-nowrap">
+                              {formatPrice(item.price * item.quantity)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#f0e4da] p-3">
+                      <p className="text-[12px] font-semibold text-ink">
+                        {text.deliveryZone}
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryZone("inside")}
+                          className={clsx(
+                            "interactive-feedback min-h-[40px] flex-1 rounded-lg border px-3 py-1.5 text-[12px] font-semibold",
+                            deliveryZone === "inside"
+                              ? "border-accent bg-accent text-white"
+                              : "border-[#e6d8ce]",
+                          )}
+                        >
+                          {text.insideDhaka}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryZone("outside")}
+                          className={clsx(
+                            "interactive-feedback min-h-[40px] flex-1 rounded-lg border px-3 py-1.5 text-[12px] font-semibold",
+                            deliveryZone === "outside"
+                              ? "border-accent bg-accent text-white"
+                              : "border-[#e6d8ce]",
+                          )}
+                        >
+                          {text.outsideDhaka}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 rounded-2xl border border-[#f0e4da] p-3 text-xs text-black">
+                      <div className="flex items-center justify-between">
+                        <span>{text.subtotal}</span>
+                        <span className="text-black font-medium">
+                          {isSummaryLoading ? (
+                            <SummaryPlaceholder />
+                          ) : (
+                            formatPrice(checkoutSubtotal)
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>{text.deliveryCharge}</span>
+                        <span className="text-black font-medium">
+                          {isSummaryLoading ? (
+                            <SummaryPlaceholder widthClass="w-12" />
+                          ) : (
+                            formatPrice(deliveryFee)
+                          )}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex justify-between border-t pt-3 text-[16px] font-semibold">
+                        <span>{text.totalPayable}</span>
+                        <span className="text-black">
+                          {isSummaryLoading ? (
+                            <SummaryPlaceholder />
+                          ) : (
+                            formatPrice(checkoutTotal)
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-[var(--text-secondary)] mt-3 space-y-1">
+                      <p>✓ Cash on Delivery Available</p>
+                      <p>✓ Nationwide Delivery</p>
+                      <p>✓ WhatsApp Confirmation</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h2 className="mb-4 text-base font-semibold text-black">
+                      Shipping Information
+                    </h2>
+                    <div
+                      className={clsx(
+                        "grid gap-4",
+                        isFieldShake && "animate-checkout-shake",
+                      )}
+                    >
+                      <label
+                        htmlFor="checkout-name"
+                        className="text-xs font-semibold text-[var(--text-secondary)]"
+                      >
+                        Full Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="checkout-name"
+                        type="text"
+                        placeholder="Name"
+                        value={customer.name}
+                        onChange={(event) =>
+                          setCustomer((prev) => ({
+                            ...prev,
+                            name: event.target.value,
+                          }))
+                        }
+                        aria-required="true"
+                        className="w-full rounded-lg border border-[var(--border-soft)] p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
+                      />
+                      <label
+                        htmlFor="checkout-phone"
+                        className="text-xs font-semibold text-[var(--text-secondary)]"
+                      >
+                        Phone <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="checkout-phone"
+                        type="tel"
+                        placeholder="Phone"
+                        value={customer.phone}
+                        onChange={(event) =>
+                          setCustomer((prev) => ({
+                            ...prev,
+                            phone: event.target.value,
+                          }))
+                        }
+                        aria-required="true"
+                        className="w-full rounded-lg border border-[var(--border-soft)] p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
+                      />
+                      <label
+                        htmlFor="checkout-address"
+                        className="text-xs font-semibold text-[var(--text-secondary)]"
+                      >
+                        Address <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        id="checkout-address"
+                        placeholder="Address"
+                        rows={3}
+                        value={customer.address}
+                        onChange={(event) =>
+                          setCustomer((prev) => ({
+                            ...prev,
+                            address: event.target.value,
+                          }))
+                        }
+                        aria-required="true"
+                        className="w-full rounded-lg border border-[var(--border-soft)] p-3 text-[14px] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-black"
+                      />
+                    </div>
+
+                    <div className="text-xs text-[var(--text-secondary)] mt-4">
+                      🔒 Your information is secure and will not be shared.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {!isOrderConfirmed ? (
+            <div className="sticky bottom-0 bg-white border-t border-[#f0e4da] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              <div className="mx-auto w-full max-w-4xl">
+                <button
+                  type="button"
+                  onClick={handlePaymentInfoOpen}
+                  disabled={isCheckoutBlocked}
+                  className={clsx(
+                    "interactive-feedback min-h-14 h-14 w-full rounded-xl bg-[var(--bar-maroon)] px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 hover:opacity-90 active:scale-95",
+                    isCheckoutBlocked && "cursor-not-allowed opacity-60",
+                  )}
+                >
+                  {isSubmitting ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-white" />
+                      Processing...
+                    </span>
+                  ) : (
+                    "Pay Now"
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleWhatsappRedirect("Cash on Delivery")}
+                  disabled={isCheckoutBlocked}
+                  className={clsx(
+                    "interactive-feedback mt-3 min-h-14 h-14 w-full rounded-xl bg-green-600 px-4 text-[14px] font-semibold text-white shadow-md transition-all duration-300 active:scale-95",
+                    isCheckoutBlocked && "cursor-not-allowed opacity-60",
+                  )}
+                >
+                  {isSubmitting ? "Processing..." : text.orderCod}
+                </button>
+                <p className="mt-3 text-[12px] text-[var(--text-secondary)]">
+                  Cash on Delivery available nationwide. You will receive
+                  confirmation before dispatch.
+                </p>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
