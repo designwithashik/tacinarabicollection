@@ -2,6 +2,8 @@ import { kv } from "@vercel/kv";
 import type {
   AnnouncementContent,
   CarouselItem,
+  CarouselOverlayIntensity,
+  CarouselTextAlign,
   FilterPanelItem,
 } from "@/lib/siteContent";
 
@@ -16,6 +18,27 @@ const isRecord = (value: unknown): value is RecordValue =>
 
 const normalizeString = (value: unknown): string =>
   typeof value === "string" ? value.trim() : "";
+
+const normalizeStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => normalizeString(item))
+    .filter(Boolean)
+    .slice(0, 4);
+};
+
+const normalizeTextAlign = (value: unknown): CarouselTextAlign => {
+  if (value === "center" || value === "right") return value;
+  return "left";
+};
+
+const normalizeOverlayIntensity = (
+  value: unknown,
+): CarouselOverlayIntensity => {
+  if (value === "light" || value === "strong") return value;
+  return "medium";
+};
 
 const toCarouselItem = (value: unknown): CarouselItem | null => {
   if (!isRecord(value)) return null;
@@ -36,8 +59,14 @@ const toCarouselItem = (value: unknown): CarouselItem | null => {
     imageUrl,
     title: normalizeString(value.title),
     subtitle: normalizeString(value.subtitle),
-    buttonText: normalizeString(value.buttonText) || "Shop Now",
+    campaignLabel: normalizeString(value.campaignLabel),
+    buttonText: normalizeString(value.buttonText) || "Shop Collection",
     buttonLink: normalizeString(value.buttonLink) || "/",
+    secondaryButtonText: normalizeString(value.secondaryButtonText),
+    secondaryButtonLink: normalizeString(value.secondaryButtonLink),
+    metadataChips: normalizeStringArray(value.metadataChips),
+    textAlign: normalizeTextAlign(value.textAlign),
+    overlayIntensity: normalizeOverlayIntensity(value.overlayIntensity),
     active: value.active !== false,
     order: Number.isFinite(parsedOrder) ? parsedOrder : 0,
   };

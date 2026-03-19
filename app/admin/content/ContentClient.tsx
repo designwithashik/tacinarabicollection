@@ -73,8 +73,14 @@ const createBlankSlide = (order: number): CarouselItem => ({
   imageUrl: "",
   title: "",
   subtitle: "",
-  buttonText: "Shop Now",
+  campaignLabel: "New Season",
+  buttonText: "Shop Collection",
   buttonLink: "/",
+  secondaryButtonText: "Explore New Arrivals",
+  secondaryButtonLink: "/new-arrivals",
+  metadataChips: ["Limited stock", "Fast delivery"],
+  textAlign: "left",
+  overlayIntensity: "medium",
   active: true,
   order,
 });
@@ -604,10 +610,10 @@ export default function ContentClient() {
                   />
                   <input
                     className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
-                    placeholder="Button text"
-                    value={item.buttonText}
+                    placeholder="Campaign label"
+                    value={item.campaignLabel ?? ""}
                     onChange={(e) =>
-                      updateSlide(item.id, { buttonText: e.target.value })
+                      updateSlide(item.id, { campaignLabel: e.target.value })
                     }
                   />
                   <input
@@ -619,13 +625,82 @@ export default function ContentClient() {
                     }
                   />
                   <input
-                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm md:col-span-2"
-                    placeholder="Button link"
+                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
+                    placeholder="Primary button text"
+                    value={item.buttonText}
+                    onChange={(e) =>
+                      updateSlide(item.id, { buttonText: e.target.value })
+                    }
+                  />
+                  <input
+                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
+                    placeholder="Primary button link"
                     value={item.buttonLink}
                     onChange={(e) =>
                       updateSlide(item.id, { buttonLink: e.target.value })
                     }
                   />
+                  <input
+                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
+                    placeholder="Secondary button text"
+                    value={item.secondaryButtonText ?? ""}
+                    onChange={(e) =>
+                      updateSlide(item.id, { secondaryButtonText: e.target.value })
+                    }
+                  />
+                  <input
+                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
+                    placeholder="Secondary button link"
+                    value={item.secondaryButtonLink ?? ""}
+                    onChange={(e) =>
+                      updateSlide(item.id, { secondaryButtonLink: e.target.value })
+                    }
+                  />
+                  <input
+                    className="rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm md:col-span-2"
+                    placeholder="Metadata chips (comma separated)"
+                    value={(item.metadataChips ?? []).join(', ')}
+                    onChange={(e) =>
+                      updateSlide(item.id, {
+                        metadataChips: e.target.value
+                          .split(',')
+                          .map((chip) => chip.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                  />
+                  <label className="text-xs font-semibold text-muted">
+                    Text alignment
+                    <select
+                      className="mt-1 w-full rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
+                      value={item.textAlign ?? 'left'}
+                      onChange={(e) =>
+                        updateSlide(item.id, {
+                          textAlign: e.target.value as CarouselItem['textAlign'],
+                        })
+                      }
+                    >
+                      <option value="left">Left</option>
+                      <option value="center">Center</option>
+                      <option value="right">Right</option>
+                    </select>
+                  </label>
+                  <label className="text-xs font-semibold text-muted">
+                    Overlay intensity
+                    <select
+                      className="mt-1 w-full rounded-lg border border-[#e6d8ce] px-3 py-2 text-sm"
+                      value={item.overlayIntensity ?? 'medium'}
+                      onChange={(e) =>
+                        updateSlide(item.id, {
+                          overlayIntensity: e.target.value as CarouselItem['overlayIntensity'],
+                        })
+                      }
+                    >
+                      <option value="light">Light</option>
+                      <option value="medium">Medium</option>
+                      <option value="strong">Strong</option>
+                    </select>
+                  </label>
                 </div>
               </div>
             </article>

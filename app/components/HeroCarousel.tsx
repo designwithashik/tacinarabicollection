@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent, TouchEvent } from "react";
 import Image from "next/image";
 import clsx from "clsx";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import type { CarouselItem } from "@/lib/siteContent";
 
@@ -12,6 +13,41 @@ type HeroCarouselProps = {
 };
 
 const SWIPE_THRESHOLD = 48;
+const AUTOPLAY_MS = 7000;
+
+const overlayMap = {
+  light: "from-black/48 via-black/18 to-black/10",
+  medium: "from-black/68 via-black/30 to-black/14",
+  strong: "from-black/82 via-black/42 to-black/20",
+} as const;
+
+const textAlignMap = {
+  left: {
+    container: "items-start text-left",
+    layout: "justify-center md:justify-start",
+    cta: "justify-start",
+  },
+  center: {
+    container: "items-center text-center",
+    layout: "justify-center",
+    cta: "justify-center",
+  },
+  right: {
+    container: "items-end text-right",
+    layout: "justify-center md:justify-end",
+    cta: "justify-end",
+  },
+} as const;
+
+const progressTransition = {
+  duration: AUTOPLAY_MS / 1000,
+  ease: [0.22, 1, 0.36, 1] as const,
+};
+
+const contentTransition = {
+  duration: 0.95,
+  ease: [0.22, 1, 0.36, 1] as const,
+};
 
 export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) {
   const [slides, setSlides] = useState<CarouselItem[]>(
@@ -24,6 +60,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
 
   const touchStartX = useRef<number | null>(null);
   const touchCurrentX = useRef<number | null>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     const loadSlides = async () => {
@@ -56,14 +93,21 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
   useEffect(() => {
     if (slides.length < 2 || isPaused) return;
 
-    const interval = setInterval(() => {
+    const interval = window.setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % slides.length);
-    }, 6000);
+    }, AUTOPLAY_MS);
 
-    return () => clearInterval(interval);
+    return () => window.clearInterval(interval);
   }, [slides.length, isPaused]);
 
-  if (slides.length === 0) {
+  const slide = slides[currentIndex];
+
+  const activeChips = useMemo(
+    () => slide?.metadataChips?.map((chip) => chip.trim()).filter(Boolean) ?? [],
+    [slide?.metadataChips],
+  );
+
+  if (slides.length === 0 || !slide) {
     return null;
   }
 
@@ -121,9 +165,14 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
     }
   };
 
+  const overlayIntensity = slide.overlayIntensity ?? "medium";
+  const textAlign = slide.textAlign ?? "left";
+  const alignmentClasses = textAlignMap[textAlign];
+  const hasSecondaryCta = Boolean(slide.secondaryButtonText?.trim() && slide.secondaryButtonLink?.trim());
+
   return (
     <div
-      className="relative w-full overflow-hidden"
+      className="relative w-full overflow-hidden rounded-[1.75rem]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocusCapture={() => setIsPaused(true)}
@@ -137,52 +186,133 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
       aria-roledescription="carousel"
       aria-label="Featured collection"
     >
-      <div
-        className="flex will-change-transform"
-        style={{
-          transform: `translate3d(-${currentIndex * 100}%, 0, 0)`,
-          transition: "transform 900ms cubic-bezier(.22,1,.36,1)",
-        }}
-      >
-        {slides.map((slide, index) => (
-          <article
+      <div className="relative aspect-[16/10] min-h-[420px] overflow-hidden bg-neutral-950 md:aspect-[21/9] md:min-h-[560px]">
+        <AnimatePresence mode="wait">
+          <motion.article
             key={slide.id}
-            className={clsx(
-              "relative w-full flex-shrink-0 aspect-[16/9] overflow-hidden md:aspect-[21/9] transition-transform duration-[900ms]",
-              index === currentIndex ? "scale-100" : "scale-[0.985]",
-            )}
-            aria-hidden={index !== currentIndex}
+            className="absolute inset-0"
+            aria-hidden={false}
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0.35, scale: 1.015 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0.2, scale: 0.992 }}
+            transition={contentTransition}
           >
-            <Image
-              src={slide.imageUrl || "/images/product-1.svg"}
-              alt={slide.title || "Carousel slide"}
-              fill
-              priority={index === 0}
-              className="absolute inset-0 h-full w-full object-cover"
-              sizes="(max-width: 768px) 100vw, 1200px"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-white/35 to-white/20" />
+            <motion.div
+              className="absolute inset-0"
+              animate={
+                shouldReduceMotion
+                  ? { scale: 1, x: 0, y: 0 }
+                  : { scale: 1.08, x: textAlign === "right" ? -18 : textAlign === "center" ? 0 : 18, y: -10 }
+              }
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { duration: AUTOPLAY_MS / 1000 + 1.5, ease: [0.22, 1, 0.36, 1] }
+              }
+            >
+              <Image
+                src={slide.imageUrl || "/images/product-1.svg"}
+                alt={slide.title || "Carousel slide"}
+                fill
+                priority={currentIndex === 0}
+                className="absolute inset-0 h-full w-full object-cover"
+                sizes="(max-width: 768px) 100vw, 1400px"
+              />
+            </motion.div>
 
-            <div className="absolute inset-0 z-20 flex items-center justify-center md:justify-start">
-              <div className="flex max-w-xl flex-col gap-2 px-4 py-6 text-center text-black sm:gap-3 sm:px-6 sm:py-8 md:gap-4 md:px-16 md:py-0 md:text-left">
-                <h2 className="line-clamp-3 break-words text-[clamp(1.1rem,5.8vw,3rem)] font-bold leading-[1.1]">
+            <div
+              className={clsx(
+                "absolute inset-0 bg-gradient-to-r",
+                overlayMap[overlayIntensity],
+              )}
+            />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_38%)]" />
+
+            <div
+              className={clsx(
+                "absolute inset-0 z-20 flex px-4 py-6 sm:px-6 sm:py-8 md:px-12 lg:px-16",
+                alignmentClasses.layout,
+              )}
+            >
+              <div
+                className={clsx(
+                  "flex max-w-2xl flex-col gap-4 self-center text-white md:gap-5",
+                  alignmentClasses.container,
+                )}
+              >
+                {slide.campaignLabel ? (
+                  <motion.span
+                    className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-white/90 backdrop-blur-md"
+                    initial={shouldReduceMotion ? false : { opacity: 0, y: 14 }}
+                    animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                    transition={{ ...contentTransition, delay: 0.08 }}
+                  >
+                    {slide.campaignLabel}
+                  </motion.span>
+                ) : null}
+
+                <motion.h2
+                  className="max-w-[14ch] text-[clamp(1.95rem,5.2vw,4.85rem)] font-semibold leading-[0.96] tracking-[-0.03em] text-balance"
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
+                  animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                  transition={{ ...contentTransition, delay: 0.14 }}
+                >
                   {slide.title}
-                </h2>
-                <p className="line-clamp-3 text-[clamp(0.82rem,3.3vw,1.125rem)] text-black md:line-clamp-none">
+                </motion.h2>
+
+                <motion.p
+                  className="max-w-[52ch] text-[clamp(0.95rem,2vw,1.15rem)] leading-relaxed text-white/84"
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
+                  animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                  transition={{ ...contentTransition, delay: 0.22 }}
+                >
                   {slide.subtitle}
-                </p>
-                <div>
+                </motion.p>
+
+                {activeChips.length ? (
+                  <motion.div
+                    className={clsx("flex flex-wrap gap-2", alignmentClasses.cta)}
+                    initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
+                    animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                    transition={{ ...contentTransition, delay: 0.3 }}
+                  >
+                    {activeChips.map((chip) => (
+                      <span
+                        key={chip}
+                        className="rounded-full border border-white/16 bg-black/20 px-3 py-1.5 text-xs font-medium text-white/86 backdrop-blur-sm"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </motion.div>
+                ) : null}
+
+                <motion.div
+                  className={clsx("flex flex-wrap gap-3 pt-1", alignmentClasses.cta)}
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+                  animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                  transition={{ ...contentTransition, delay: 0.38 }}
+                >
                   <a
-                    className="interactive-feedback inline-flex items-center justify-center rounded-full bg-white px-7 py-3 font-semibold text-black shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
+                    className="interactive-feedback inline-flex min-h-12 items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-black shadow-[0_20px_50px_rgba(0,0,0,0.18)] transition-all duration-500 hover:-translate-y-0.5 hover:shadow-[0_28px_60px_rgba(0,0,0,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40"
                     href={slide.buttonLink || "/"}
                   >
-                    {slide.buttonText || "Shop Now"}
+                    {slide.buttonText || "Shop Collection"}
                   </a>
-                </div>
+
+                  {hasSecondaryCta ? (
+                    <a
+                      className="interactive-feedback inline-flex min-h-12 items-center justify-center rounded-full border border-white/28 bg-white/10 px-7 py-3 text-sm font-semibold text-white backdrop-blur-md transition-all duration-500 hover:-translate-y-0.5 hover:bg-white/16 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40"
+                      href={slide.secondaryButtonLink}
+                    >
+                      {slide.secondaryButtonText}
+                    </a>
+                  ) : null}
+                </motion.div>
               </div>
             </div>
-          </article>
-        ))}
+          </motion.article>
+        </AnimatePresence>
       </div>
 
       {slides.length > 1 ? (
@@ -190,7 +320,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <button
             type="button"
             aria-label="Previous slide"
-            className="absolute left-3 top-1/2 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-black/50 sm:flex sm:h-9 sm:w-9 md:h-11 md:w-11"
+            className="absolute left-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/18 bg-black/20 text-white backdrop-blur-md transition-all duration-500 hover:scale-105 hover:bg-black/32 sm:flex md:h-11 md:w-11"
             onClick={goPrev}
           >
             ‹
@@ -198,7 +328,7 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
           <button
             type="button"
             aria-label="Next slide"
-            className="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-black/50 sm:flex sm:h-9 sm:w-9 md:h-11 md:w-11"
+            className="absolute right-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/18 bg-black/20 text-white backdrop-blur-md transition-all duration-500 hover:scale-105 hover:bg-black/32 sm:flex md:h-11 md:w-11"
             onClick={goNext}
           >
             ›
@@ -206,25 +336,55 @@ export default function HeroCarousel({ initialSlides = [] }: HeroCarouselProps) 
         </>
       ) : null}
 
-      <div
-        className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2"
-        aria-label="Slide navigation"
-      >
-        {slides.map((slide, index) => (
-          <button
-            key={slide.id}
-            type="button"
-            aria-label={`Go to slide ${index + 1}`}
-            aria-current={index === currentIndex}
-            className={clsx(
-              "h-2.5 rounded-full transition-all duration-300",
-              index === currentIndex
-                ? "w-8 bg-white shadow"
-                : "w-2.5 bg-white/60 hover:bg-white/90",
-            )}
-            onClick={() => goTo(index)}
-          />
-        ))}
+      <div className="absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/45 to-transparent px-4 pb-4 pt-12 sm:px-6 md:px-10 md:pb-6">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-white/62">
+              Featured story
+            </p>
+            <p className="mt-1 text-sm text-white/84">
+              {String(currentIndex + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
+            </p>
+          </div>
+
+          <div className="flex w-full max-w-2xl gap-2" aria-label="Slide progress">
+            {slides.map((item, index) => {
+              const isActive = index === currentIndex;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => goTo(index)}
+                  aria-label={`Go to slide ${index + 1}`}
+                  aria-current={isActive}
+                  className="group flex min-w-0 flex-1 flex-col gap-2 text-left"
+                >
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/18">
+                    <motion.div
+                      key={`${item.id}-${isActive ? currentIndex : "idle"}`}
+                      className={clsx(
+                        "h-full rounded-full",
+                        isActive ? "bg-white" : "bg-white/45",
+                      )}
+                      initial={shouldReduceMotion ? false : { width: isActive ? "0%" : "100%" }}
+                      animate={{ width: isActive ? "100%" : "28%" }}
+                      transition={isActive && !isPaused && !shouldReduceMotion ? progressTransition : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                    />
+                  </div>
+                  <span
+                    className={clsx(
+                      "truncate text-xs transition-colors duration-300",
+                      isActive ? "text-white" : "text-white/58 group-hover:text-white/80",
+                    )}
+                  >
+                    {item.campaignLabel || item.title}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       <p className="sr-only" aria-live="polite">
