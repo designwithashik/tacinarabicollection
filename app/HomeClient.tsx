@@ -201,6 +201,83 @@ const formatPrice = (price: number) => `৳${price.toLocaleString("en-BD")}`;
 
 const getStatusLabel = (index: number) =>
   statusLabels[index % statusLabels.length];
+
+const getProductTimestamp = (product: AdminProduct) => {
+  const candidate = product.updatedAt ?? (product as AdminProduct & { createdAt?: string }).createdAt;
+  const parsed = candidate ? Date.parse(candidate) : Number.NaN;
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getMerchandisingSections = (products: AdminProduct[]): MerchandisingSection[] => {
+  if (!products.length) return [];
+
+  const byNewest = [...products].sort(
+    (a, b) => getProductTimestamp(b) - getProductTimestamp(a),
+  );
+  const byPrice = [...products].sort((a, b) => b.price - a.price);
+  const lowStock = products
+    .filter((product) => typeof product.stock === "number" && product.stock > 0 && product.stock <= 5)
+    .sort((a, b) => (a.stock ?? Number.MAX_SAFE_INTEGER) - (b.stock ?? Number.MAX_SAFE_INTEGER));
+
+  const premiumCategories = ["clothing", "ceramic"];
+  const categoryPriority = new Map(premiumCategories.map((category, index) => [category, index]));
+  const editorsPicks = [...products]
+    .sort((a, b) => {
+      const categoryDelta =
+        (categoryPriority.get(a.category.trim().toLowerCase()) ?? premiumCategories.length) -
+        (categoryPriority.get(b.category.trim().toLowerCase()) ?? premiumCategories.length);
+
+      if (categoryDelta !== 0) return categoryDelta;
+
+      const stockDelta = (b.stock ?? 0) - (a.stock ?? 0);
+      if (stockDelta !== 0) return stockDelta;
+
+      return b.price - a.price;
+    });
+
+  const configuredSections: Omit<MerchandisingSection, "products">[] = [
+    {
+      id: "new-arrivals",
+      eyebrow: "Freshly added",
+      title: "New Arrivals",
+      description: "The latest pieces to land in the collection, selected for a polished first look.",
+      accentClassName: "border-[#eadfd8] bg-[#fbf7f4]",
+    },
+    {
+      id: "best-sellers",
+      eyebrow: "Most loved",
+      title: "Best Sellers",
+      description: "Premium staples and statement pieces with enduring appeal across the collection.",
+      accentClassName: "border-[#e7dfcf] bg-[#faf7ef]",
+    },
+    {
+      id: "editors-picks",
+      eyebrow: "Curated edit",
+      title: "Editor’s Picks",
+      description: "A refined mix of signature categories and elevated finishes for thoughtful gifting or self-selection.",
+      accentClassName: "border-[#dfdfeb] bg-[#f7f7fb]",
+    },
+    {
+      id: "limited-stock",
+      eyebrow: "Almost gone",
+      title: "Limited Stock Highlights",
+      description: "A short list of pieces with only a few units remaining right now.",
+      accentClassName: "border-[#ead9d2] bg-[#fff8f5]",
+    },
+  ];
+
+  const productGroups = [
+    byNewest.slice(0, 4),
+    byPrice.slice(0, 4),
+    editorsPicks.slice(0, 4),
+    lowStock.slice(0, 4),
+  ];
+
+  return configuredSections
+    .map((section, index) => ({ ...section, products: productGroups[index] ?? [] }))
+    .filter((section) => section.products.length > 0);
+};
+
 const getStockLabel = (product: Product & { stock?: number }, index: number) => {
   const stockCount = typeof product.stock === "number" ? product.stock : null;
   if (stockCount !== null) {
@@ -210,6 +287,15 @@ const getStockLabel = (product: Product & { stock?: number }, index: number) => 
   }
 
   return index % 3 === 2 ? "Limited stock" : "In stock";
+};
+
+type MerchandisingSection = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  products: AdminProduct[];
+  accentClassName: string;
 };
 
 type HomeClientProps = {
@@ -829,6 +915,10 @@ export default function HomePage({
     () => visibleProducts.map((product) => product.id).join("|"),
     [visibleProducts],
   );
+  const merchandisingSections = useMemo(
+    () => getMerchandisingSections(productSource),
+    [productSource],
+  );
 
   const activeChips = [
     ...filters.size.map((size) => ({ type: "size", value: size })),
@@ -1058,6 +1148,43 @@ export default function HomePage({
     };
   }, []);
 
+  const renderProductGrid = (products: AdminProduct[], sectionKey: string) => (
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      {products.map((product, index) => (
+        <AnimatedWrapper
+          key={`${sectionKey}-${product.id}`}
+          variant="product-card"
+          delay={prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.12)}
+        >
+          <ProductCard
+            product={product}
+            selectedSize={selectedSizes[product.id]}
+            quantity={quantities[product.id] ?? 1}
+            onSizeChange={(size) => updateSize(product.id, size)}
+            onQuantityChange={(quantity) => updateQuantity(product.id, quantity)}
+            onBuyNow={() => handleBuyNow(product)}
+            onAddToCart={() => handleAddToCart(product)}
+            onOpenDetails={() => {
+              markRecentlyViewed(product);
+              setDetailsProduct(product);
+            }}
+            priceLabel={text.priceLabel}
+            buyNowLabel={text.buyNow}
+            addToCartLabel={text.addToCart}
+            addingLabel={text.adding}
+            addedLabel={text.added}
+            addState={addStates[product.id] ?? "idle"}
+            quantityFeedback={quantityFeedback[product.id]}
+            statusLabel={getStatusLabel(index)}
+            stockLabel={getStockLabel(product, index)}
+            sizeErrorLabel={text.sizeError}
+            isRouting={isRouting}
+          />
+        </AnimatedWrapper>
+      ))}
+    </div>
+  );
+
   return (
     <div
       className={clsx(
@@ -1247,6 +1374,50 @@ export default function HomePage({
         </AnimatedWrapper>
       </section>
 
+      {merchandisingSections.length > 0 ? (
+        <section className="mx-auto mt-6 max-w-6xl px-4">
+          <div className="space-y-6">
+            {merchandisingSections.map((section, sectionIndex) => (
+              <AnimatedWrapper
+                key={section.id}
+                className="retail-section-enter"
+                variant="section"
+                delay={prefersReducedMotion ? 0 : Math.min(sectionIndex * 0.04, 0.16)}
+              >
+                <div
+                  className={clsx(
+                    "overflow-hidden rounded-[28px] border p-5 shadow-[0_24px_80px_rgba(49,33,18,0.06)] sm:p-6",
+                    section.accentClassName,
+                  )}
+                >
+                  <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="max-w-2xl">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-black/55">
+                        {section.eyebrow}
+                      </p>
+                      <h2 className="mt-2 font-heading text-2xl font-semibold tracking-[-0.02em] text-ink sm:text-[2rem]">
+                        {section.title}
+                      </h2>
+                      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)] sm:text-[15px]">
+                        {section.description}
+                      </p>
+                    </div>
+                    <a
+                      href="#product-grid"
+                      className="inline-flex w-fit items-center gap-2 rounded-full border border-black/10 bg-white/80 px-4 py-2 text-[12px] font-semibold text-ink transition hover:bg-white"
+                    >
+                      Explore full collection
+                      <span aria-hidden="true">→</span>
+                    </a>
+                  </div>
+                  {renderProductGrid(section.products, section.id)}
+                </div>
+              </AnimatedWrapper>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section id="product-grid" className="mx-auto mt-6 max-w-6xl px-4 pb-24">
         <h2 className="mb-3 text-[18px] font-semibold">Our Collection</h2>
         {activeChips.length > 0 ? (
@@ -1292,10 +1463,7 @@ export default function HomePage({
           ) : (
             <motion.div
               key={productBatchKey}
-              className={clsx(
-                "grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
-                !prefersReducedMotion && "retail-batch-enter",
-              )}
+              className={clsx(!prefersReducedMotion && "retail-batch-enter")}
               initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{
@@ -1303,42 +1471,7 @@ export default function HomePage({
                 ease: [0.16, 1, 0.3, 1],
               }}
             >
-              {visibleProducts.map((product, index) => (
-                <AnimatedWrapper
-                  key={product.id}
-                  variant="product-card"
-                  delay={
-                    prefersReducedMotion ? 0 : Math.min(index * 0.02, 0.12)
-                  }
-                >
-                  <ProductCard
-                    product={product}
-                    selectedSize={selectedSizes[product.id]}
-                    quantity={quantities[product.id] ?? 1}
-                    onSizeChange={(size) => updateSize(product.id, size)}
-                    onQuantityChange={(quantity) =>
-                      updateQuantity(product.id, quantity)
-                    }
-                    onBuyNow={() => handleBuyNow(product)}
-                    onAddToCart={() => handleAddToCart(product)}
-                    onOpenDetails={() => {
-                      markRecentlyViewed(product);
-                      setDetailsProduct(product);
-                    }}
-                    priceLabel={text.priceLabel}
-                    buyNowLabel={text.buyNow}
-                    addToCartLabel={text.addToCart}
-                    addingLabel={text.adding}
-                    addedLabel={text.added}
-                    addState={addStates[product.id] ?? "idle"}
-                    quantityFeedback={quantityFeedback[product.id]}
-                    statusLabel={getStatusLabel(index)}
-                    stockLabel={getStockLabel(product, index)}
-                    sizeErrorLabel={text.sizeError}
-                    isRouting={isRouting}
-                  />
-                </AnimatedWrapper>
-              ))}
+              {renderProductGrid(visibleProducts, "collection")}
             </motion.div>
           )}
         </SectionLoader>
@@ -1370,7 +1503,10 @@ export default function HomePage({
                     }
                     onBuyNow={() => handleBuyNow(product)}
                     onAddToCart={() => handleAddToCart(product)}
-                    onOpenDetails={() => setDetailsProduct(product)}
+                    onOpenDetails={() => {
+                      markRecentlyViewed(product);
+                      setDetailsProduct(product);
+                    }}
                     showBadge="Recently Viewed"
                     priceLabel={text.priceLabel}
                     buyNowLabel={text.buyNow}
