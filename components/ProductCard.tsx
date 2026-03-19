@@ -111,7 +111,10 @@ export default function ProductCard({
     (product as Product & { compareAtPrice?: number }).compareAtPrice;
 
   return (
-    <div className="group flex w-full min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-white transition-all duration-200 ease-out hover:shadow-md">
+    <div
+      className="group flex w-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-white hover:shadow-md hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+      style={{ transition: "var(--transition)" }}
+    >
       <div
         role="button"
         tabIndex={0}
@@ -124,13 +127,13 @@ export default function ProductCard({
           }
         }}
       >
-        <div className="relative w-full aspect-[3/4] overflow-hidden">
+        <div className="relative aspect-[3/4] w-full overflow-hidden">
           {imageSrc && !imageFailed ? (
             <Image
               src={imageSrc}
               alt={product.name}
               fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
               onError={() => setImageFailed(true)}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             />
@@ -146,7 +149,7 @@ export default function ProductCard({
 
         <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-2xl border border-white/30 bg-white/35 p-3 text-left backdrop-blur-sm">
           <p className="text-[10px] uppercase tracking-[0.2em] text-charcoal/80">{product.category}</p>
-          <p className="mt-0.5 font-heading text-sm sm:text-base font-semibold text-charcoal transition-transform duration-200 group-hover:translate-y-[-1px] break-words line-clamp-2">
+          <p className="mt-0.5 break-words font-heading text-sm font-semibold text-charcoal transition-transform duration-200 group-hover:translate-y-[-1px] line-clamp-2 sm:text-base">
             {product.name}
           </p>
           <p className="mt-0.5 text-xs font-semibold text-charcoal/85 transition-transform duration-200 delay-75 group-hover:translate-y-[-1px]">
@@ -174,10 +177,10 @@ export default function ProductCard({
 
       <div className="flex flex-1 flex-col space-y-3 p-4">
         <div className="flex justify-between items-start gap-2">
-          <h3 className="line-clamp-2 break-words text-[16px] font-medium leading-[1.4] text-neutral-900">
+          <h3 className="line-clamp-2 break-words text-[15px] font-medium leading-[1.4] text-neutral-900 md:text-base">
             {product.name}
           </h3>
-          <span className="whitespace-nowrap text-[16px] font-medium leading-[1.4] text-neutral-900">
+          <span className="whitespace-nowrap text-sm font-semibold leading-[1.4] tracking-tight text-neutral-900">
             ৳{product.price.toLocaleString()}
           </span>
         </div>
@@ -187,7 +190,7 @@ export default function ProductCard({
         ) : null}
 
         <div className="flex items-center justify-between gap-2">
-          <p className="break-words text-[13px] leading-[1.5] text-neutral-700">{product.category}</p>
+          <p className="break-words text-xs leading-[1.5] text-[var(--text-muted)]">{product.category}</p>
           {typeof stockCount === "number" && stockCount <= 5 ? (
             <span
               className={clsx(
@@ -210,7 +213,7 @@ export default function ProductCard({
                 key={size}
                 type="button"
                 className={clsx(
-                  "interactive-feedback text-[11px] px-2 py-1 rounded-md border transition",
+                  "interactive-feedback rounded-md border px-2 py-1 text-[11px] transition",
                   selectedSize === size
                     ? "border-[var(--bar-maroon)] bg-[var(--bar-maroon)] text-white"
                     : "border-[var(--border-soft)] bg-white text-black",
@@ -249,7 +252,7 @@ export default function ProductCard({
           </div>
           <button
             type="button"
-            className="interactive-feedback flex-1 min-h-[40px] rounded-lg bg-[var(--bar-maroon)] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+            className="interactive-feedback flex-1 min-h-[40px] rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
             onClick={handleBuyClick}
             disabled={isRouting || isOutOfStock}
           >
@@ -262,7 +265,7 @@ export default function ProductCard({
         <button
           type="button"
           className={clsx(
-            "interactive-feedback mt-1 w-full min-h-[40px] rounded-lg border px-4 py-2.5 text-[13px] font-semibold",
+            "interactive-feedback mt-1 min-h-[40px] w-full rounded-md border px-3 py-1.5 text-xs font-semibold transition hover:opacity-90",
             addState === "success" ? "border-emerald-600 bg-emerald-600 text-white" : "border-neutral-300 bg-white text-neutral-900",
           )}
           onClick={handleAddClick}
